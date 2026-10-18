@@ -13,7 +13,7 @@
       (function () {
         try {
           var saved = localStorage.getItem("famigo-theme");
-          var dark =</script>
+          var dark =
             saved === "dark" ||
             (saved === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
           document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
