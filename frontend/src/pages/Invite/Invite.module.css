@@ -1,0 +1,48 @@
+.body {
+  gap: 18px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.linkCard {
+  background: var(--primary-soft);
+  border-color: var(--soft-border);
+  box-shadow: none;
+}
+
+.linkHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.linkNote {
+  font-size: 14px;
+  color: var(--on-soft-muted);
+  line-height: 1.5;
+}
+
+.link {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--card);
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  word-break: break-all;
+}
+
+.copy {
+  height: 48px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--soft-border-strong);
+  color: var(--on-soft);
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}

@@ -1,0 +1,98 @@
+p{
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+}
+
+.page{
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg);
+}
+
+.hero{
+    background: linear-gradient(145deg, #778B66 0%, #667A55 45%, #52663F 100%);
+    position: relative;
+    height: 230px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px 24px 28px;
+    overflow: hidden;
+}
+
+.bigLetter{
+    font-family: "Pacifico", cursive;
+    font-size: 300px;
+    color: rgba(255, 255, 255, 0.12);
+    position: absolute;
+    right: -20px;
+    top: -40px;
+    line-height: 1;
+}
+
+.brand{
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo{
+    font-family: "Pacifico", cursive;
+    color: var(--primary);
+    font-size: 24px;
+
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    background-color: var(--bg);
+    border-radius: 12px;
+    padding-right: 4px;
+}
+
+.brandName{
+    font-family: "Golos Text", sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--bg);
+}
+
+.slogan{
+    position: relative;
+    margin: 0px;
+    font-family: "Golos Text", sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--bg);
+}
+
+.form{
+    flex: 1;
+    padding: 28px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.title{
+    font-weight: 700;
+    font-size: 28px;
+}
+
+.link{
+    color: var(--link);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.signup .link {
+    font-size: 14px;
+    font-weight: 500;
+}

@@ -1,0 +1,60 @@
+.me {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.meText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meName {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.photo {
+  color: var(--link);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.theme {
+  padding: 14px 16px;
+  gap: 10px;
+  box-shadow: none;
+}
+
+.themeTitle {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.options {
+  display: flex;
+  gap: 8px;
+}
+
+.option {
+  flex: 1;
+  padding: 10px 0;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.active {
+  border: 2px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  font-weight: 600;
+}

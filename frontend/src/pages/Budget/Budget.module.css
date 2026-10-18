@@ -1,0 +1,175 @@
+.history {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--field-border);
+  color: inherit;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.summary {
+  padding: 20px;
+  border-radius: var(--radius-card);
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summaryLabel {
+  font-size: 14px;
+  color: var(--primary-soft);
+}
+
+.summaryAmount {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 800;
+  font-size: 38px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.statValue {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.card {
+  padding: 18px;
+  gap: 12px;
+  box-shadow: none;
+}
+
+.cardTitle {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.categoryRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.categoryName {
+  font-weight: 500;
+}
+
+.categorySum {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+.fill {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--primary);
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fade {
+  animation: fadeIn 0.3s ease;
+}
+
+.next {
+  animation: slideNext 0.3s ease;
+}
+
+.prev {
+  animation: slidePrev 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slideNext {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slidePrev {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.empty {
+  margin: 0;
+  padding: 24px 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade,
+  .next,
+  .prev {
+    animation: none;
+  }
+}

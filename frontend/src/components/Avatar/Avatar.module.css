@@ -1,0 +1,29 @@
+.avatar {
+  flex: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 700;
+}
+
+.green {
+  background: var(--primary);
+  color: #fff;
+}
+
+.terra {
+  background: var(--accent);
+  color: #20221F;
+}
+
+.sage {
+  background: #B9C7AC;
+  color: #20221F;
+}
+
+.gray {
+  background: var(--avatar-gray-bg);
+  color: var(--avatar-gray-text);
+}

@@ -1,0 +1,102 @@
+.page {
+  gap: 16px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.profile {
+  padding: 16px;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+}
+
+.profileText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.email {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.chevron {
+  color: var(--muted);
+  flex: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+}
+
+.item:last-child {
+  border-bottom: 0;
+}
+
+.itemIcon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.itemText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemLabel {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.itemSub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.logout {
+  height: 52px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--field-border);
+  color: var(--neutral-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+}

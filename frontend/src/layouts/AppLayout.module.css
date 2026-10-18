@@ -1,0 +1,10 @@
+.layout {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}

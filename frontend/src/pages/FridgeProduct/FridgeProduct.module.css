@@ -1,0 +1,49 @@
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.qty {
+  flex: 3;
+  min-width: 0;
+}
+
+.unit {
+  flex: 2;
+  min-width: 0;
+}
+
+.spoiled {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-field);
+  background: var(--card);
+  cursor: pointer;
+}
+
+.spoiled input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--primary);
+}
+
+.spoiledText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spoiledTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.spoiledHint {
+  font-size: 12px;
+  color: var(--muted);
+}
