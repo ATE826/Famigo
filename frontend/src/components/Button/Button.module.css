@@ -20,9 +20,9 @@
 
 .soft {
   background: var(--primary-soft);
-  color: #3E4F32;
+  color: var(--on-soft);
 }
 
 .soft:hover {
-  background: #D6E0CD;
+  background: var(--soft-hover);
 }

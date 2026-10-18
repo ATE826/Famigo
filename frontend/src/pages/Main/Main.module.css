@@ -1,0 +1,221 @@
+.page {
+  padding: 20px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  padding-right: 4px;
+  border-radius: 11px;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Pacifico', cursive;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.brandName {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bell {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #20221F;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.greeting {
+  padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.family {
+  color: var(--muted);
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.balance {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.amount {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 800;
+  font-size: 34px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.bars {
+  height: 44px;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.bar {
+  flex: 1;
+  border-radius: 5px;
+  background: var(--primary-soft);
+}
+
+.barActive {
+  background: var(--primary);
+}
+
+.fridge {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-card);
+}
+
+.fridgeIcon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: var(--accent);
+  color: #20221F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fridgeText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fridgeTitle {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.fridgeSub {
+  font-size: 13px;
+  color: var(--accent-text-2);
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.event {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.eventLine {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.eventText {
+  display: flex;
+  flex-direction: column;
+}
+
+.eventTime {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.eventTitle {
+  font-weight: 600;
+  font-size: 15px;
+}

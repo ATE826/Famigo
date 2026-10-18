@@ -12,7 +12,7 @@ function Login() {
   function handleChange(e) {
     const { name, value } = e.target;
     setValues({ ...values, [name]: value });
-    setErrors({ ...errors, [name]: "" }); // убираем ошибку, когда пользователь начал править поле
+    setErrors({ ...errors, [name]: "" });
   }
 
   function handleSubmit(e) {

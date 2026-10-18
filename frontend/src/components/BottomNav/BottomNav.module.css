@@ -1,0 +1,70 @@
+.nav {
+  position: sticky;
+  bottom: 0;
+  height: calc(72px + env(safe-area-inset-bottom));
+  padding: 0 8px env(safe-area-inset-bottom);
+  display: flex;
+  align-items: stretch;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+}
+
+.indicator {
+  position: absolute;
+  top: 11px;
+  left: calc(8px + (100% - 16px) / 5 * (var(--i) + 0.5) - 28px);
+  width: 56px;
+  height: 30px;
+  border-radius: 15px;
+  background: var(--primary-soft);
+  transition:
+    left 0.35s cubic-bezier(0.34, 1.3, 0.5, 1),
+    opacity 0.2s ease;
+}
+
+.hidden {
+  opacity: 0;
+}
+
+.item {
+  position: relative;
+  flex: 1;
+  padding-top: 11px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--neutral-text);
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.pill {
+  width: 56px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
+}
+
+.active {
+  color: var(--on-soft);
+  font-weight: 600;
+}
+
+.active .pill {
+  transform: scale(1.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator,
+  .item,
+  .pill {
+    transition: none;
+  }
+}

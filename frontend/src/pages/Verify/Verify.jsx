@@ -9,20 +9,17 @@ const CODE_LENGTH = 6;
 function Verify() {
   const navigate = useNavigate();
   const location = useLocation();
-  // куда вести после кода: из регистрации — создание семьи, из входа — главная
   const next = location.state?.next ?? "/main";
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
 
   function handleChange(e) {
-    // оставляем только цифры
     setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH));
     setError("");
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-    // Пока заглушка: подходит любой код из 6 цифр. Позже проверка уйдёт на сервер.
     if (code.length === CODE_LENGTH) {
       navigate(next);
     } else {

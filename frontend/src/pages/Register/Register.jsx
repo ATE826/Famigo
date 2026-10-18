@@ -12,7 +12,7 @@ const Register = () => {
   function handleChange(e) {
     const { name, value } = e.target;
     setValues({ ...values, [name]: value });
-    setErrors({ ...errors, [name]: "" }); // убираем ошибку, когда пользователь начал править поле
+    setErrors({ ...errors, [name]: "" });
   }
 
   function validate() {
@@ -94,7 +94,7 @@ const Register = () => {
         <p className={styles.login}>
           Уже есть аккаунт? <Link to="/" className={styles.link}>Войти</Link>
         </p>
-        
+
       </form>
     </main>
   );

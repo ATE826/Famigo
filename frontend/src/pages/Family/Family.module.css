@@ -1,0 +1,88 @@
+.subtitle {
+  margin: -8px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.invite {
+  height: 52px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+}
+
+.chevron {
+  flex: none;
+  color: var(--muted);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.note {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.role {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.Owner {
+  background: var(--primary-soft);
+  color: var(--on-soft);
+}
+
+.Admin {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.Member {
+  background: var(--neutral-soft);
+  color: var(--neutral-text);
+}
+
+.info {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}

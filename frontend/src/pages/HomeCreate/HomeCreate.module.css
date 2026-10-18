@@ -1,0 +1,9 @@
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.col {
+  flex: 1;
+  min-width: 0;
+}

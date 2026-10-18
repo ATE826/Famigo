@@ -1,14 +1,37 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
 import styles from "./FamilyCreate.module.css";
 
+const CODE_LENGTH = 6;
+
 function FamilyCreate() {
   const navigate = useNavigate();
+  const [familyName, setFamilyName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [familyError, setFamilyError] = useState("");
+  const [inviteError, setInviteError] = useState("");
 
-  function handleSubmit(event){
+  function handleCreate(event) {
     event.preventDefault();
+    if (!familyName.trim()) {
+      setFamilyError("Введите название семьи");
+      return;
+    }
     navigate("/main");
+  }
+
+  function handleJoin(event) {
+    event.preventDefault();
+    const code = inviteCode.trim();
+    if (!code) {
+      setInviteError("Введите код приглашения");
+    } else if (code.length !== CODE_LENGTH) {
+      setInviteError(`Код состоит из ${CODE_LENGTH} символов`);
+    } else {
+      navigate("/main");
+    }
   }
 
   return (
@@ -23,15 +46,38 @@ function FamilyCreate() {
           Создайте новую группу или присоединитесь к существующей.
         </p>
       </div>
-      <form className={`${styles.card} ${styles.main}`} onSubmit={handleSubmit}>
+      <form className={`${styles.card} ${styles.main}`} onSubmit={handleCreate} noValidate>
         <h2 className={styles.cardTitle}>Создать семью</h2>
-        <Input id="family" label="Название семьи" type="text" placeholder="Семья Ивановых" />
+        <Input
+          id="family"
+          label="Название семьи"
+          type="text"
+          placeholder="Семья Ивановых"
+          value={familyName}
+          onChange={(e) => {
+            setFamilyName(e.target.value);
+            setFamilyError("");
+          }}
+          hint={familyError}
+        />
         <Button type="submit">Создать</Button>
       </form>
 
-      <form className={styles.card} onSubmit={handleSubmit}>
+      <form className={styles.card} onSubmit={handleJoin} noValidate>
         <h2 className={styles.cardTitle}>Присоединиться</h2>
-        <Input id="invite" label="Код приглашения" type="text" placeholder="8X72K"/>
+        <Input
+          id="invite"
+          label="Код приглашения"
+          type="text"
+          placeholder="8X72K"
+          maxLength={CODE_LENGTH}
+          value={inviteCode}
+          onChange={(e) => {
+            setInviteCode(e.target.value);
+            setInviteError("");
+          }}
+          hint={inviteError}
+        />
         <Button type="submit">Присоединиться</Button>
       </form>
     </main>

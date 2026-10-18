@@ -76,7 +76,7 @@ p{
 }
 
 .link {
-  color: var(--primary-dark);
+  color: var(--link);
   font-size: 14px;
   font-weight: 600;
-}  
+}

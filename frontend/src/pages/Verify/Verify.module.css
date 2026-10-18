@@ -68,7 +68,7 @@
 }
 
 .link {
-  color: var(--primary-dark);
+  color: var(--link);
   font-size: 15px;
   font-weight: 600;
 }

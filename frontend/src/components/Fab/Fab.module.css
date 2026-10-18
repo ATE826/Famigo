@@ -1,0 +1,24 @@
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  box-shadow: 0 6px 16px rgba(60, 75, 50, 0.25);
+}
+
+.wide {
+  width: auto;
+  padding: 0 22px;
+  border-radius: 28px;
+}

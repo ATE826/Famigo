@@ -1,0 +1,319 @@
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fade {
+  animation: fadeIn 0.3s ease;
+}
+
+.next {
+  animation: slideNext 0.3s ease;
+}
+
+.prev {
+  animation: slidePrev 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slideNext {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slidePrev {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade,
+  .next,
+  .prev {
+    animation: none;
+  }
+}
+
+.calendar {
+  padding: 10px;
+  gap: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  row-gap: 2px;
+}
+
+.weekDay {
+  padding: 6px 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.cell {
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.num {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 500;
+  font-size: 14px;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.today {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.selected {
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.today.selected {
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.hasEvent {
+  background: var(--accent);
+}
+
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eventsTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.empty {
+  margin: 0;
+  padding: 12px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.event {
+  padding: 14px 16px;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.eventLine {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.eventText {
+  display: flex;
+  flex-direction: column;
+}
+
+.eventTime {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.eventTitle {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.weekStrip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.weekDayButton {
+  padding: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.weekDayActive {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.weekDayName {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.weekDayNum {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.weekToday {
+  color: var(--link);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navLabel {
+  flex: 1;
+  text-align: center;
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.todayButton {
+  padding: 10px 0 10px 10px;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.todayButton:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.navButton {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.navButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 4px 12px;
+}
+
+.hourRow {
+  display: flex;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.hourRow:last-child {
+  border-bottom: 0;
+}
+
+.hourLabel {
+  width: 44px;
+  flex: none;
+  padding-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.hourSlot {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

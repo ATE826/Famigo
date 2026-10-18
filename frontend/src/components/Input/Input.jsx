@@ -1,8 +1,6 @@
 import styles from "./Input.module.css";
 
-// label — подпись над полем, action — необязательный элемент справа от подписи
-// (например, ссылка «Забыли пароль?»). Остальные props уходят прямо в <input>.
-export default function Input({ id, label, action, hint, ...props }) {
+export default function Input({ id, label, action, hint, inputClassName = "", ...props }) {
   return (
     <div className={styles.field}>
       <div className={styles.head}>
@@ -11,7 +9,7 @@ export default function Input({ id, label, action, hint, ...props }) {
         </label>
         {action}
       </div>
-      <input id={id} className={styles.input} {...props} />
+      <input id={id} className={`${styles.input} ${inputClassName}`} {...props} />
       {hint && <span className={styles.hint}>{hint}</span>}
     </div>
   );
