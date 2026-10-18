@@ -1,0 +1,82 @@
+p{
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+}
+
+.page{
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg);
+}
+
+.brand{
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 24px 0;
+}
+
+.logo{
+    font-family: "Pacifico", cursive;
+    color: var(--bg);
+    font-size: 24px;
+
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    background-color: var(--primary);
+    border-radius: 12px;
+    padding-right: 4px;
+}
+
+.brandName{
+    font-family: "Golos Text", sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--primary);
+}
+
+.intro {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.title{
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+}
+
+.subtitle{
+    line-height: 1.15;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.form{
+    flex: 1;
+    padding: 28px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.login {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.link {
+  color: var(--primary-dark);
+  font-size: 14px;
+  font-weight: 600;
+}  
