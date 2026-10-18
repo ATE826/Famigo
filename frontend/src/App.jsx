@@ -35,7 +35,7 @@ function App() {
   return (
     <ThemeProvider>
       <DataProvider>
-        <BrowserRouter>
+        <BrowserRouter basename="/Famigo">
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
