@@ -2,10 +2,12 @@ import { useState } from "react";
 import { unitStep } from "../pages/Fridge/products";
 import { DataContext } from "./DataContext";
 import { initialHomes, initialMembers, initialProducts } from "./initialData";
+import { initialOperations } from "./operations";
 
 export default function DataProvider({ children }) {
   const [homes, setHomes] = useState(initialHomes);
   const [products, setProducts] = useState(initialProducts);
+  const [operations, setOperations] = useState(initialOperations);
   const [fridgeHomeId, setFridgeHomeId] = useState(initialHomes[0].id);
   const [members, setMembers] = useState(initialMembers);
   const currentUserId = "anton";
@@ -81,6 +83,10 @@ export default function DataProvider({ children }) {
     setMembers((current) => current.map((m) => (m.id === id ? { ...m, role } : m)));
   }
 
+  function addOperation(operation) {
+    setOperations((current) => [...current, { ...operation, id: Date.now() }]);
+  }
+
   function addProduct(product) {
     setProducts((current) => [...current, { ...product, id: Date.now() }]);
   }
@@ -106,6 +112,8 @@ export default function DataProvider({ children }) {
         members,
         currentUserId,
         products,
+        operations,
+        addOperation,
         fridgeHomeId,
         setFridgeHomeId,
         addHome,

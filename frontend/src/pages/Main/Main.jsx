@@ -1,9 +1,17 @@
 import { Link } from "react-router-dom";
 import Card from "../../components/Card/Card";
+import { useData } from "../../store/DataContext";
+import {
+  CURRENT_MONTH,
+  balanceUpTo,
+  formatMoney,
+  monthPrepositional,
+  parseMonth,
+  monthlyTotals,
+} from "../../utils/budget";
 import styles from "./Main.module.css";
 
-const weeks = [55, 80, 100, 30, 12];
-const currentWeek = 2;
+const CHART_MONTHS = 5;
 
 const events = [
   { time: "19:00", title: "Семейный ужин" },
@@ -11,6 +19,13 @@ const events = [
 ];
 
 function Main() {
+  const { operations } = useData();
+  const key = CURRENT_MONTH;
+  const month = parseMonth(key);
+  const months = monthlyTotals(operations, key, CHART_MONTHS);
+  const maxAmount = Math.max(1, ...months.flatMap((m) => [m.income, m.expense]));
+  const barHeight = (amount) => `${Math.max((amount / maxAmount) * 100, amount > 0 ? 6 : 2)}%`;
+
   return (
     <main className={styles.page}>
       <header className={styles.header}>
@@ -51,17 +66,33 @@ function Main() {
       <Link to="/budget" className={styles.link}>
         <Card>
           <div className={styles.balance}>
-            <span className={styles.label}>Доступно в августе</span>
-            <span className={styles.amount}>163 580 ₽</span>
+            <span className={styles.label}>Доступно в {monthPrepositional(month)}</span>
+            <span className={styles.amount}>{formatMoney(balanceUpTo(operations, key))}</span>
           </div>
-          <div className={styles.bars} role="img" aria-label="Расходы по неделям">
-            {weeks.map((h, i) => (
+          <div className={styles.chart} role="img" aria-label="Доходы и расходы по месяцам">
+            {months.map((m) => (
               <div
-                key={i}
-                className={`${styles.bar} ${i === currentWeek ? styles.barActive : ""}`}
-                style={{ height: `${h}%` }}
-              />
+                key={m.key}
+                className={styles.monthCol}
+                title={`${m.label}: доходы ${formatMoney(m.income)}, расходы ${formatMoney(m.expense)}`}
+              >
+                <div className={styles.pair}>
+                  <div className={styles.barIncome} style={{ height: barHeight(m.income) }} />
+                  <div className={styles.barExpense} style={{ height: barHeight(m.expense) }} />
+                </div>
+                <span className={styles.monthLabel}>{m.label}</span>
+              </div>
             ))}
+          </div>
+          <div className={styles.legend}>
+            <span className={styles.legendItem}>
+              <span className={`${styles.dot} ${styles.dotIncome}`} />
+              Доходы
+            </span>
+            <span className={styles.legendItem}>
+              <span className={`${styles.dot} ${styles.dotExpense}`} />
+              Расходы
+            </span>
           </div>
         </Card>
       </Link>

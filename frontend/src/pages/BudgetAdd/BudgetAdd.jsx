@@ -6,6 +6,7 @@ import Button from "../../components/Button/Button";
 import Segmented from "../../components/Segmented/Segmented";
 import FormScreen from "../../components/FormScreen/FormScreen";
 import PageHeader from "../../components/PageHeader/PageHeader";
+import { useData } from "../../store/DataContext";
 import { todayString } from "../../utils/dates";
 import { amountError, dateError, formatDate } from "../../utils/validation";
 import styles from "./BudgetAdd.module.css";
@@ -15,16 +16,23 @@ const types = [
   { value: "income", label: "Доход" },
 ];
 
+const OTHER_CATEGORY = "Другое";
+const TITLE_MAX = 20;
+
 const categories = {
   expense: ["Продукты", "Дом", "Транспорт", "Развлечения", "Другое"],
-  income: ["Зарплата", "Перечисления", "Выигрыш", "Другое"],
+  income: ["Зарплата", "Подарок", "Другое"],
 };
 
 function BudgetAdd() {
   const navigate = useNavigate();
+  const { currentUserId, addOperation } = useData();
   const [type, setType] = useState("expense");
-  const [values, setValues] = useState({ sum: "", desc: "", date: "" });
+  const [category, setCategory] = useState(categories.expense[0]);
+  const [values, setValues] = useState({ sum: "", title: "", desc: "", date: "" });
   const [errors, setErrors] = useState({});
+
+  const isOther = category === OTHER_CATEGORY;
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -37,11 +45,28 @@ function BudgetAdd() {
     const found = {
       sum: amountError(values.sum),
       date: dateError(values.date),
+      title: isOther && !values.title.trim() ? "Введите название" : "",
     };
     setErrors(found);
-    if (!found.sum && !found.date) {
-      navigate("/budget");
-    }
+    if (found.sum || found.date || found.title) return;
+
+    const [day, month, year] = values.date.split(".");
+    const isoDate = `${year}-${month}-${day}`;
+    addOperation({
+      date: isoDate,
+      type,
+      category,
+      amount: Number(values.sum.replace(/[\s₽]/g, "").replace(",", ".")),
+      title: isOther ? values.title.trim() : "",
+      desc: values.desc.trim(),
+      who: currentUserId,
+    });
+    navigate(`/budget?month=${isoDate.slice(0, 7)}`);
+  }
+
+  function handleTypeChange(value) {
+    setType(value);
+    setCategory(categories[value][0]);
   }
 
   return (
@@ -54,7 +79,7 @@ function BudgetAdd() {
     >
       <PageHeader title="Новая операция" to="/budget" icon="close" />
 
-      <Segmented options={types} value={type} onChange={setType} label="Тип операции" />
+      <Segmented options={types} value={type} onChange={handleTypeChange} label="Тип операции" />
 
       <Input
         id="sum"
@@ -69,11 +94,25 @@ function BudgetAdd() {
         hint={errors.sum}
       />
 
-      <Select key={type} id="category" label="Категория">
+      <Select id="category" label="Категория" value={category} onChange={(e) => setCategory(e.target.value)}>
         {categories[type].map((c) => (
           <option key={c}>{c}</option>
         ))}
       </Select>
+
+      {isOther && (
+        <Input
+          id="title"
+          name="title"
+          label={type === "expense" ? "Название расхода" : "Название дохода"}
+          type="text"
+          placeholder={type === "expense" ? "Например, подарок" : "Например, продажа вещей"}
+          maxLength={TITLE_MAX}
+          value={values.title}
+          onChange={handleChange}
+          hint={errors.title || `${values.title.length}/${TITLE_MAX}`}
+        />
+      )}
 
       <Input
         id="desc"

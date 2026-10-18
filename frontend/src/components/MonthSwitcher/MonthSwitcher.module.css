@@ -1,0 +1,31 @@
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  flex: 1;
+  text-align: center;
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

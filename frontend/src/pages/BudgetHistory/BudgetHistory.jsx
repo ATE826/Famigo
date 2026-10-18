@@ -1,68 +1,95 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Card from "../../components/Card/Card";
 import Avatar from "../../components/Avatar/Avatar";
 import Chip, { ChipRow } from "../../components/Chip/Chip";
+import MonthSwitcher from "../../components/MonthSwitcher/MonthSwitcher";
 import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
+import { addMonths, dayTitle, monthLabel } from "../Calendar/data";
+import { useData } from "../../store/DataContext";
+import { CURRENT_MONTH, earliestMonthKey, formatMoney, monthKey, opsInMonth, parseMonth } from "../../utils/budget";
 import styles from "./BudgetHistory.module.css";
 
-const filters = ["Август", "Категория", "Дом", "Участник"];
-
-const groups = [
-  {
-    day: "17 августа",
-    rows: [
-      { who: "А", tone: "green", title: "Продукты", sub: "Квартира, Антон", amount: "-2 500 ₽" },
-      { who: "М", tone: "terra", title: "Квартплата", sub: "Квартира, Мама", amount: "-1 800 ₽" },
-    ],
-  },
-  {
-    day: "16 августа",
-    rows: [
-      { who: "А", tone: "green", title: "Зарплата", sub: "Доход, Антон", amount: "+120 000 ₽", income: true },
-    ],
-  },
-  {
-    day: "15 августа",
-    rows: [
-      { who: "П", tone: "sage", title: "Транспорт", sub: "Бензин, Папа", amount: "-900 ₽" },
-      { who: "М", tone: "terra", title: "Развлечения", sub: "Кино, Мама", amount: "-1 400 ₽" },
-    ],
-  },
+const filters = [
+  { value: "all", label: "Все" },
+  { value: "expense", label: "Расходы" },
+  { value: "income", label: "Доходы" },
 ];
 
 function BudgetHistory() {
-  const [active, setActive] = useState("Август");
+  const { operations, members } = useData();
+  const [params, setParams] = useSearchParams();
+  const [filter, setFilter] = useState("all");
+
+  const month = parseMonth(params.get("month"));
+  const key = monthKey(month);
+
+  const visible = opsInMonth(operations, key)
+    .filter((o) => filter === "all" || o.type === filter)
+    .sort((a, b) => (a.date === b.date ? b.id - a.id : b.date.localeCompare(a.date)));
+
+  const days = [...new Set(visible.map((o) => o.date))];
+
+  function go(step) {
+    setParams({ month: monthKey(addMonths(month, step)) }, { replace: true });
+  }
 
   return (
     <Page>
       <PageHeader title="История" to="/budget" />
 
+      <MonthSwitcher
+        label={monthLabel(month)}
+        onPrev={() => go(-1)}
+        onNext={() => go(1)}
+        prevDisabled={key <= earliestMonthKey(operations)}
+        nextDisabled={key >= CURRENT_MONTH}
+      />
+
       <ChipRow>
         {filters.map((f) => (
-          <Chip key={f} active={f === active} onClick={() => setActive(f)}>
-            {f}
+          <Chip key={f.value} active={f.value === filter} onClick={() => setFilter(f.value)}>
+            {f.label}
           </Chip>
         ))}
       </ChipRow>
 
-      <Card flush className={styles.list}>
-        {groups.map((g) => (
-          <div key={g.day}>
-            <div className={styles.day}>{g.day}</div>
-            {g.rows.map((r, i) => (
-              <div key={i} className={styles.row}>
-                <Avatar letter={r.who} tone={r.tone} size={38} />
-                <div className={styles.text}>
-                  <span className={styles.title}>{r.title}</span>
-                  <span className={styles.sub}>{r.sub}</span>
-                </div>
-                <span className={`${styles.amount} ${r.income ? styles.income : ""}`}>{r.amount}</span>
+      {days.length === 0 ? (
+        <p className={styles.empty}>Операций нет</p>
+      ) : (
+        <Card flush className={styles.list}>
+          {days.map((day) => {
+            const [year, mon, dayNumber] = day.split("-").map(Number);
+            return (
+              <div key={day}>
+                <div className={styles.day}>{dayTitle(new Date(year, mon - 1, dayNumber))}</div>
+                {visible
+                  .filter((o) => o.date === day)
+                  .map((o) => {
+                    const member = members.find((m) => m.id === o.who);
+                    const isIncome = o.type === "income";
+                    return (
+                      <div key={o.id} className={styles.row}>
+                        <Avatar letter={member?.letter ?? "?"} tone={member?.tone ?? "gray"} size={38} />
+                        <div className={styles.text}>
+                          <span className={styles.title}>{o.title || o.desc || o.category}</span>
+                          <span className={styles.sub}>
+                            {o.category}, {member?.name ?? "Бывший участник"}
+                          </span>
+                        </div>
+                        <span className={`${styles.amount} ${isIncome ? styles.income : ""}`}>
+                          {isIncome ? "+" : "-"}
+                          {formatMoney(o.amount)}
+                        </span>
+                      </div>
+                    );
+                  })}
               </div>
-            ))}
-          </div>
-        ))}
-      </Card>
+            );
+          })}
+        </Card>
+      )}
     </Page>
   );
 }

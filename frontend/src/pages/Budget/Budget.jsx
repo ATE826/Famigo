@@ -1,77 +1,117 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import Card from "../../components/Card/Card";
 import Fab from "../../components/Fab/Fab";
+import MonthSwitcher from "../../components/MonthSwitcher/MonthSwitcher";
 import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
+import { addMonths, monthLabel } from "../Calendar/data";
+import { useData } from "../../store/DataContext";
+import {
+  balanceUpTo,
+  CURRENT_MONTH,
+  byCategory,
+  earliestMonthKey,
+  formatMoney,
+  monthKey,
+  opsInMonth,
+  parseMonth,
+  totalOf,
+} from "../../utils/budget";
 import styles from "./Budget.module.css";
 
-const weeks = [55, 80, 100, 30, 12];
-const currentWeek = 2;
-
-const categories = [
-  { name: "Продукты", sum: "24 500 ₽", share: 91 },
-  { name: "Дом", sum: "18 000 ₽", share: 67 },
-  { name: "Транспорт", sum: "9 200 ₽", share: 34 },
-  { name: "Развлечения", sum: "7 800 ₽", share: 29 },
-  { name: "Другое", sum: "26 920 ₽", share: 100 },
-];
+function CategoryList({ items }) {
+  const max = Math.max(1, ...items.map((c) => c.amount));
+  return items.map((c) => (
+    <div key={c.name} className={styles.category}>
+      <div className={styles.categoryRow}>
+        <span className={styles.categoryName}>{c.name}</span>
+        <span className={styles.categorySum}>{formatMoney(c.amount)}</span>
+      </div>
+      <div className={styles.track}>
+        <div className={styles.fill} style={{ width: `${(c.amount / max) * 100}%` }} />
+      </div>
+    </div>
+  ));
+}
 
 function Budget() {
+  const { operations } = useData();
+  const [params, setParams] = useSearchParams();
+  const [direction, setDirection] = useState("fade");
+
+  const month = parseMonth(params.get("month"));
+  const key = monthKey(month);
+  const isCurrent = key === CURRENT_MONTH;
+
+  const monthOps = opsInMonth(operations, key);
+  const income = totalOf(monthOps, "income");
+  const expenses = totalOf(monthOps, "expense");
+  const balance = balanceUpTo(operations, key);
+  const expenseCategories = byCategory(monthOps, "expense");
+  const incomeCategories = byCategory(monthOps, "income");
+
+  function go(step) {
+    setDirection(step > 0 ? "next" : "prev");
+    setParams({ month: monthKey(addMonths(month, step)) }, { replace: true });
+  }
+
   return (
     <Page fab>
       <PageHeader
         title="Бюджет"
-        subtitle="Август 2026"
         right={
-          <Link to="/budget/history" className={styles.history}>
+          <Link to={`/budget/history?month=${key}`} className={styles.history}>
             История
           </Link>
         }
       />
 
-      <div className={styles.summary}>
-        <span className={styles.summaryLabel}>Доступно</span>
-        <span className={styles.summaryAmount}>163 580 ₽</span>
-      </div>
+      <MonthSwitcher
+        label={monthLabel(month)}
+        onPrev={() => go(-1)}
+        onNext={() => go(1)}
+        prevDisabled={key <= earliestMonthKey(operations)}
+        nextDisabled={key >= CURRENT_MONTH}
+      />
 
-      <div className={styles.stats}>
-        <div className={styles.stat}>
-          <span className={styles.statLabel}>Расходы</span>
-          <span className={styles.statValue}>86 420 ₽</span>
+      <div key={key} className={`${styles.view} ${styles[direction]}`}>
+        <div className={styles.summary}>
+          <span className={styles.summaryLabel}>{isCurrent ? "Доступно" : "Остаток на конец месяца"}</span>
+          <span className={styles.summaryAmount}>{formatMoney(balance)}</span>
         </div>
-        <div className={styles.stat}>
-          <span className={styles.statLabel}>Доходы</span>
-          <span className={styles.statValue}>120 000 ₽</span>
-        </div>
-      </div>
 
-      <Card className={styles.card}>
-        <h2 className={styles.cardTitle}>Расходы по неделям</h2>
-        <div className={styles.bars} role="img" aria-label="График расходов по неделям">
-          {weeks.map((h, i) => (
-            <div
-              key={i}
-              className={`${styles.bar} ${i === currentWeek ? styles.barActive : ""}`}
-              style={{ height: `${h}%` }}
-            />
-          ))}
-        </div>
-      </Card>
-
-      <Card className={styles.card}>
-        <h2 className={styles.cardTitle}>Категории</h2>
-        {categories.map((c) => (
-          <div key={c.name} className={styles.category}>
-            <div className={styles.categoryRow}>
-              <span className={styles.categoryName}>{c.name}</span>
-              <span className={styles.categorySum}>{c.sum}</span>
-            </div>
-            <div className={styles.track}>
-              <div className={styles.fill} style={{ width: `${c.share}%` }} />
-            </div>
+        <div className={styles.stats}>
+          <div className={styles.stat}>
+            <span className={styles.statLabel}>Расходы</span>
+            <span className={styles.statValue}>{formatMoney(expenses)}</span>
           </div>
-        ))}
-      </Card>
+          <div className={styles.stat}>
+            <span className={styles.statLabel}>Доходы</span>
+            <span className={styles.statValue}>{formatMoney(income)}</span>
+          </div>
+        </div>
+
+        {monthOps.length === 0 ? (
+          <p className={styles.empty}>В этом месяце операций нет</p>
+        ) : (
+          <>
+            {expenseCategories.length > 0 && (
+              <Card className={styles.card}>
+                <h2 className={styles.cardTitle}>Категории расходов</h2>
+                <CategoryList items={expenseCategories} />
+              </Card>
+            )}
+
+            {incomeCategories.length > 0 && (
+              <Card className={styles.card}>
+                <h2 className={styles.cardTitle}>Доходы по категориям</h2>
+                <CategoryList items={incomeCategories} />
+              </Card>
+            )}
+          </>
+        )}
+      </div>
 
       <Fab to="/budget/add" label="Добавить операцию" />
     </Page>

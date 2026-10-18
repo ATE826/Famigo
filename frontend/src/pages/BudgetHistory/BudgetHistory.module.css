@@ -46,3 +46,11 @@
 .income {
   color: var(--link);
 }
+
+.empty {
+  margin: 0;
+  padding: 24px 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
