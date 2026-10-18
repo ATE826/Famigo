@@ -65,8 +65,8 @@
 }
 
 .warn {
-  background: var(--accent-soft);
-  color: var(--accent-text);
+  background: var(--warn-soft);
+  color: var(--warn-text);
 }
 
 .spoiled {

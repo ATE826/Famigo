@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\" && gh-pages -d dist"
+    "deploy": "vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\" && node deploy.mjs"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",

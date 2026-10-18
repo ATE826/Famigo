@@ -18,6 +18,7 @@ import Calendar from "./pages/Calendar/Calendar.jsx";
 import CalendarCreate from "./pages/CalendarCreate/CalendarCreate.jsx";
 import Chats from "./pages/Chats/Chats.jsx";
 import Chat from "./pages/Chat/Chat.jsx";
+import ChatInfo from "./pages/ChatInfo/ChatInfo.jsx";
 import More from "./pages/More/More.jsx";
 import Family from "./pages/Family/Family.jsx";
 import Member from "./pages/Member/Member.jsx";
@@ -35,7 +36,7 @@ function App() {
   return (
     <ThemeProvider>
       <DataProvider>
-        <BrowserRouter>
+        <BrowserRouter basename="/Famigo">
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -43,7 +44,8 @@ function App() {
             <Route path="/family-create" element={<FamilyCreate />} />
             <Route path="/budget/add" element={<BudgetAdd />} />
             <Route path="/calendar/create" element={<CalendarCreate />} />
-            <Route path="/chats/family" element={<Chat />} />
+            <Route path="/chats/:id" element={<Chat />} />
+          <Route path="/chats/:id/info" element={<ChatInfo />} />
             <Route path="/more/invite" element={<Invite />} />
             <Route path="/more/homes/add" element={<HomeCreate />} />
           <Route path="/more/home/:id/edit" element={<HomeCreate />} />

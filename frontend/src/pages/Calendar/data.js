@@ -1,4 +1,6 @@
-export const TODAY = new Date(2026, 7, 17);
+import { todayStart } from "../../utils/dates";
+
+export const TODAY = todayStart();
 
 const MONTHS = [
   "Январь",
@@ -99,17 +101,19 @@ export function monthCells(date) {
   });
 }
 
+const eventAt = (offset) => dateKey(addDays(TODAY, offset));
+
 export const events = [
-  { id: 1, date: "2026-07-28", time: "11:00", title: "Техосмотр" },
-  { id: 2, date: "2026-08-05", time: "10:30", title: "Визит к врачу" },
-  { id: 3, date: "2026-08-12", time: "15:00", title: "Встреча с друзьями" },
-  { id: 4, date: "2026-08-17", time: "19:00", title: "Семейный ужин" },
-  { id: 5, date: "2026-08-17", time: "21:00", title: "Фильм" },
-  { id: 6, date: "2026-08-20", time: "12:00", title: "Поездка на дачу" },
-  { id: 7, date: "2026-08-24", time: "09:00", title: "Оплата квартплаты" },
-  { id: 8, date: "2026-08-29", time: "18:30", title: "Родительское собрание" },
-  { id: 9, date: "2026-09-01", time: "09:00", title: "Начало учебного года" },
-  { id: 10, date: "2026-09-12", time: "10:00", title: "Поездка на дачу" },
+  { id: 1, date: eventAt(-21), time: "11:00", title: "Техосмотр" },
+  { id: 2, date: eventAt(-12), time: "10:30", title: "Визит к врачу" },
+  { id: 3, date: eventAt(-5), time: "15:00", title: "Встреча с друзьями" },
+  { id: 4, date: eventAt(0), time: "19:00", title: "Семейный ужин" },
+  { id: 5, date: eventAt(0), time: "21:00", title: "Фильм" },
+  { id: 6, date: eventAt(3), time: "12:00", title: "Поездка на дачу" },
+  { id: 7, date: eventAt(7), time: "09:00", title: "Оплата квартплаты" },
+  { id: 8, date: eventAt(12), time: "18:30", title: "Родительское собрание" },
+  { id: 9, date: eventAt(20), time: "09:00", title: "Визит к стоматологу" },
+  { id: 10, date: eventAt(30), time: "10:00", title: "Поездка на дачу" },
 ];
 
 export function eventsOn(date) {

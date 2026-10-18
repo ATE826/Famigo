@@ -7,8 +7,8 @@ import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
 import { categories, units } from "../Fridge/products";
-import { todayString } from "../../utils/dates";
-import { dateError, formatDate, quantityError } from "../../utils/validation";
+import { fullToShort, shortToFull, todayShort } from "../../utils/dates";
+import { formatShortDate, quantityError, shortDateError } from "../../utils/validation";
 import styles from "./FridgeProduct.module.css";
 
 function FridgeProduct() {
@@ -26,7 +26,7 @@ function FridgeProduct() {
     cat: product?.cat ?? categories[0],
     qty: product ? String(product.qty) : "",
     unit: product?.unit ?? units[0],
-    expires: product?.expires ?? "",
+    expires: product ? fullToShort(product.expires) : "",
     spoiled: product?.spoiled ?? false,
   });
   const [errors, setErrors] = useState({});
@@ -39,7 +39,7 @@ function FridgeProduct() {
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setValues({ ...values, [name]: name === "expires" ? formatDate(value) : value });
+    setValues({ ...values, [name]: name === "expires" ? formatShortDate(value) : value });
     setErrors({ ...errors, [name]: "" });
   }
 
@@ -48,7 +48,7 @@ function FridgeProduct() {
     const found = {
       name: values.name.trim() ? "" : "Введите название",
       qty: quantityError(values.qty),
-      expires: dateError(values.expires),
+      expires: shortDateError(values.expires),
     };
     setErrors(found);
     if (!Object.values(found).every((message) => !message)) return;
@@ -59,7 +59,7 @@ function FridgeProduct() {
       cat: values.cat,
       qty: Number(values.qty.replace(/\s/g, "").replace(",", ".")),
       unit: values.unit,
-      expires: values.expires,
+      expires: shortToFull(values.expires),
       spoiled: values.spoiled,
     };
     if (isEdit) {
@@ -134,8 +134,8 @@ function FridgeProduct() {
         label="Годен до"
         type="text"
         inputMode="numeric"
-        placeholder={todayString()}
-        maxLength={10}
+        placeholder={todayShort()}
+        maxLength={8}
         value={values.expires}
         onChange={handleChange}
         hint={errors.expires}
