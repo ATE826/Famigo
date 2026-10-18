@@ -40,6 +40,26 @@ export function formatDate(value) {
   return result;
 }
 
+export function formatShortDate(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 6);
+  let result = digits.slice(0, 2);
+  if (digits.length > 2) result += "." + digits.slice(2, 4);
+  if (digits.length > 4) result += "." + digits.slice(4);
+  return result;
+}
+
+export function shortDateError(value) {
+  if (!value.trim()) return "Введите дату";
+  const match = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec(value.trim());
+  if (!match) return "Формат: ДД.ММ.ГГ";
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = 2000 + Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  const real = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  return real ? "" : "Такой даты не существует";
+}
+
 export function dateError(value) {
   if (!value.trim()) return "Введите дату";
   const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value.trim());

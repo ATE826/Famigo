@@ -1,9 +1,10 @@
+import { todayStart } from "../../utils/dates";
+
 export const categories = ["Молочные", "Овощи", "Мясо", "Напитки", "Другое"];
 
 export const units = ["шт.", "мл", "л", "кг", "г"];
 
-const MOCK_TODAY = new Date(2026, 7, 17);
-const WARN_DAYS = 4;
+const WARN_DAYS = 3;
 
 export function unitStep(unit) {
   return unit === "мл" || unit === "г" ? 100 : 1;
@@ -11,7 +12,7 @@ export function unitStep(unit) {
 
 function daysLeft(expires) {
   const [day, month, year] = expires.split(".").map(Number);
-  return Math.round((new Date(year, month - 1, day) - MOCK_TODAY) / 86400000);
+  return Math.round((new Date(year, month - 1, day) - todayStart()) / 86400000);
 }
 
 export function isSpoiled(product) {

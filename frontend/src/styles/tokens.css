@@ -26,6 +26,8 @@
   --chat-bg: #FBFAF7;
   --danger-soft: #F6DAD5;
   --danger-text: #8A2F25;
+  --warn-soft: #FBEFC4;
+  --warn-text: #6B5300;
   --avatar-gray-bg: #E4E4DE;
   --avatar-gray-text: #20221F;
   --radius-card: 20px;
@@ -58,6 +60,8 @@
   --chat-bg: #151713;
   --danger-soft: #3D2220;
   --danger-text: #F2B8B0;
+  --warn-soft: #3A3218;
+  --warn-text: #F2DC8B;
   --avatar-gray-bg: #3A3D36;
   --avatar-gray-text: #ECEAE3;
 }
