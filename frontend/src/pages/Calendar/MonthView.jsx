@@ -3,9 +3,9 @@ import EventCard from "./EventCard";
 import { TODAY, WEEKDAYS, dayTitle, eventsOn, monthCells, sameDay } from "./data";
 import styles from "./Calendar.module.css";
 
-export default function MonthView({ selected, onSelect }) {
+export default function MonthView({ selected, onSelect, extra }) {
   const cells = monthCells(selected);
-  const dayEvents = eventsOn(selected);
+  const dayEvents = eventsOn(selected, extra);
 
   return (
     <>
@@ -33,7 +33,7 @@ export default function MonthView({ selected, onSelect }) {
                 >
                   {date.getDate()}
                 </span>
-                <span className={`${styles.dot} ${eventsOn(date).length ? styles.hasEvent : ""}`} />
+                <span className={`${styles.dot} ${eventsOn(date, extra).length ? styles.hasEvent : ""}`} />
               </button>
             ) : (
               <div key={i} className={styles.cell} />

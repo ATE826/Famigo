@@ -4,6 +4,9 @@ import Chip, { ChipRow } from "../../components/Chip/Chip";
 import Icon from "../../components/Icon/Icon";
 import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
+import { useData } from "../../store/DataContext";
+import { daysUntilBirthday } from "../../utils/dates";
+import { plural } from "../../utils/plural";
 import styles from "./Notifications.module.css";
 
 const filters = [
@@ -22,7 +25,30 @@ const icons = {
   family: "users",
 };
 
-const initialItems = [
+function birthdayItems(members, currentUserId) {
+  return members
+    .filter((m) => m.id !== currentUserId && m.birthday)
+    .map((m) => ({ member: m, days: daysUntilBirthday(m.birthday) }))
+    .filter(({ days }) => days !== null && days <= 7)
+    .map(({ member, days }) => ({
+      id: `bday-${member.id}`,
+      day: "Сегодня",
+      type: "calendar",
+      tone: "terra",
+      title: days === 0 ? `Сегодня день рождения: ${member.name}` : `Скоро день рождения: ${member.name}`,
+      text:
+        days === 0
+          ? "Не забудьте поздравить"
+          : days === 1
+            ? "Завтра"
+            : `Через ${days} ${plural(days, ["день", "дня", "дней"])}`,
+      time: "",
+      to: "/calendar",
+      read: false,
+    }));
+}
+
+const buildItems = (userName) => [
   {
     id: 1,
     day: "Сегодня",
@@ -61,7 +87,7 @@ const initialItems = [
     day: "Вчера",
     type: "budget",
     tone: "green",
-    title: "Антон добавил расход",
+    title: `${userName} добавил расход`,
     text: "Продукты, 2 500 ₽",
     time: "15:20",
     to: "/budget/history",
@@ -83,11 +109,17 @@ const initialItems = [
 const days = ["Сегодня", "Вчера"];
 
 function Notifications() {
-  const [items, setItems] = useState(initialItems);
+  const { members, currentUserId, notificationSettings } = useData();
+  const userName = members.find((m) => m.id === currentUserId)?.name ?? "";
+  const [items, setItems] = useState(() => [
+    ...birthdayItems(members, currentUserId),
+    ...buildItems(userName),
+  ]);
   const [filter, setFilter] = useState("all");
 
-  const unreadCount = items.filter((item) => !item.read).length;
-  const visible = items.filter((item) => filter === "all" || item.type === filter);
+  const enabled = items.filter((item) => notificationSettings[item.type] !== false);
+  const unreadCount = enabled.filter((item) => !item.read).length;
+  const visible = enabled.filter((item) => filter === "all" || item.type === filter);
 
   function markRead(id) {
     setItems(items.map((item) => (item.id === id ? { ...item, read: true } : item)));

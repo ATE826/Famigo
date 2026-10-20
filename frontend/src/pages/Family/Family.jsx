@@ -10,13 +10,13 @@ import { roleLabels } from "../../utils/roles";
 import styles from "./Family.module.css";
 
 function Family() {
-  const { members } = useData();
+  const { members, familyName } = useData();
 
   return (
     <Page>
       <PageHeader title="Моя семья" to="/more" />
       <p className={styles.subtitle}>
-        Семья Ивановых, {members.length} {plural(members.length, ["участник", "участника", "участников"])}
+        {familyName}, {members.length} {plural(members.length, ["участник", "участника", "участников"])}
       </p>
 
       <Link to="/more/invite" className={styles.invite}>
@@ -27,7 +27,7 @@ function Family() {
       <Card flush>
         {members.map((m) => (
           <Link key={m.id} to={`/more/family/${m.id}`} className={styles.row}>
-            <Avatar letter={m.letter} tone={m.tone} size={48} />
+            <Avatar letter={m.letter} tone={m.tone} photo={m.photo} size={48} />
             <div className={styles.text}>
               <span className={styles.name}>{m.name}</span>
               <span className={styles.note}>{m.note}</span>

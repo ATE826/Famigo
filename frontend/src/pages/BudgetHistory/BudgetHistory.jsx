@@ -71,7 +71,7 @@ function BudgetHistory() {
                     const isIncome = o.type === "income";
                     return (
                       <div key={o.id} className={styles.row}>
-                        <Avatar letter={member?.letter ?? "?"} tone={member?.tone ?? "gray"} size={38} />
+                        <Avatar letter={member?.letter ?? "?"} tone={member?.tone ?? "cream"} photo={member?.photo} size={38} />
                         <div className={styles.text}>
                           <span className={styles.title}>{o.title || o.desc || o.category}</span>
                           <span className={styles.sub}>

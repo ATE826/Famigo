@@ -59,7 +59,7 @@ function TaskCreate() {
         id="task"
         label="Задача"
         type="text"
-        placeholder="Заменить лампочку в коридоре"
+        placeholder="Название задачи"
         maxLength={TITLE_MAX}
         value={text}
         onChange={(e) => {
@@ -73,7 +73,7 @@ function TaskCreate() {
         id="description"
         label="Описание"
         type="text"
-        placeholder="Что нужно сделать"
+        placeholder="Описание задачи"
         maxLength={300}
         value={description}
         onChange={(e) => setDescription(e.target.value)}

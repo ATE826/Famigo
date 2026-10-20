@@ -8,7 +8,7 @@ import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
 import { productsLabel } from "../../utils/plural";
-import { categories, expiryLabel, statusOf } from "./products";
+import { categories, expiryLabel, isLow, statusOf } from "./products";
 import styles from "./Fridge.module.css";
 
 const filters = ["Все", ...categories];
@@ -79,8 +79,9 @@ function Fridge() {
           <div key={p.id} className={styles.row}>
             <Link to={`/more/fridge/${p.id}/edit`} className={styles.text} aria-label={`Редактировать: ${p.name}`}>
               <span className={styles.name}>{p.name}</span>
-              <span className={`${styles.exp} ${styles[statusOf(p)]}`}>
-                {expiryLabel(p)}
+              <span className={styles.badges}>
+                <span className={`${styles.exp} ${styles[statusOf(p)]}`}>{expiryLabel(p)}</span>
+                {isLow(p) && <span className={`${styles.exp} ${styles.warn}`}>Заканчивается</span>}
               </span>
             </Link>
             <button type="button" className={styles.step} aria-label="Меньше" onClick={() => changeQty(p.id, -1)}>

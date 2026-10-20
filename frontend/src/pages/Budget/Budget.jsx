@@ -5,6 +5,7 @@ import Fab from "../../components/Fab/Fab";
 import MonthSwitcher from "../../components/MonthSwitcher/MonthSwitcher";
 import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
+import useSwipe from "../../hooks/useSwipe";
 import { addMonths, monthLabel } from "../Calendar/data";
 import { useData } from "../../store/DataContext";
 import {
@@ -51,13 +52,21 @@ function Budget() {
   const expenseCategories = byCategory(monthOps, "expense");
   const incomeCategories = byCategory(monthOps, "income");
 
+  const prevDisabled = key <= earliestMonthKey(operations);
+  const nextDisabled = key >= CURRENT_MONTH;
+
   function go(step) {
     setDirection(step > 0 ? "next" : "prev");
     setParams({ month: monthKey(addMonths(month, step)) }, { replace: true });
   }
 
+  const swipe = useSwipe({
+    onLeft: () => !nextDisabled && go(1),
+    onRight: () => !prevDisabled && go(-1),
+  });
+
   return (
-    <Page fab>
+    <Page fab {...swipe}>
       <PageHeader
         title="Бюджет"
         right={
@@ -71,8 +80,8 @@ function Budget() {
         label={monthLabel(month)}
         onPrev={() => go(-1)}
         onNext={() => go(1)}
-        prevDisabled={key <= earliestMonthKey(operations)}
-        nextDisabled={key >= CURRENT_MONTH}
+        prevDisabled={prevDisabled}
+        nextDisabled={nextDisabled}
       />
 
       <div key={key} className={`${styles.view} ${styles[direction]}`}>

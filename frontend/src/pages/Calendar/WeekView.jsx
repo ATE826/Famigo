@@ -12,10 +12,10 @@ import {
 } from "./data";
 import styles from "./Calendar.module.css";
 
-export default function WeekView({ selected, onSelect }) {
+export default function WeekView({ selected, onSelect, extra }) {
   const start = weekStart(selected);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  const withEvents = days.filter((day) => eventsOn(day).length > 0);
+  const withEvents = days.filter((day) => eventsOn(day, extra).length > 0);
 
   return (
     <>
@@ -33,7 +33,7 @@ export default function WeekView({ selected, onSelect }) {
             <span className={`${styles.weekDayNum} ${sameDay(day, TODAY) ? styles.weekToday : ""}`}>
               {day.getDate()}
             </span>
-            <span className={`${styles.dot} ${eventsOn(day).length ? styles.hasEvent : ""}`} />
+            <span className={`${styles.dot} ${eventsOn(day, extra).length ? styles.hasEvent : ""}`} />
           </button>
         ))}
       </div>
@@ -46,7 +46,7 @@ export default function WeekView({ selected, onSelect }) {
             {WEEKDAYS_FULL[weekdayIndex(day)]}, {dayTitle(day)}
             {sameDay(day, TODAY) && <span className={styles.badge}>Сегодня</span>}
           </h2>
-          {eventsOn(day).map((event) => (
+          {eventsOn(day, extra).map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </section>

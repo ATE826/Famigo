@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Fab from "../../components/Fab/Fab";
+import useSwipe from "../../hooks/useSwipe";
 import Icon from "../../components/Icon/Icon";
 import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
@@ -13,6 +14,7 @@ import {
   WEEKDAYS_FULL,
   addDays,
   addMonths,
+  birthdayEvents,
   dateKey,
   dayTitle,
   monthLabel,
@@ -21,6 +23,7 @@ import {
   weekStart,
   weekdayIndex,
 } from "./data";
+import { useData } from "../../store/DataContext";
 import styles from "./Calendar.module.css";
 
 const views = [
@@ -36,8 +39,6 @@ const viewComponents = {
   day: DayView,
   list: ListView,
 };
-
-const SWIPE_DISTANCE = 60;
 
 function shift(view, date, direction) {
   if (view === "week") return addDays(date, 7 * direction);
@@ -61,13 +62,17 @@ function Calendar() {
   const [view, setView] = useState("month");
   const [selected, setSelected] = useState(TODAY);
   const [direction, setDirection] = useState("fade");
-  const touchStart = useRef(null);
   const View = viewComponents[view];
+  const { members } = useData();
+  const year = selected.getFullYear();
+  const extra = [year - 1, year, year + 1].flatMap((y) => birthdayEvents(members, y));
 
   function go(step) {
     setDirection(step > 0 ? "next" : "prev");
     setSelected(shift(view, selected, step));
   }
+
+  const swipe = useSwipe({ onLeft: () => go(1), onRight: () => go(-1) });
 
   function changeView(value) {
     setDirection("fade");
@@ -79,24 +84,8 @@ function Calendar() {
     setSelected(TODAY);
   }
 
-  function handleTouchStart(e) {
-    const touch = e.touches[0];
-    touchStart.current = { x: touch.clientX, y: touch.clientY };
-  }
-
-  function handleTouchEnd(e) {
-    if (!touchStart.current) return;
-    const touch = e.changedTouches[0];
-    const dx = touch.clientX - touchStart.current.x;
-    const dy = touch.clientY - touchStart.current.y;
-    touchStart.current = null;
-    if (Math.abs(dx) > SWIPE_DISTANCE && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      go(dx < 0 ? 1 : -1);
-    }
-  }
-
   return (
-    <Page fab>
+    <Page fab {...swipe}>
       <PageHeader
         title="Календарь"
         subtitle="Общий календарь семьи"
@@ -129,10 +118,8 @@ function Calendar() {
       <div
         key={`${view}-${periodKey(view, selected)}`}
         className={`${styles.view} ${styles[direction]}`}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
       >
-        <View selected={selected} onSelect={setSelected} />
+        <View selected={selected} onSelect={setSelected} extra={extra} />
       </div>
 
       <Fab to="/calendar/create" label="Создать событие" />

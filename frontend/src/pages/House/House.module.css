@@ -436,3 +436,9 @@
   font-weight: 600;
   text-decoration: none;
 }
+
+.moveHint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}

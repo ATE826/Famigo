@@ -8,7 +8,7 @@ import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
-import { homeGradient, homeIcon } from "../../utils/homes";
+import { homeGradient, homeIcon, homeOf } from "../../utils/homes";
 import { canManageHomes } from "../../utils/permissions";
 import { plural, productsLabel } from "../../utils/plural";
 import styles from "./House.module.css";
@@ -99,7 +99,7 @@ function House() {
         </div>
         {residents.map((m) => (
           <div key={m.id} className={styles.resident}>
-            <Avatar letter={m.letter} tone={m.tone} size={40} />
+            <Avatar letter={m.letter} tone={m.tone} photo={m.photo} size={40} />
             <div className={styles.residentText}>
               <span className={styles.residentName}>{m.name}</span>
               <span className={styles.residentNote}>{m.note}</span>
@@ -125,11 +125,14 @@ function House() {
                 value={selectedId}
                 onChange={(e) => setCandidate(e.target.value)}
               >
-                {available.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
+                {available.map((m) => {
+                  const current = homeOf(homes, m.id);
+                  return (
+                    <option key={m.id} value={m.id}>
+                      {current ? `${m.name} — сейчас: ${current.name}` : m.name}
+                    </option>
+                  );
+                })}
               </Select>
             </div>
             <button
@@ -140,6 +143,11 @@ function House() {
               Добавить
             </button>
           </div>
+        )}
+        {available.length > 0 && homeOf(homes, selectedId) && (
+          <p className={styles.moveHint}>
+            {members.find((m) => m.id === selectedId)?.name} переедет сюда из дома «{homeOf(homes, selectedId).name}»
+          </p>
         )}
       </Card>
 

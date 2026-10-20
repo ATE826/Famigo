@@ -19,15 +19,22 @@ export function isSpoiled(product) {
   return Boolean(product.spoiled) || daysLeft(product.expires) < 0;
 }
 
+export function isLow(product) {
+  return Boolean(product.low) && !isSpoiled(product);
+}
+
+export function needsAttention(product) {
+  return isSpoiled(product) || isLow(product);
+}
+
 export function statusOf(product) {
   if (isSpoiled(product)) return "spoiled";
-  if (product.low || daysLeft(product.expires) <= WARN_DAYS) return "warn";
+  if (daysLeft(product.expires) <= WARN_DAYS) return "warn";
   return "ok";
 }
 
 export function expiryLabel(product) {
   if (isSpoiled(product)) return "Испорчено";
-  if (product.low) return "Заканчивается";
   const [day, month, year] = product.expires.split(".");
   return `до ${day}.${month}.${year.slice(-2)}`;
 }

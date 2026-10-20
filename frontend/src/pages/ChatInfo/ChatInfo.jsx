@@ -67,7 +67,7 @@ function ChatInfo() {
         <h3 className={styles.membersTitle}>Участники: {members.length}</h3>
         {members.map((m) => (
           <Link key={m.id} to={`/more/family/${m.id}`} className={styles.member}>
-            <Avatar letter={m.letter} tone={m.tone} size={44} />
+            <Avatar letter={m.letter} tone={m.tone} photo={m.photo} size={44} />
             <div className={styles.memberText}>
               <span className={styles.memberName}>{m.name}</span>
               <span className={styles.memberRole}>{roleLabels[m.role]}</span>

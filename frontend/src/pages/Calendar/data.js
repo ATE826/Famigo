@@ -116,12 +116,27 @@ export const events = [
   { id: 10, date: eventAt(30), time: "10:00", title: "Поездка на дачу" },
 ];
 
-export function eventsOn(date) {
+export function eventsOn(date, extra = []) {
   const key = dateKey(date);
-  return events.filter((event) => event.date === key);
+  return [...extra, ...events].filter((event) => event.date === key);
 }
 
-export function eventsInMonth(date) {
+export function eventsInMonth(date, extra = []) {
   const prefix = dateKey(date).slice(0, 7);
-  return events.filter((event) => event.date.startsWith(prefix));
+  return [...extra, ...events].filter((event) => event.date.startsWith(prefix));
+}
+
+export function birthdayEvents(members, year) {
+  return members
+    .filter((m) => m.birthday)
+    .map((m) => {
+      const [day, month] = m.birthday.split(".");
+      return {
+        id: `bday-${m.id}-${year}`,
+        date: `${year}-${month}-${day}`,
+        time: "Весь день",
+        title: `День рождения: ${m.name}`,
+        allDay: true,
+      };
+    });
 }

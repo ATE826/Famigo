@@ -28,6 +28,7 @@ function FridgeProduct() {
     unit: product?.unit ?? units[0],
     expires: product ? fullToShort(product.expires) : "",
     spoiled: product?.spoiled ?? false,
+    low: product?.low ?? false,
   });
   const [errors, setErrors] = useState({});
 
@@ -61,9 +62,10 @@ function FridgeProduct() {
       unit: values.unit,
       expires: shortToFull(values.expires),
       spoiled: values.spoiled,
+      low: values.low,
     };
     if (isEdit) {
-      updateProduct(product.id, { ...data, low: false });
+      updateProduct(product.id, data);
     } else {
       addProduct(data);
     }
@@ -91,7 +93,7 @@ function FridgeProduct() {
         name="name"
         label="Название"
         type="text"
-        placeholder="Молоко"
+        placeholder="Название продукта"
         maxLength={60}
         value={values.name}
         onChange={handleChange}
@@ -112,7 +114,7 @@ function FridgeProduct() {
             label="Количество"
             type="text"
             inputMode="decimal"
-            placeholder="2"
+            placeholder="0"
             maxLength={8}
             value={values.qty}
             onChange={handleChange}
@@ -140,6 +142,18 @@ function FridgeProduct() {
         onChange={handleChange}
         hint={errors.expires}
       />
+
+      <label className={styles.spoiled}>
+        <input
+          type="checkbox"
+          checked={values.low}
+          onChange={(e) => setValues({ ...values, low: e.target.checked })}
+        />
+        <span className={styles.spoiledText}>
+          <span className={styles.spoiledTitle}>Продукт заканчивается</span>
+          <span className={styles.spoiledHint}>Покажем напоминание на главном экране</span>
+        </span>
+      </label>
 
       {isEdit && (
         <label className={styles.spoiled}>

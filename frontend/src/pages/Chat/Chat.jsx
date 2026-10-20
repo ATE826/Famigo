@@ -54,7 +54,7 @@ function Chat() {
           {isGroup ? (
             <Avatar letter="С" size={40} />
           ) : (
-            <Avatar letter={partner.letter} tone={partner.tone} size={40} />
+            <Avatar letter={partner.letter} tone={partner.tone} photo={partner.photo} size={40} />
           )}
           <div className={styles.headerText}>
             <h1 className={styles.title}>{title}</h1>
@@ -83,7 +83,7 @@ function Chat() {
           const author = members.find((member) => member.id === m.from);
           return (
             <div key={m.id} className={styles.other}>
-              <Avatar letter={author?.letter ?? "?"} tone={author?.tone ?? "gray"} size={28} />
+              <Avatar letter={author?.letter ?? "?"} tone={author?.tone ?? "cream"} photo={author?.photo} size={28} />
               <div className={styles.otherBody}>
                 <div className={styles.bubbleOther}>
                   {isGroup && <b className={styles.author}>{author?.name ?? "Бывший участник"}</b>}

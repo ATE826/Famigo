@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
+import { useData } from "../../store/DataContext";
 import styles from "./FamilyCreate.module.css";
 
 const CODE_LENGTH = 6;
 
 function FamilyCreate() {
   const navigate = useNavigate();
+  const { renameFamily } = useData();
   const [familyName, setFamilyName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [familyError, setFamilyError] = useState("");
@@ -19,6 +21,7 @@ function FamilyCreate() {
       setFamilyError("Введите название семьи");
       return;
     }
+    renameFamily(familyName.trim());
     navigate("/main");
   }
 
@@ -52,7 +55,7 @@ function FamilyCreate() {
           id="family"
           label="Название семьи"
           type="text"
-          placeholder="Семья Ивановых"
+          placeholder="Название семьи"
           value={familyName}
           onChange={(e) => {
             setFamilyName(e.target.value);
@@ -69,7 +72,7 @@ function FamilyCreate() {
           id="invite"
           label="Код приглашения"
           type="text"
-          placeholder="8X72K"
+          placeholder="Код приглашения"
           maxLength={CODE_LENGTH}
           value={inviteCode}
           onChange={(e) => {

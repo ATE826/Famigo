@@ -48,7 +48,7 @@ function Invite() {
           id="email"
           label="Email"
           type="email"
-          placeholder="sister@example.com"
+          placeholder="Email участника"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);

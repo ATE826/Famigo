@@ -45,7 +45,7 @@ function Login() {
           name="email"
           label="Email"
           type="email"
-          placeholder="email@my.ru"
+          placeholder="Ваш email"
           value={values.email}
           onChange={handleChange}
           hint={errors.email}
@@ -55,7 +55,7 @@ function Login() {
           name="password"
           label="Пароль"
           type="password"
-          placeholder="********"
+          placeholder="Ваш пароль"
           value={values.password}
           onChange={handleChange}
           hint={errors.password}

@@ -10,7 +10,7 @@ function Chats() {
 
   const personal = members
     .filter((m) => m.id !== currentUserId)
-    .map((m) => ({ id: m.id, name: m.name, letter: m.letter, tone: m.tone, personal: true }));
+    .map((m) => ({ id: m.id, name: m.name, letter: m.letter, tone: m.tone, photo: m.photo, personal: true }));
   const group = { id: GROUP_CHAT_ID, name: "Семья", letter: "С", tone: "green", personal: false };
   const chats = chatSettings[GROUP_CHAT_ID]?.pinned === false ? [...personal, group] : [group, ...personal];
 
@@ -37,7 +37,7 @@ function Chats() {
               to={`/chats/${c.id}`}
               className={`${styles.item} ${count ? styles.unread : ""}`}
             >
-              <Avatar letter={c.letter} tone={c.tone} size={48} />
+              <Avatar letter={c.letter} tone={c.tone} photo={c.photo} size={48} />
               <div className={styles.text}>
                 <span className={styles.name}>{c.name}</span>
                 <span className={styles.last}>{lastMessage(c)}</span>

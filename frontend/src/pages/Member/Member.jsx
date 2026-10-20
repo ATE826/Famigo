@@ -47,7 +47,7 @@ function Member() {
       <PageHeader title={member.name} subtitle={isMe ? "Это вы" : member.note} to="/more/family" />
 
       <div className={styles.top}>
-        <Avatar letter={member.letter} tone={member.tone} size={72} />
+        <Avatar letter={member.letter} tone={member.tone} photo={member.photo} size={72} />
         <div className={styles.topText}>
           <span className={styles.name}>{member.name}</span>
           <span className={`${styles.role} ${styles[member.role]}`}>{roleLabels[member.role]}</span>
@@ -82,6 +82,29 @@ function Member() {
         ))}
         {memberHomes.length === 0 && <p className={styles.empty}>Не указан ни в одном доме</p>}
       </Card>
+
+      {(member.birthday || member.foodPrefs?.length > 0 || member.foodNote) && (
+        <Card className={styles.card}>
+          {member.birthday && (
+            <p className={styles.text}>
+              День рождения: <b>{member.birthday.slice(0, 5)}</b>
+            </p>
+          )}
+          {(member.foodPrefs?.length > 0 || member.foodNote) && (
+            <>
+              <h2 className={styles.cardTitle}>Предпочтения в еде</h2>
+              <div className={styles.prefs}>
+                {member.foodPrefs.map((pref) => (
+                  <span key={pref} className={styles.pref}>
+                    {pref}
+                  </span>
+                ))}
+              </div>
+              {member.foodNote && <p className={styles.text}>{member.foodNote}</p>}
+            </>
+          )}
+        </Card>
+      )}
 
       {isMe && (
         <Link to="/profile" className={styles.profileLink}>

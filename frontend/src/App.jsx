@@ -30,6 +30,12 @@ import TaskCreate from "./pages/TaskCreate/TaskCreate.jsx";
 import Fridge from "./pages/Fridge/Fridge.jsx";
 import FridgeProduct from "./pages/FridgeProduct/FridgeProduct.jsx";
 import Profile from "./pages/Profile/Profile.jsx";
+import PhoneForm from "./pages/PhoneForm/PhoneForm.jsx";
+import PhoneVerify from "./pages/PhoneVerify/PhoneVerify.jsx";
+import ProfilePersonal from "./pages/ProfilePersonal/ProfilePersonal.jsx";
+import ProfileFood from "./pages/ProfileFood/ProfileFood.jsx";
+import ProfileNotifications from "./pages/ProfileNotifications/ProfileNotifications.jsx";
+import ProfilePassword from "./pages/ProfilePassword/ProfilePassword.jsx";
 import Notifications from "./pages/Notifications/Notifications.jsx";
 
 function App() {
@@ -53,6 +59,12 @@ function App() {
             <Route path="/more/fridge/add" element={<FridgeProduct />} />
             <Route path="/more/fridge/:id/edit" element={<FridgeProduct />} />
             <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/personal" element={<ProfilePersonal />} />
+          <Route path="/profile/food" element={<ProfileFood />} />
+          <Route path="/profile/notifications" element={<ProfileNotifications />} />
+          <Route path="/profile/password" element={<ProfilePassword />} />
+          <Route path="/profile/phone" element={<PhoneForm />} />
+          <Route path="/profile/phone/verify" element={<PhoneVerify />} />
             <Route path="/notifications" element={<Notifications />} />
 
             <Route element={<AppLayout />}>

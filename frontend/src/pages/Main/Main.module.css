@@ -204,11 +204,73 @@
 .fridge {
   padding: 16px;
   display: flex;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  gap: 10px;
   background: var(--accent-soft);
   border: 1px solid var(--accent-border);
   border-radius: var(--radius-card);
+}
+
+.fridgeHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--card);
+  color: inherit;
+  text-decoration: none;
+}
+
+.alertName {
+  min-width: 0;
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alertHome {
+  flex: 1;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.alertStatus {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.alertLow {
+  background: var(--warn-soft);
+  color: var(--warn-text);
+}
+
+.alertSpoiled {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+.alertMore {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-text-2);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .fridgeIcon {
@@ -230,6 +292,7 @@
 }
 
 .fridgeTitle {
+  margin: 0;
   font-family: 'Golos Text', sans-serif;
   font-weight: 700;
   font-size: 16px;
@@ -270,4 +333,114 @@
 .eventTitle {
   font-weight: 600;
   font-size: 15px;
+}
+
+.avatarLink {
+  display: flex;
+  border-radius: 50%;
+  text-decoration: none;
+}
+
+.fridgeOk {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--primary-soft);
+  border-radius: var(--radius-card);
+}
+
+.fridgeIconOk {
+  background: var(--primary);
+  color: #fff;
+}
+
+.fridgeSubOk {
+  font-size: 13px;
+  color: var(--on-soft);
+}
+
+.fridgeOk .fridgeText {
+  flex: 1;
+  min-width: 0;
+}
+
+.chevron {
+  flex: none;
+  color: var(--on-soft);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.count {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.taskDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.taskText {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taskHome {
+  flex: none;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.tasksEmpty {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.more {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--link);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cardHeadText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }

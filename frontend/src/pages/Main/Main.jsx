@@ -1,6 +1,11 @@
 import { Link } from "react-router-dom";
+import Avatar from "../../components/Avatar/Avatar";
 import Card from "../../components/Card/Card";
+import Icon from "../../components/Icon/Icon";
+import { isSpoiled, needsAttention } from "../Fridge/products";
 import { useData } from "../../store/DataContext";
+import { homeOf } from "../../utils/homes";
+import { plural, productsLabel } from "../../utils/plural";
 import { greeting } from "../../utils/greeting";
 import {
   CURRENT_MONTH,
@@ -13,6 +18,8 @@ import {
 import styles from "./Main.module.css";
 
 const CHART_MONTHS = 5;
+const MAX_ALERTS = 2;
+const MAX_TASKS = 3;
 
 const events = [
   { time: "19:00", title: "Семейный ужин" },
@@ -20,8 +27,15 @@ const events = [
 ];
 
 function Main() {
-  const { operations, members, currentUserId } = useData();
-  const userName = members.find((m) => m.id === currentUserId)?.name ?? "";
+  const { operations, members, currentUserId, products, homes } = useData();
+  const alerts = products
+    .filter(needsAttention)
+    .sort((a, b) => Number(isSpoiled(b)) - Number(isSpoiled(a)));
+  const myHome = homeOf(homes, currentUserId);
+  const tasks = myHome ? myHome.tasks.filter((t) => !t.done) : [];
+  const me = members.find((m) => m.id === currentUserId);
+  const userName = me?.name ?? "";
+  const userLetter = me?.letter ?? "";
   const key = CURRENT_MONTH;
   const month = parseMonth(key);
   const months = monthlyTotals(operations, key, CHART_MONTHS);
@@ -52,8 +66,8 @@ function Main() {
             </svg>
             <span className={styles.badge}>3</span>
           </Link>
-          <Link to="/profile" className={styles.avatar} aria-label="Профиль">
-            А
+          <Link to="/profile" className={styles.avatarLink} aria-label="Профиль">
+            <Avatar letter={userLetter} tone={me?.tone} photo={me?.photo} size={44} />
           </Link>
         </div>
       </header>
@@ -101,27 +115,53 @@ function Main() {
         </Card>
       </Link>
 
-      <Link to="/more/fridge" className={`${styles.link} ${styles.fridge}`}>
-        <span className={styles.fridgeIcon}>
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M6 3h12v18H6zM6 10h12M9 6v1.5M9 13v3" />
-          </svg>
-        </span>
-        <div className={styles.fridgeText}>
-          <span className={styles.fridgeTitle}>Молоко заканчивается</span>
-          <span className={styles.fridgeSub}>Добавить в список продуктов</span>
-        </div>
-      </Link>
+      {alerts.length === 0 && (
+        <Link to="/more/fridge" className={`${styles.link} ${styles.fridgeOk}`}>
+          <span className={`${styles.fridgeIcon} ${styles.fridgeIconOk}`}>
+            <Icon name="fridge" size={20} strokeWidth={1.8} />
+          </span>
+          <div className={styles.fridgeText}>
+            <span className={styles.fridgeTitle}>В холодильнике всё в порядке</span>
+            <span className={styles.fridgeSubOk}>
+              {productsLabel(products.length)} · ничего не испортилось
+            </span>
+          </div>
+          <Icon name="chevron" size={18} className={styles.chevron} />
+        </Link>
+      )}
+
+      {alerts.length > 0 && (
+        <section className={styles.fridge}>
+          <div className={styles.fridgeHead}>
+            <span className={styles.fridgeIcon}>
+              <Icon name="fridge" size={20} strokeWidth={1.8} />
+            </span>
+            <div className={styles.fridgeText}>
+              <h2 className={styles.fridgeTitle}>Холодильник</h2>
+              <span className={styles.fridgeSub}>
+                {alerts.length} {plural(alerts.length, ["продукт требует", "продукта требуют", "продуктов требуют"])} внимания
+              </span>
+            </div>
+          </div>
+
+          {alerts.slice(0, MAX_ALERTS).map((p) => (
+            <Link key={p.id} to={`/more/fridge?home=${p.homeId}`} className={styles.alert}>
+              <span className={styles.alertName}>{p.name}</span>
+              <span className={styles.alertHome}>{homes.find((h) => h.id === p.homeId)?.name}</span>
+              <span className={`${styles.alertStatus} ${isSpoiled(p) ? styles.alertSpoiled : styles.alertLow}`}>
+                {isSpoiled(p) ? "Испорчено" : "Заканчивается"}
+              </span>
+            </Link>
+          ))}
+
+          {alerts.length > MAX_ALERTS && (
+            <Link to="/more/fridge" className={styles.alertMore}>
+              Ещё {productsLabel(alerts.length - MAX_ALERTS)}
+              <Icon name="chevron" size={16} />
+            </Link>
+          )}
+        </section>
+      )}
 
       <Link to="/calendar" className={styles.link}>
         <Card>
@@ -137,6 +177,35 @@ function Main() {
           ))}
         </Card>
       </Link>
+
+      <Card>
+        <div className={styles.cardHead}>
+          <div className={styles.cardHeadText}>
+            <h2 className={styles.cardTitle}>Дела по дому</h2>
+            {myHome && <span className={styles.taskHome}>{myHome.name}</span>}
+          </div>
+          {tasks.length > 0 && <span className={styles.count}>{tasks.length}</span>}
+        </div>
+        {tasks.slice(0, MAX_TASKS).map((t) => (
+          <Link key={t.id} to={`/more/home/${myHome.id}`} className={styles.task}>
+            <span className={styles.taskDot} />
+            <span className={styles.taskText}>{t.text}</span>
+          </Link>
+        ))}
+        {!myHome && (
+          <Link to="/more/homes" className={styles.more}>
+            Выберите дом, в котором живёте
+            <Icon name="chevron" size={16} />
+          </Link>
+        )}
+        {myHome && tasks.length === 0 && <p className={styles.tasksEmpty}>Все дела сделаны</p>}
+        {tasks.length > MAX_TASKS && (
+          <Link to={`/more/home/${myHome.id}`} className={styles.more}>
+            Ещё {tasks.length - MAX_TASKS} {plural(tasks.length - MAX_TASKS, ["дело", "дела", "дел"])}
+            <Icon name="chevron" size={16} />
+          </Link>
+        )}
+      </Card>
     </main>
   );
 }

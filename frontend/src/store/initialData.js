@@ -1,10 +1,52 @@
 import { offsetDateString } from "../utils/dates";
 
 export const initialMembers = [
-  { id: "anton", letter: "А", tone: "green", name: "Антон", note: "Вы", role: "Owner" },
-  { id: "mama", letter: "М", tone: "terra", name: "Мама", note: "С июля", role: "Admin" },
-  { id: "papa", letter: "П", tone: "sage", name: "Папа", note: "С июля", role: "Admin" },
-  { id: "sister", letter: "С", tone: "gray", name: "Сестра", note: "С августа", role: "Member" },
+  {
+    id: "anton",
+    letter: "А",
+    tone: "green",
+    name: "Антон",
+    note: "Вы",
+    role: "Owner",
+    email: "anton@example.com",
+    joined: "июля",
+    birthday: "",
+    foodPrefs: [],
+    foodNote: "",
+  },
+  {
+    id: "mama",
+    letter: "М",
+    tone: "terra",
+    name: "Мама",
+    note: "С июля",
+    role: "Admin",
+    birthday: "14.03.1975",
+    foodPrefs: ["Без глютена"],
+    foodNote: "",
+  },
+  {
+    id: "papa",
+    letter: "П",
+    tone: "mint",
+    name: "Папа",
+    note: "С июля",
+    role: "Admin",
+    birthday: "02.06.1972",
+    foodPrefs: [],
+    foodNote: "",
+  },
+  {
+    id: "sister",
+    letter: "С",
+    tone: "cream",
+    name: "Сестра",
+    note: "С августа",
+    role: "Member",
+    birthday: "26.10.2008",
+    foodPrefs: ["Аллергия на орехи"],
+    foodNote: "",
+  },
 ];
 
 export const initialHomes = [
@@ -44,7 +86,7 @@ export const initialHomes = [
     kind: "dacha",
     rooms: 5,
     people: 4,
-    residents: ["anton", "mama", "papa", "sister"],
+    residents: ["papa", "sister"],
     tasks: [
       {
         id: "d1",

@@ -317,3 +317,7 @@
   flex-direction: column;
   gap: 8px;
 }
+
+.eventLineBirthday {
+  background: var(--primary);
+}

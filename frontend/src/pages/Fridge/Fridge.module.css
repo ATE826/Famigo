@@ -51,8 +51,13 @@
   font-size: 16px;
 }
 
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .exp {
-  align-self: flex-start;
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 12px;
@@ -84,11 +89,14 @@
   font: inherit;
   font-size: 18px;
   cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
 }
 
 .qty {
-  min-width: 44px;
+  min-width: 56px;
   text-align: center;
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
   font-size: 14px;
 }

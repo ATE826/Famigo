@@ -2,8 +2,8 @@ import EventCard from "./EventCard";
 import { TODAY, WEEKDAYS_FULL, dateKey, dayTitle, eventsInMonth, weekdayIndex } from "./data";
 import styles from "./Calendar.module.css";
 
-export default function ListView({ selected }) {
-  const monthEvents = eventsInMonth(selected);
+export default function ListView({ selected, extra }) {
+  const monthEvents = eventsInMonth(selected, extra);
   const keys = [...new Set(monthEvents.map((event) => event.date))].sort();
 
   if (keys.length === 0) {

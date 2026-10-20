@@ -6,21 +6,16 @@ import FormScreen from "../../components/FormScreen/FormScreen";
 import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
+import { useData } from "../../store/DataContext";
 import { todayString } from "../../utils/dates";
 import { dateError, formatDate, formatTime, timeError } from "../../utils/validation";
 import styles from "./CalendarCreate.module.css";
 
-const members = [
-  { name: "Антон", tone: "green" },
-  { name: "Мама", tone: "terra" },
-  { name: "Папа", tone: "sage" },
-  { name: "Сестра", tone: "gray" },
-];
-
 function CalendarCreate() {
   const navigate = useNavigate();
   const [values, setValues] = useState({ title: "", date: "", time: "", desc: "" });
-  const [selected, setSelected] = useState(["Антон", "Мама", "Папа"]);
+  const { members } = useData();
+  const [selected, setSelected] = useState(() => members.slice(0, 3).map((m) => m.id));
   const [errors, setErrors] = useState({});
 
   function handleChange(e) {
@@ -31,8 +26,10 @@ function CalendarCreate() {
     setErrors({ ...errors, [name]: "" });
   }
 
-  function toggleMember(name) {
-    setSelected(selected.includes(name) ? selected.filter((n) => n !== name) : [...selected, name]);
+  function toggleMember(memberId) {
+    setSelected(
+      selected.includes(memberId) ? selected.filter((id) => id !== memberId) : [...selected, memberId],
+    );
     setErrors({ ...errors, members: "" });
   }
 
@@ -62,7 +59,7 @@ function CalendarCreate() {
         name="title"
         label="Название"
         type="text"
-        placeholder="Семейный ужин"
+        placeholder="Название события"
         maxLength={60}
         value={values.title}
         onChange={handleChange}
@@ -91,7 +88,7 @@ function CalendarCreate() {
             label="Время"
             type="text"
             inputMode="numeric"
-            placeholder="19:00"
+            placeholder="00:00"
             maxLength={5}
             value={values.time}
             onChange={handleChange}
@@ -104,16 +101,16 @@ function CalendarCreate() {
         <span className={styles.label}>Участники</span>
         <div className={styles.chips}>
           {members.map((m) => {
-            const on = selected.includes(m.name);
+            const on = selected.includes(m.id);
             return (
               <button
-                key={m.name}
+                key={m.id}
                 type="button"
                 className={`${styles.member} ${on ? styles.on : ""}`}
                 aria-pressed={on}
-                onClick={() => toggleMember(m.name)}
+                onClick={() => toggleMember(m.id)}
               >
-                <Avatar letter={m.name[0]} tone={m.tone} size={26} />
+                <Avatar letter={m.letter} tone={m.tone} photo={m.photo} size={26} />
                 {m.name}
               </button>
             );
@@ -140,7 +137,7 @@ function CalendarCreate() {
         name="desc"
         label="Описание"
         type="text"
-        placeholder="Каждый приносит одно блюдо"
+        placeholder="Описание события"
         maxLength={200}
         value={values.desc}
         onChange={handleChange}

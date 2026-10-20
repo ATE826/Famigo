@@ -2,10 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
+import { useData } from "../../store/DataContext";
+import { TODAY, dayTitle } from "../Calendar/data";
 import styles from "./Register.module.css";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { currentUserId, updateMember } = useData();
   const [values, setValues] = useState({ name: "", email: "", password: "", password2: "" });
   const [errors, setErrors] = useState({});
 
@@ -32,6 +35,18 @@ const Register = () => {
     const found = validate();
     setErrors(found);
     if (Object.keys(found).length === 0) {
+      const name = values.name.trim();
+      updateMember(currentUserId, {
+        name,
+        letter: name[0].toUpperCase(),
+        email: values.email.trim(),
+        phone: "",
+        phoneVerified: false,
+        birthday: "",
+        foodPrefs: [],
+        foodNote: "",
+        joined: dayTitle(TODAY).split(" ")[1],
+      });
       navigate("/verify", { state: { next: "/family-create" } });
     }
   }
@@ -54,7 +69,8 @@ const Register = () => {
           name="name"
           label="Имя"
           type="text"
-          placeholder="Антон"
+          placeholder="Ваше имя"
+          maxLength={30}
           value={values.name}
           onChange={handleChange}
           hint={errors.name}
@@ -64,7 +80,7 @@ const Register = () => {
           name="email"
           label="Email"
           type="email"
-          placeholder="email@my.ru"
+          placeholder="Ваш email"
           value={values.email}
           onChange={handleChange}
           hint={errors.email}
@@ -74,7 +90,7 @@ const Register = () => {
           name="password"
           label="Пароль"
           type="password"
-          placeholder="********"
+          placeholder="Придумайте пароль"
           value={values.password}
           onChange={handleChange}
           hint={errors.password}
@@ -84,7 +100,7 @@ const Register = () => {
           name="password2"
           label="Подтверждение пароля"
           type="password"
-          placeholder="********"
+          placeholder="Повторите пароль"
           value={values.password2}
           onChange={handleChange}
           hint={errors.password2}

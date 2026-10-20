@@ -87,7 +87,7 @@ function BudgetAdd() {
         label="Сумма"
         type="text"
         inputMode="decimal"
-        placeholder="2 500 ₽"
+        placeholder="0 ₽"
         inputClassName={styles.sum}
         value={values.sum}
         onChange={handleChange}
@@ -106,7 +106,7 @@ function BudgetAdd() {
           name="title"
           label={type === "expense" ? "Название расхода" : "Название дохода"}
           type="text"
-          placeholder={type === "expense" ? "Например, подарок" : "Например, продажа вещей"}
+          placeholder="Введите название"
           maxLength={TITLE_MAX}
           value={values.title}
           onChange={handleChange}
@@ -119,7 +119,7 @@ function BudgetAdd() {
         name="desc"
         label="Описание"
         type="text"
-        placeholder="Продукты на неделю"
+        placeholder="Добавьте описание"
         maxLength={100}
         value={values.desc}
         onChange={handleChange}

@@ -5,6 +5,10 @@ export const kinds = [
   { value: "other", label: "Другое" },
 ];
 
+export function homeOf(homes, memberId) {
+  return homes.find((h) => h.residents.includes(memberId));
+}
+
 export function homeIcon(kind) {
   return kind === "apartment" ? "home" : "cottage";
 }

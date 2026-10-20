@@ -4,11 +4,20 @@ import styles from "./Calendar.module.css";
 
 const hours = Array.from({ length: 16 }, (_, i) => i + 8);
 
-export default function DayView({ selected }) {
-  const dayEvents = eventsOn(selected);
+export default function DayView({ selected, extra }) {
+  const dayEvents = eventsOn(selected, extra);
+  const allDay = dayEvents.filter((event) => event.allDay);
 
   return (
     <>
+      {allDay.length > 0 && (
+        <section className={styles.events}>
+          {allDay.map((event) => (
+            <EventCard key={event.id} event={event} />
+          ))}
+        </section>
+      )}
+
       <div className={styles.timeline}>
         {hours.map((hour) => {
           const hourEvents = dayEvents.filter((event) => parseInt(event.time, 10) === hour);

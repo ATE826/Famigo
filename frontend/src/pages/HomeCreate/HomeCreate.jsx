@@ -98,7 +98,7 @@ function HomeCreate() {
         name="name"
         label="Название"
         type="text"
-        placeholder="Квартира"
+        placeholder="Название дома"
         maxLength={40}
         value={values.name}
         onChange={handleChange}
@@ -118,7 +118,7 @@ function HomeCreate() {
         name="place"
         label="Город или адрес"
         type="text"
-        placeholder="Москва"
+        placeholder="Город или адрес"
         maxLength={80}
         value={values.place}
         onChange={handleChange}
@@ -133,7 +133,7 @@ function HomeCreate() {
             label="Комнат"
             type="text"
             inputMode="numeric"
-            placeholder="3"
+            placeholder="0"
             maxLength={2}
             value={values.rooms}
             onChange={handleChange}
@@ -147,7 +147,7 @@ function HomeCreate() {
             label="Живёт человек"
             type="text"
             inputMode="numeric"
-            placeholder="2"
+            placeholder="0"
             maxLength={2}
             value={values.people}
             onChange={handleChange}
