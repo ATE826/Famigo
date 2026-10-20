@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Card from "../../components/Card/Card";
 import { useData } from "../../store/DataContext";
+import { greeting } from "../../utils/greeting";
 import {
   CURRENT_MONTH,
   balanceUpTo,
@@ -19,7 +20,8 @@ const events = [
 ];
 
 function Main() {
-  const { operations } = useData();
+  const { operations, members, currentUserId } = useData();
+  const userName = members.find((m) => m.id === currentUserId)?.name ?? "";
   const key = CURRENT_MONTH;
   const month = parseMonth(key);
   const months = monthlyTotals(operations, key, CHART_MONTHS);
@@ -57,7 +59,9 @@ function Main() {
       </header>
 
       <div className={styles.greeting}>
-        <h1 className={styles.title}>Добрый вечер, Антон</h1>
+        <h1 className={styles.title}>
+          {greeting()}, {userName}
+        </h1>
         <Link to="/more/family" className={styles.family}>
           Ваша семья: 4 человека
         </Link>
