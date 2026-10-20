@@ -8,13 +8,22 @@ import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { addMonths, dayTitle, monthLabel } from "../Calendar/data";
 import { useData } from "../../store/DataContext";
-import { CURRENT_MONTH, earliestMonthKey, formatMoney, monthKey, opsInMonth, parseMonth } from "../../utils/budget";
+import {
+  CURRENT_MONTH,
+  categoryLabel,
+  earliestMonthKey,
+  formatMoney,
+  monthKey,
+  opsInMonth,
+  parseMonth,
+} from "../../utils/budget";
+import { t } from "../../i18n";
 import styles from "./BudgetHistory.module.css";
 
 const filters = [
-  { value: "all", label: "Все" },
-  { value: "expense", label: "Расходы" },
-  { value: "income", label: "Доходы" },
+  { value: "all", label: "all" },
+  { value: "expense", label: "expenses" },
+  { value: "income", label: "income" },
 ];
 
 function BudgetHistory() {
@@ -37,7 +46,7 @@ function BudgetHistory() {
 
   return (
     <Page>
-      <PageHeader title="История" to="/budget" />
+      <PageHeader title={t("budget.history")} to="/budget" />
 
       <MonthSwitcher
         label={monthLabel(month)}
@@ -50,13 +59,13 @@ function BudgetHistory() {
       <ChipRow>
         {filters.map((f) => (
           <Chip key={f.value} active={f.value === filter} onClick={() => setFilter(f.value)}>
-            {f.label}
+            {t(`budget.filters.${f.label}`)}
           </Chip>
         ))}
       </ChipRow>
 
       {days.length === 0 ? (
-        <p className={styles.empty}>Операций нет</p>
+        <p className={styles.empty}>{t("budget.noOperationsShort")}</p>
       ) : (
         <Card flush className={styles.list}>
           {days.map((day) => {
@@ -71,11 +80,11 @@ function BudgetHistory() {
                     const isIncome = o.type === "income";
                     return (
                       <div key={o.id} className={styles.row}>
-                        <Avatar letter={member?.letter ?? "?"} tone={member?.tone ?? "gray"} size={38} />
+                        <Avatar letter={member?.letter ?? "?"} tone={member?.tone ?? "cream"} photo={member?.photo} size={38} />
                         <div className={styles.text}>
-                          <span className={styles.title}>{o.title || o.desc || o.category}</span>
+                          <span className={styles.title}>{o.title || o.desc || categoryLabel(o.category)}</span>
                           <span className={styles.sub}>
-                            {o.category}, {member?.name ?? "Бывший участник"}
+                            {categoryLabel(o.category)}, {member?.name ?? t("common.formerMember")}
                           </span>
                         </div>
                         <span className={`${styles.amount} ${isIncome ? styles.income : ""}`}>

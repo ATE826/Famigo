@@ -190,3 +190,13 @@
   justify-content: center;
   cursor: pointer;
 }
+
+@media (min-width: 1024px) {
+  .screen {
+    height: calc(100dvh - 72px);
+    margin: 0 40px 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+}

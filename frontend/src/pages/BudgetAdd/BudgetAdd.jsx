@@ -9,11 +9,13 @@ import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
 import { todayString } from "../../utils/dates";
 import { amountError, dateError, formatDate } from "../../utils/validation";
+import { t } from "../../i18n";
+import { categoryLabel } from "../../utils/budget";
 import styles from "./BudgetAdd.module.css";
 
 const types = [
-  { value: "expense", label: "Расход" },
-  { value: "income", label: "Доход" },
+  { value: "expense", label: "expense" },
+  { value: "income", label: "income" },
 ];
 
 const OTHER_CATEGORY = "Другое";
@@ -45,7 +47,7 @@ function BudgetAdd() {
     const found = {
       sum: amountError(values.sum),
       date: dateError(values.date),
-      title: isOther && !values.title.trim() ? "Введите название" : "",
+      title: isOther && !values.title.trim() ? t("budgetAdd.titleRequired") : "",
     };
     setErrors(found);
     if (found.sum || found.date || found.title) return;
@@ -74,29 +76,31 @@ function BudgetAdd() {
       onSubmit={handleSubmit}
       className={styles.body}
       footer={
-        <Button type="submit">{type === "expense" ? "Добавить расход" : "Добавить доход"}</Button>
+        <Button type="submit">{type === "expense" ? t("budgetAdd.addExpense") : t("budgetAdd.addIncome")}</Button>
       }
     >
-      <PageHeader title="Новая операция" to="/budget" icon="close" />
+      <PageHeader title={t("budgetAdd.title")} to="/budget" icon="close" />
 
-      <Segmented options={types} value={type} onChange={handleTypeChange} label="Тип операции" />
+      <Segmented options={types.map((o) => ({ value: o.value, label: t(`budgetAdd.${o.label}`) }))} value={type} onChange={handleTypeChange} label={t("budgetAdd.typeLabel")} />
 
       <Input
         id="sum"
         name="sum"
-        label="Сумма"
+        label={t("budgetAdd.amount")}
         type="text"
         inputMode="decimal"
-        placeholder="2 500 ₽"
+        placeholder="0 ₽"
         inputClassName={styles.sum}
         value={values.sum}
         onChange={handleChange}
         hint={errors.sum}
       />
 
-      <Select id="category" label="Категория" value={category} onChange={(e) => setCategory(e.target.value)}>
+      <Select id="category" label={t("budgetAdd.category")} value={category} onChange={(e) => setCategory(e.target.value)}>
         {categories[type].map((c) => (
-          <option key={c}>{c}</option>
+          <option key={c} value={c}>
+            {categoryLabel(c)}
+          </option>
         ))}
       </Select>
 
@@ -104,9 +108,9 @@ function BudgetAdd() {
         <Input
           id="title"
           name="title"
-          label={type === "expense" ? "Название расхода" : "Название дохода"}
+          label={type === "expense" ? t("budgetAdd.expenseName") : t("budgetAdd.incomeName")}
           type="text"
-          placeholder={type === "expense" ? "Например, подарок" : "Например, продажа вещей"}
+          placeholder={t("budgetAdd.namePlaceholder")}
           maxLength={TITLE_MAX}
           value={values.title}
           onChange={handleChange}
@@ -117,9 +121,9 @@ function BudgetAdd() {
       <Input
         id="desc"
         name="desc"
-        label="Описание"
+        label={t("budgetAdd.description")}
         type="text"
-        placeholder="Продукты на неделю"
+        placeholder={t("budgetAdd.descriptionPlaceholder")}
         maxLength={100}
         value={values.desc}
         onChange={handleChange}
@@ -127,7 +131,7 @@ function BudgetAdd() {
       <Input
         id="date"
         name="date"
-        label="Дата"
+        label={t("budgetAdd.date")}
         type="text"
         inputMode="numeric"
         placeholder={todayString()}

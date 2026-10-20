@@ -4,7 +4,7 @@ export async function copyText(text) {
       await navigator.clipboard.writeText(text);
       return true;
     } catch {
-      // переходим к запасному способу
+      // fallback below
     }
   }
 

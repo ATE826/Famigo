@@ -32,3 +32,12 @@ export function shortToFull(value) {
   const [day, month, year] = value.split(".");
   return `${day}.${month}.20${year}`;
 }
+
+export function daysUntilBirthday(birthday) {
+  if (!birthday) return null;
+  const [day, month] = birthday.split(".").map(Number);
+  const today = todayStart();
+  let next = new Date(today.getFullYear(), month - 1, day);
+  if (next < today) next = new Date(today.getFullYear() + 1, month - 1, day);
+  return Math.round((next - today) / 86400000);
+}

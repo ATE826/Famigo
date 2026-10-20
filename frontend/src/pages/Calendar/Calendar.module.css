@@ -317,3 +317,44 @@
   flex-direction: column;
   gap: 8px;
 }
+
+.eventLineBirthday {
+  background: var(--primary);
+}
+
+@media (min-width: 1024px) {
+  .view:has(> .calendar) {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .calendar {
+    padding: 16px;
+  }
+
+  .weekDay {
+    font-size: 13px;
+  }
+
+  .cell {
+    height: 76px;
+    gap: 6px;
+  }
+
+  .num {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .nav {
+    max-width: 480px;
+  }
+}

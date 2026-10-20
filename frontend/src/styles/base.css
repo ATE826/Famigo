@@ -1,6 +1,11 @@
 * { box-sizing: border-box; }
 
-html { overscroll-behavior-y: none; }
+html {
+  overscroll-behavior-y: none;
+  touch-action: manipulation;
+}
+
+button { -webkit-tap-highlight-color: transparent; }
 
 body {
   margin: 0;

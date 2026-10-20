@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { unitStep } from "../pages/Fridge/products";
+import { canManageHomes } from "../utils/permissions";
 import { DataContext } from "./DataContext";
 import {
   initialChatSettings,
@@ -18,8 +19,16 @@ export default function DataProvider({ children }) {
   const [messages, setMessages] = useState(initialMessages);
   const [unread, setUnread] = useState(initialUnread);
   const [chatSettings, setChatSettings] = useState(initialChatSettings);
-  const [fridgeHomeId, setFridgeHomeId] = useState(initialHomes[0].id);
+  const [fridgeHomeId, setFridgeHomeId] = useState(null);
   const [members, setMembers] = useState(initialMembers);
+  const [familyName, setFamilyName] = useState("Семья Ивановых");
+  const [notificationSettings, setNotificationSettings] = useState({
+    budget: true,
+    calendar: true,
+    fridge: true,
+    chat: true,
+    family: true,
+  });
   const currentUserId = "anton";
 
   function addHome(home) {
@@ -33,6 +42,7 @@ export default function DataProvider({ children }) {
   }
 
   function removeHome(id) {
+    if (!canManageHomes(members.find((m) => m.id === currentUserId))) return;
     const rest = homes.filter((h) => h.id !== id);
     setHomes(rest);
     setProducts((current) => current.filter((p) => p.homeId !== id));
@@ -67,7 +77,12 @@ export default function DataProvider({ children }) {
   function addResident(homeId, memberId) {
     setHomes((current) =>
       current.map((h) => {
-        if (h.id !== homeId || h.residents.includes(memberId)) return h;
+        if (h.id !== homeId) {
+          return h.residents.includes(memberId)
+            ? { ...h, residents: h.residents.filter((r) => r !== memberId) }
+            : h;
+        }
+        if (h.residents.includes(memberId)) return h;
         const residents = [...h.residents, memberId];
         return { ...h, residents, people: Math.max(h.people, residents.length) };
       }),
@@ -87,6 +102,18 @@ export default function DataProvider({ children }) {
     setHomes((current) =>
       current.map((h) => ({ ...h, residents: h.residents.filter((r) => r !== id) })),
     );
+  }
+
+  function renameFamily(name) {
+    setFamilyName(name);
+  }
+
+  function setNotificationSetting(key, value) {
+    setNotificationSettings((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateMember(id, patch) {
+    setMembers((current) => current.map((m) => (m.id === id ? { ...m, ...patch } : m)));
   }
 
   function updateMemberRole(id, role) {
@@ -137,6 +164,10 @@ export default function DataProvider({ children }) {
       value={{
         homes,
         members,
+        familyName,
+        renameFamily,
+        notificationSettings,
+        setNotificationSetting,
         currentUserId,
         products,
         operations,
@@ -158,6 +189,7 @@ export default function DataProvider({ children }) {
         addResident,
         removeResident,
         removeMember,
+        updateMember,
         updateMemberRole,
         addProduct,
         updateProduct,

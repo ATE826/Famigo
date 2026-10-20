@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import Avatar from "../../components/Avatar/Avatar";
 import Icon from "../../components/Icon/Icon";
 import { useData } from "../../store/DataContext";
 import { GROUP_CHAT_ID } from "../../utils/chats";
-import { plural } from "../../utils/plural";
 import { roleLabels } from "../../utils/roles";
+import { t } from "../../i18n";
 import styles from "./Chat.module.css";
 
 function Chat() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { members, currentUserId, messages, sendMessage, markChatRead } = useData();
   const [text, setText] = useState("");
   const endRef = useRef(null);
@@ -30,6 +32,13 @@ function Chat() {
     return <Navigate to="/chats" replace />;
   }
 
+  function handleBack(e) {
+    if (location.key !== "default") {
+      e.preventDefault();
+      navigate(-1);
+    }
+  }
+
   function handleSend(e) {
     e.preventDefault();
     const value = text.trim();
@@ -38,23 +47,23 @@ function Chat() {
     setText("");
   }
 
-  const title = isGroup ? "Семья" : partner.name;
+  const title = isGroup ? t("chats.family") : partner.name;
   const subtitle = isGroup
-    ? `${members.length} ${plural(members.length, ["участник", "участника", "участников"])}`
+    ? t("plural.members", { count: members.length })
     : roleLabels[partner.role];
   const headerTo = isGroup ? `/chats/${id}/info` : `/more/family/${partner.id}`;
 
   return (
     <div className={styles.screen}>
       <header className={styles.header}>
-        <Link to="/chats" className={styles.back} aria-label="Назад">
+        <Link to="/chats" onClick={handleBack} className={styles.back} aria-label={t("common.back")}>
           <Icon name="back" />
         </Link>
-        <Link to={headerTo} className={styles.headerLink} aria-label={`Открыть: ${title}`}>
+        <Link to={headerTo} className={styles.headerLink} aria-label={t("chats.open", { name: title })}>
           {isGroup ? (
-            <Avatar letter="С" size={40} />
+            <Avatar letter={title[0]} size={40} />
           ) : (
-            <Avatar letter={partner.letter} tone={partner.tone} size={40} />
+            <Avatar letter={partner.letter} tone={partner.tone} photo={partner.photo} size={40} />
           )}
           <div className={styles.headerText}>
             <h1 className={styles.title}>{title}</h1>
@@ -64,9 +73,9 @@ function Chat() {
       </header>
 
       <div className={styles.messages}>
-        <div className={styles.day}>Сегодня</div>
+        <div className={styles.day}>{t("calendar.today")}</div>
 
-        {list.length === 0 && <p className={styles.empty}>Сообщений пока нет</p>}
+        {list.length === 0 && <p className={styles.empty}>{t("chats.empty")}</p>}
 
         {list.map((m) => {
           if (m.from === currentUserId) {
@@ -83,10 +92,10 @@ function Chat() {
           const author = members.find((member) => member.id === m.from);
           return (
             <div key={m.id} className={styles.other}>
-              <Avatar letter={author?.letter ?? "?"} tone={author?.tone ?? "gray"} size={28} />
+              <Avatar letter={author?.letter ?? "?"} tone={author?.tone ?? "cream"} photo={author?.photo} size={28} />
               <div className={styles.otherBody}>
                 <div className={styles.bubbleOther}>
-                  {isGroup && <b className={styles.author}>{author?.name ?? "Бывший участник"}</b>}
+                  {isGroup && <b className={styles.author}>{author?.name ?? t("common.formerMember")}</b>}
                   {m.text}
                 </div>
                 <span className={styles.meta}>{m.time}</span>
@@ -97,9 +106,9 @@ function Chat() {
 
         {isGroup && (
           <div className={styles.notice}>
-            Молоко заканчивается.{" "}
+            {t("chats.milkNotice")}{" "}
             <Link to="/more/fridge" className={styles.noticeLink}>
-              Проверить холодильник
+              {t("chats.checkFridge")}
             </Link>
           </div>
         )}
@@ -108,17 +117,17 @@ function Chat() {
 
       <form className={styles.form} onSubmit={handleSend}>
         <label htmlFor="message" className={styles.srOnly}>
-          Сообщение
+          {t("chats.message")}
         </label>
         <input
           id="message"
           type="text"
-          placeholder="Написать сообщение..."
+          placeholder={t("chats.placeholder")}
           className={styles.input}
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <button type="submit" className={styles.send} aria-label="Отправить">
+        <button type="submit" className={styles.send} aria-label={t("chats.send")}>
           <Icon name="send" size={20} />
         </button>
       </form>

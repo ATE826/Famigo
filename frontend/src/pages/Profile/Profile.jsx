@@ -1,116 +1,156 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import Avatar from "../../components/Avatar/Avatar";
-import Button from "../../components/Button/Button";
 import Card from "../../components/Card/Card";
-import FormScreen from "../../components/FormScreen/FormScreen";
-import Input from "../../components/Input/Input";
+import Icon from "../../components/Icon/Icon";
+import MenuRow from "../../components/MenuRow/MenuRow";
+import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
-import { useTheme } from "../../store/ThemeContext";
-import { emailError, formatPhone, phoneError } from "../../utils/validation";
+import { useData } from "../../store/DataContext";
+import { homeOf } from "../../utils/homes";
+import { roleLabels } from "../../utils/roles";
+import { t } from "../../i18n";
+import { joinedLabel } from "../Calendar/data";
+import { foodLabel } from "../ProfileFood/food";
 import styles from "./Profile.module.css";
 
-const themes = [
-  { value: "light", label: "Светлая" },
-  { value: "dark", label: "Тёмная" },
-  { value: "system", label: "Системная" },
+const tones = [
+  { value: "green", color: "#667A55" },
+  { value: "terra", color: "#D38A62" },
+  { value: "mint", color: "#E5EBE0", outlined: true },
+  { value: "cream", color: "#F5F3EE", outlined: true },
+  { value: "graphite", color: "#20221F", outlined: true },
 ];
 
-function Profile() {
-  const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
-  const [values, setValues] = useState({
-    name: "Антон",
-    email: "anton@example.com",
-    phone: "+7(912)344-48-67",
-  });
-  const [errors, setErrors] = useState({});
+const legacyTones = { sage: "mint", gray: "cream" };
+const MAX_PHOTO_MB = 5;
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setValues({ ...values, [name]: name === "phone" ? formatPhone(value) : value });
-    setErrors({ ...errors, [name]: "" });
+function Profile() {
+  const { members, homes, currentUserId, updateMember, familyName } = useData();
+  const [photoError, setPhotoError] = useState("");
+  const me = members.find((m) => m.id === currentUserId);
+
+  if (!me) {
+    return <Navigate to="/" replace />;
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    const found = {
-      name: values.name.trim() ? "" : "Введите имя",
-      email: emailError(values.email),
-      phone: phoneError(values.phone),
-    };
-    setErrors(found);
-    if (Object.values(found).every((message) => !message)) {
-      navigate("/more");
+  const myHome = homeOf(homes, me.id);
+  const currentTone = legacyTones[me.tone] ?? me.tone;
+  const toneInfo = tones.find((tone) => tone.value === currentTone);
+  const ringColor = toneInfo?.outlined ? "var(--field-border)" : toneInfo?.color;
+
+  function handlePhoto(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError(t("profile.chooseImage"));
+      return;
     }
+    if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
+      setPhotoError(t("profile.fileTooBig", { count: MAX_PHOTO_MB }));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      updateMember(me.id, { photo: reader.result });
+      setPhotoError("");
+    };
+    reader.readAsDataURL(file);
   }
 
   return (
-    <FormScreen
-      onSubmit={handleSubmit}
-      footer={<Button type="submit">Сохранить</Button>}
-    >
-      <PageHeader title="Профиль" to="/more" />
+    <Page className={styles.page}>
+      <PageHeader
+        title={t("nav.profile")}
+        to="/more"
+        right={
+          <Link to="/settings" className={styles.settings} aria-label={t("nav.settings")}>
+            <Icon name="settings" size={20} strokeWidth={1.8} />
+          </Link>
+        }
+      />
 
-      <div className={styles.me}>
-        <Avatar letter="А" size={72} />
-        <div className={styles.meText}>
-          <span className={styles.meName}>Антон</span>
-          <a href="#" className={styles.photo}>
-            Сменить фото
-          </a>
+      <div className={styles.hero}>
+        <span className={styles.ring} style={{ borderColor: ringColor }}>
+          <Avatar letter={me.letter} tone={me.tone} photo={me.photo} size={88} />
+        </span>
+        <div className={styles.photoActions}>
+          <label className={styles.photoButton}>
+            {me.photo ? t("profile.changePhoto") : t("profile.uploadPhoto")}
+            <input type="file" accept="image/*" className={styles.fileInput} onChange={handlePhoto} />
+          </label>
+          {me.photo && (
+            <button
+              type="button"
+              className={styles.photoRemove}
+              onClick={() => updateMember(me.id, { photo: "" })}
+            >
+              {t("profile.removePhoto")}
+            </button>
+          )}
         </div>
+        {photoError && <span className={styles.photoError}>{photoError}</span>}
+        <span className={styles.heroName}>{me.name}</span>
+        <span className={`${styles.role} ${styles[me.role]}`}>{roleLabels[me.role]}</span>
+        <span className={styles.heroFamily}>
+          {familyName}
+          {me.joined && ` · ${t("profile.inFamilySince", { month: joinedLabel(me.joined) })}`}
+        </span>
+        <span className={styles.heroEmail}>{me.email}</span>
       </div>
 
-      <Input
-        id="name"
-        name="name"
-        label="Имя"
-        type="text"
-        placeholder="Антон"
-        maxLength={40}
-        value={values.name}
-        onChange={handleChange}
-        hint={errors.name}
-      />
-      <Input
-        id="email"
-        name="email"
-        label="Email"
-        type="email"
-        placeholder="anton@example.com"
-        value={values.email}
-        onChange={handleChange}
-        hint={errors.email}
-      />
-      <Input
-        id="phone"
-        name="phone"
-        label="Телефон"
-        type="tel"
-        placeholder="+7(000)000-00-00"
-        value={values.phone}
-        onChange={handleChange}
-        hint={errors.phone}
-      />
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>{t("profile.aboutMe")}</h2>
+        <Card flush>
+          <MenuRow
+            to="/profile/personal"
+            icon="user"
+            label={t("profile.personal")}
+            sub={me.birthday ? `${t("member.birthday")} ${me.birthday}` : t("profile.personalSub")}
+          />
+          <MenuRow
+            to={myHome ? `/more/home/${myHome.id}` : "/more/homes"}
+            icon="home"
+            label={t("profile.myHome")}
+            sub={
+              myHome
+                ? t("common.nowAt", { name: `${myHome.name}${myHome.place ? `, ${myHome.place}` : ""}` })
+                : t("profile.notChosen")
+            }
+          />
+          <MenuRow to="/profile/phone" icon="phone" label={t("profile.phone")} sub={me.phone || t("profile.notSet")} />
+          <MenuRow
+            to="/profile/food"
+            icon="food"
+            label={t("profile.food")}
+            sub={me.foodPrefs?.length ? me.foodPrefs.map(foodLabel).join(", ") : t("profile.notSetPlural")}
+          />
+        </Card>
+      </section>
 
-      <Card className={styles.theme}>
-        <span className={styles.themeTitle}>Тема</span>
-        <div className={styles.options}>
-          {themes.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              aria-pressed={theme === t.value}
-              className={`${styles.option} ${theme === t.value ? styles.active : ""}`}
-              onClick={() => setTheme(t.value)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </Card>
-    </FormScreen>
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>{t("profile.avatar")}</h2>
+        <Card className={styles.appearance}>
+          <span className={styles.label}>{t("profile.avatarColor")}</span>
+          <div className={styles.tones} role="group" aria-label={t("profile.avatarColor")}>
+            {tones.map((tone) => (
+              <button
+                key={tone.value}
+                type="button"
+                className={`${styles.tone} ${tone.outlined ? styles.toneOutlined : ""} ${
+                  currentTone === tone.value ? styles.toneActive : ""
+                }`}
+                style={{ background: tone.color }}
+                aria-label={t(`profile.tones.${tone.value}`)}
+                aria-pressed={currentTone === tone.value}
+                onClick={() => updateMember(me.id, { tone: tone.value })}
+              />
+            ))}
+          </div>
+        </Card>
+      </section>
+    </Page>
   );
 }
 

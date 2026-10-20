@@ -1,27 +1,44 @@
 import { Link } from "react-router-dom";
+import Avatar from "../../components/Avatar/Avatar";
 import Card from "../../components/Card/Card";
+import Icon from "../../components/Icon/Icon";
+import { isSpoiled, needsAttention } from "../Fridge/products";
 import { useData } from "../../store/DataContext";
+import { chatList, lastMessageOf, lastMessageText } from "../../utils/chats";
+import { homeOf } from "../../utils/homes";
+import { productsLabel } from "../../utils/plural";
 import { greeting } from "../../utils/greeting";
 import {
   CURRENT_MONTH,
   balanceUpTo,
   formatMoney,
-  monthPrepositional,
+  monthInSentence,
   parseMonth,
   monthlyTotals,
 } from "../../utils/budget";
+import { t } from "../../i18n";
+import { TODAY, birthdayEvents, eventsOn } from "../Calendar/data";
 import styles from "./Main.module.css";
 
 const CHART_MONTHS = 5;
-
-const events = [
-  { time: "19:00", title: "Семейный ужин" },
-  { time: "21:00", title: "Фильм" },
-];
+const MAX_ALERTS = 2;
+const MAX_TASKS = 3;
 
 function Main() {
-  const { operations, members, currentUserId } = useData();
-  const userName = members.find((m) => m.id === currentUserId)?.name ?? "";
+  const { operations, members, currentUserId, products, homes, messages, unread, chatSettings } = useData();
+  const myHome = homeOf(homes, currentUserId);
+  const myProducts = myHome ? products.filter((p) => p.homeId === myHome.id) : [];
+  const alerts = myProducts
+    .filter(needsAttention)
+    .sort((a, b) => Number(isSpoiled(b)) - Number(isSpoiled(a)));
+  const fridgeLink = myHome ? `/more/fridge?home=${myHome.id}` : "/more/fridge";
+  const tasks = myHome ? myHome.tasks.filter((task) => !task.done) : [];
+  const me = members.find((m) => m.id === currentUserId);
+  const todayEvents = eventsOn(TODAY, birthdayEvents(members, TODAY.getFullYear()));
+  const chats = chatList(members, currentUserId, chatSettings);
+  const freshChat = chats.find((c) => (unread[c.id] ?? 0) > 0);
+  const userName = me?.name ?? "";
+  const userLetter = me?.letter ?? "";
   const key = CURRENT_MONTH;
   const month = parseMonth(key);
   const months = monthlyTotals(operations, key, CHART_MONTHS);
@@ -36,7 +53,7 @@ function Main() {
           <span className={styles.brandName}>Famigo</span>
         </div>
         <div className={styles.actions}>
-          <Link to="/notifications" className={styles.bell} aria-label="Уведомления">
+          <Link to="/notifications" className={styles.bell} aria-label={t("nav.notifications")}>
             <svg
               width="20"
               height="20"
@@ -52,91 +69,225 @@ function Main() {
             </svg>
             <span className={styles.badge}>3</span>
           </Link>
-          <Link to="/profile" className={styles.avatar} aria-label="Профиль">
-            А
+          <Link to="/profile" className={styles.avatarLink} aria-label={t("nav.profile")}>
+            <Avatar letter={userLetter} tone={me?.tone} photo={me?.photo} size={44} />
           </Link>
         </div>
       </header>
 
-      <div className={styles.greeting}>
-        <h1 className={styles.title}>
-          {greeting()}, {userName}
-        </h1>
-        <Link to="/more/family" className={styles.family}>
-          Ваша семья: 4 человека
+      <div className={styles.greetingRow}>
+        <div className={styles.greeting}>
+          <h1 className={styles.title}>
+            {greeting()}, {userName}
+          </h1>
+          <Link to="/more/family" className={styles.family}>
+            {t("main.yourFamily", { count: members.length })}
+          </Link>
+        </div>
+        <Link to="/more/family" className={styles.stack} aria-label={t("main.familyMembers")}>
+          {members.map((m) => (
+            <span key={m.id} className={styles.stackItem}>
+              <Avatar letter={m.letter} tone={m.tone} photo={m.photo} size={44} />
+            </span>
+          ))}
         </Link>
       </div>
 
-      <Link to="/budget" className={styles.link}>
-        <Card>
-          <div className={styles.balance}>
-            <span className={styles.label}>Доступно в {monthPrepositional(month)}</span>
-            <span className={styles.amount}>{formatMoney(balanceUpTo(operations, key))}</span>
-          </div>
-          <div className={styles.chart} role="img" aria-label="Доходы и расходы по месяцам">
-            {months.map((m) => (
-              <div
-                key={m.key}
-                className={styles.monthCol}
-                title={`${m.label}: доходы ${formatMoney(m.income)}, расходы ${formatMoney(m.expense)}`}
-              >
-                <div className={styles.pair}>
-                  <div className={styles.barIncome} style={{ height: barHeight(m.income) }} />
-                  <div className={styles.barExpense} style={{ height: barHeight(m.expense) }} />
+      <div className={styles.grid}>
+        <div className={styles.colMain}>
+          <Link to="/budget" className={styles.link}>
+            <Card>
+              <div className={styles.balance}>
+                <span className={styles.label}>{t("main.availableIn", { month: monthInSentence(month) })}</span>
+                <span className={styles.amount}>{formatMoney(balanceUpTo(operations, key))}</span>
+              </div>
+              <div className={styles.chart} role="img" aria-label={t("main.chartLabel")}>
+                {months.map((m) => (
+                  <div
+                    key={m.key}
+                    className={styles.monthCol}
+                    title={t("main.chartTooltip", {
+                      month: m.label,
+                      income: formatMoney(m.income),
+                      expense: formatMoney(m.expense),
+                    })}
+                  >
+                    <div className={styles.pair}>
+                      <div className={styles.barIncome} style={{ height: barHeight(m.income) }} />
+                      <div className={styles.barExpense} style={{ height: barHeight(m.expense) }} />
+                    </div>
+                    <span className={styles.monthLabel}>{m.label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className={styles.legend}>
+                <span className={styles.legendItem}>
+                  <span className={`${styles.dot} ${styles.dotIncome}`} />
+                  {t("budget.income")}
+                </span>
+                <span className={styles.legendItem}>
+                  <span className={`${styles.dot} ${styles.dotExpense}`} />
+                  {t("budget.expenses")}
+                </span>
+              </div>
+            </Card>
+          </Link>
+
+          {myHome && myProducts.length === 0 && (
+            <Link
+              to={`/more/fridge/add?home=${myHome.id}`}
+              className={`${styles.link} ${styles.fridgeOk} ${styles.fridgeEmpty}`}
+            >
+              <span className={styles.fridgeIcon}>
+                <Icon name="fridge" size={20} strokeWidth={1.8} />
+              </span>
+              <div className={styles.fridgeText}>
+                <span className={styles.fridgeTitle}>{t("main.noFood")}</span>
+                <span className={styles.fridgeSub}>{t("main.fridgeEmpty", { home: myHome.name })}</span>
+              </div>
+              <Icon name="plus" size={18} className={styles.emptyPlus} />
+            </Link>
+          )}
+
+          {myHome && myProducts.length > 0 && alerts.length === 0 && (
+            <Link to={fridgeLink} className={`${styles.link} ${styles.fridgeOk}`}>
+              <span className={`${styles.fridgeIcon} ${styles.fridgeIconOk}`}>
+                <Icon name="fridge" size={20} strokeWidth={1.8} />
+              </span>
+              <div className={styles.fridgeText}>
+                <span className={styles.fridgeTitle}>{t("main.fridgeOk")}</span>
+                <span className={styles.fridgeSubOk}>
+                  {myHome.name} · {productsLabel(myProducts.length)}
+                </span>
+              </div>
+              <Icon name="chevron" size={18} className={styles.chevron} />
+            </Link>
+          )}
+
+          {alerts.length > 0 && (
+            <section className={styles.fridge}>
+              <div className={styles.fridgeHead}>
+                <span className={styles.fridgeIcon}>
+                  <Icon name="fridge" size={20} strokeWidth={1.8} />
+                </span>
+                <div className={styles.fridgeText}>
+                  <h2 className={styles.fridgeTitle}>{t("main.fridgeTitle", { home: myHome.name })}</h2>
+                  <span className={styles.fridgeSub}>
+                    {t("main.needAttention", { count: alerts.length })}
+                  </span>
                 </div>
-                <span className={styles.monthLabel}>{m.label}</span>
               </div>
-            ))}
-          </div>
-          <div className={styles.legend}>
-            <span className={styles.legendItem}>
-              <span className={`${styles.dot} ${styles.dotIncome}`} />
-              Доходы
-            </span>
-            <span className={styles.legendItem}>
-              <span className={`${styles.dot} ${styles.dotExpense}`} />
-              Расходы
-            </span>
-          </div>
-        </Card>
-      </Link>
 
-      <Link to="/more/fridge" className={`${styles.link} ${styles.fridge}`}>
-        <span className={styles.fridgeIcon}>
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M6 3h12v18H6zM6 10h12M9 6v1.5M9 13v3" />
-          </svg>
-        </span>
-        <div className={styles.fridgeText}>
-          <span className={styles.fridgeTitle}>Молоко заканчивается</span>
-          <span className={styles.fridgeSub}>Добавить в список продуктов</span>
+              {alerts.slice(0, MAX_ALERTS).map((p) => (
+                <Link key={p.id} to={`/more/fridge/${p.id}/edit`} className={styles.alert}>
+                  <span className={styles.alertName}>{p.name}</span>
+                  <span className={`${styles.alertStatus} ${isSpoiled(p) ? styles.alertSpoiled : styles.alertLow}`}>
+                    {isSpoiled(p) ? t("fridge.spoiled") : t("fridge.low")}
+                  </span>
+                </Link>
+              ))}
+
+              {alerts.length > MAX_ALERTS && (
+                <Link to={fridgeLink} className={styles.alertMore}>
+                  {t("main.moreItems", { items: productsLabel(alerts.length - MAX_ALERTS) })}
+                  <Icon name="chevron" size={16} />
+                </Link>
+              )}
+            </section>
+          )}
         </div>
-      </Link>
 
-      <Link to="/calendar" className={styles.link}>
-        <Card>
-          <h2 className={styles.cardTitle}>Сегодня</h2>
-          {events.map((ev) => (
-            <div key={ev.time} className={styles.event}>
-              <span className={styles.eventLine} />
-              <div className={styles.eventText}>
-                <span className={styles.eventTime}>{ev.time}</span>
-                <span className={styles.eventTitle}>{ev.title}</span>
+        <div className={styles.colSide}>
+          <Link to="/calendar" className={styles.link}>
+            <Card>
+              <h2 className={styles.cardTitle}>{t("calendar.today")}</h2>
+              {todayEvents.length === 0 && <p className={styles.tasksEmpty}>{t("calendar.noEvents")}</p>}
+              {todayEvents.map((ev) => (
+                <div key={ev.id} className={styles.event}>
+                  <span className={styles.eventLine} />
+                  <div className={styles.eventText}>
+                    <span className={styles.eventTime}>{ev.time}</span>
+                    <span className={styles.eventTitle}>{ev.title}</span>
+                  </div>
+                </div>
+              ))}
+            </Card>
+          </Link>
+
+          <Card>
+            <div className={styles.cardHead}>
+              <div className={styles.cardHeadText}>
+                <h2 className={styles.cardTitle}>{t("main.tasks")}</h2>
+                {myHome && <span className={styles.taskHome}>{myHome.name}</span>}
               </div>
+              {tasks.length > 0 && <span className={styles.count}>{tasks.length}</span>}
             </div>
-          ))}
-        </Card>
-      </Link>
+            {tasks.slice(0, MAX_TASKS).map((task) => (
+              <Link key={task.id} to={`/more/home/${myHome.id}`} className={styles.task}>
+                <span className={styles.taskDot} />
+                <span className={styles.taskText}>{task.text}</span>
+              </Link>
+            ))}
+            {!myHome && (
+              <Link to="/more/homes" className={styles.more}>
+                {t("main.chooseHome")}
+                <Icon name="chevron" size={16} />
+              </Link>
+            )}
+            {myHome && tasks.length === 0 && <p className={styles.tasksEmpty}>{t("main.allDone")}</p>}
+            {tasks.length > MAX_TASKS && (
+              <Link to={`/more/home/${myHome.id}`} className={styles.more}>
+                {t("main.moreTasks", { count: tasks.length - MAX_TASKS })}
+                <Icon name="chevron" size={16} />
+              </Link>
+            )}
+          </Card>
+
+          <Card className={styles.desktopOnly}>
+            <div className={styles.cardHead}>
+              <h2 className={styles.cardTitle}>{t("nav.chats")}</h2>
+              <Link to="/chats" className={styles.open}>
+                {t("main.allChats")}
+              </Link>
+            </div>
+            <div className={styles.quickChats}>
+              {chats.map((c) => {
+                const count = unread[c.id] ?? 0;
+                return (
+                  <Link
+                    key={c.id}
+                    to={`/chats/${c.id}`}
+                    className={styles.quickChat}
+                    aria-label={count ? t("main.unreadIn", { name: c.name, count }) : c.name}
+                  >
+                    <span className={styles.quickAvatar}>
+                      <Avatar letter={c.letter} tone={c.tone} photo={c.photo} size={52} />
+                      {count > 0 && <span className={styles.quickBadge}>{count}</span>}
+                    </span>
+                    <span className={styles.quickName}>{c.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+            {freshChat ? (
+              <Link to={`/chats/${freshChat.id}`} className={styles.fresh}>
+                <span className={styles.freshDot} />
+                <span className={styles.freshText}>
+                  <span className={styles.freshTitle}>
+                    {freshChat.personal ? freshChat.name : t("main.groupChat", { name: freshChat.name })}
+                    <span className={styles.freshTime}>{lastMessageOf(freshChat, messages)?.time}</span>
+                  </span>
+                  <span className={styles.freshLast}>
+                    {lastMessageText(freshChat, messages, members, currentUserId)}
+                  </span>
+                </span>
+              </Link>
+            ) : (
+              <p className={styles.tasksEmpty}>{t("main.noNewMessages")}</p>
+            )}
+          </Card>
+        </div>
+      </div>
     </main>
   );
 }

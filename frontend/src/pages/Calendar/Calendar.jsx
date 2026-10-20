@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Fab from "../../components/Fab/Fab";
+import useSwipe from "../../hooks/useSwipe";
 import Icon from "../../components/Icon/Icon";
 import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
@@ -10,9 +11,9 @@ import DayView from "./DayView";
 import ListView from "./ListView";
 import {
   TODAY,
-  WEEKDAYS_FULL,
   addDays,
   addMonths,
+  birthdayEvents,
   dateKey,
   dayTitle,
   monthLabel,
@@ -20,14 +21,17 @@ import {
   weekLabel,
   weekStart,
   weekdayIndex,
+  weekdaysFull,
 } from "./data";
+import { useData } from "../../store/DataContext";
+import { t } from "../../i18n";
 import styles from "./Calendar.module.css";
 
 const views = [
-  { value: "month", label: "Месяц" },
-  { value: "week", label: "Неделя" },
-  { value: "day", label: "День" },
-  { value: "list", label: "Список" },
+  { value: "month", label: "month" },
+  { value: "week", label: "week" },
+  { value: "day", label: "day" },
+  { value: "list", label: "list" },
 ];
 
 const viewComponents = {
@@ -37,8 +41,6 @@ const viewComponents = {
   list: ListView,
 };
 
-const SWIPE_DISTANCE = 60;
-
 function shift(view, date, direction) {
   if (view === "week") return addDays(date, 7 * direction);
   if (view === "day") return addDays(date, direction);
@@ -47,7 +49,7 @@ function shift(view, date, direction) {
 
 function periodLabel(view, date) {
   if (view === "week") return weekLabel(date);
-  if (view === "day") return `${dayTitle(date)}, ${WEEKDAYS_FULL[weekdayIndex(date)].toLowerCase()}`;
+  if (view === "day") return `${dayTitle(date)}, ${weekdaysFull()[weekdayIndex(date)].toLowerCase()}`;
   return monthLabel(date);
 }
 
@@ -61,13 +63,17 @@ function Calendar() {
   const [view, setView] = useState("month");
   const [selected, setSelected] = useState(TODAY);
   const [direction, setDirection] = useState("fade");
-  const touchStart = useRef(null);
   const View = viewComponents[view];
+  const { members } = useData();
+  const year = selected.getFullYear();
+  const extra = [year - 1, year, year + 1].flatMap((y) => birthdayEvents(members, y));
 
   function go(step) {
     setDirection(step > 0 ? "next" : "prev");
     setSelected(shift(view, selected, step));
   }
+
+  const swipe = useSwipe({ onLeft: () => go(1), onRight: () => go(-1) });
 
   function changeView(value) {
     setDirection("fade");
@@ -79,27 +85,11 @@ function Calendar() {
     setSelected(TODAY);
   }
 
-  function handleTouchStart(e) {
-    const touch = e.touches[0];
-    touchStart.current = { x: touch.clientX, y: touch.clientY };
-  }
-
-  function handleTouchEnd(e) {
-    if (!touchStart.current) return;
-    const touch = e.changedTouches[0];
-    const dx = touch.clientX - touchStart.current.x;
-    const dy = touch.clientY - touchStart.current.y;
-    touchStart.current = null;
-    if (Math.abs(dx) > SWIPE_DISTANCE && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      go(dx < 0 ? 1 : -1);
-    }
-  }
-
   return (
-    <Page fab>
+    <Page fab wide {...swipe}>
       <PageHeader
-        title="Календарь"
-        subtitle="Общий календарь семьи"
+        title={t("calendar.title")}
+        subtitle={t("calendar.subtitle")}
         right={
           <button
             type="button"
@@ -107,21 +97,21 @@ function Calendar() {
             disabled={sameDay(selected, TODAY)}
             onClick={goToday}
           >
-            Сегодня
+            {t("calendar.today")}
           </button>
         }
       />
 
-      <Segmented size="sm" options={views} value={view} onChange={changeView} label="Вид календаря" />
+      <Segmented size="sm" options={views.map((v) => ({ value: v.value, label: t(`calendar.views.${v.label}`) }))} value={view} onChange={changeView} label={t("calendar.viewLabel")} />
 
       <div className={styles.nav}>
-        <button type="button" className={styles.navButton} aria-label="Назад" onClick={() => go(-1)}>
+        <button type="button" className={styles.navButton} aria-label={t("common.back")} onClick={() => go(-1)}>
           <Icon name="back" size={20} />
         </button>
         <span className={styles.navLabel} aria-live="polite">
           {periodLabel(view, selected)}
         </span>
-        <button type="button" className={styles.navButton} aria-label="Вперёд" onClick={() => go(1)}>
+        <button type="button" className={styles.navButton} aria-label={t("common.forward")} onClick={() => go(1)}>
           <Icon name="chevron" size={20} />
         </button>
       </div>
@@ -129,13 +119,11 @@ function Calendar() {
       <div
         key={`${view}-${periodKey(view, selected)}`}
         className={`${styles.view} ${styles[direction]}`}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
       >
-        <View selected={selected} onSelect={setSelected} />
+        <View selected={selected} onSelect={setSelected} extra={extra} />
       </div>
 
-      <Fab to="/calendar/create" label="Создать событие" />
+      <Fab to="/calendar/create" label={t("calendar.create")} />
     </Page>
   );
 }

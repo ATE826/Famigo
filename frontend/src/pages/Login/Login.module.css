@@ -96,3 +96,43 @@ p{
     font-size: 14px;
     font-weight: 500;
 }
+@media (min-width: 1024px) {
+  .page {
+    flex-direction: row-reverse;
+  }
+
+  .hero {
+    flex: 1 1 50%;
+    height: auto;
+    min-height: 100dvh;
+    padding: 48px 64px 64px;
+  }
+
+  .bigLetter {
+    font-size: 620px;
+    right: -40px;
+    top: -60px;
+  }
+
+  .slogan {
+    max-width: 460px;
+    font-size: 44px;
+    line-height: 1.1;
+  }
+
+  .form {
+    flex: 1 1 50%;
+    justify-content: center;
+    padding: 48px 64px;
+  }
+
+  .form > * {
+    width: 100%;
+    max-width: 400px;
+    align-self: center;
+  }
+
+  .title {
+    font-size: 36px;
+  }
+}

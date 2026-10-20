@@ -6,8 +6,8 @@ import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
 import { GROUP_CHAT_ID } from "../../utils/chats";
-import { plural } from "../../utils/plural";
 import { roleLabels } from "../../utils/roles";
+import { t } from "../../i18n";
 import styles from "./ChatInfo.module.css";
 
 function ChatInfo() {
@@ -19,26 +19,27 @@ function ChatInfo() {
   }
 
   const settings = chatSettings[id];
-  const count = `${members.length} ${plural(members.length, ["участник", "участника", "участников"])}`;
+  const count = t("plural.members", { count: members.length });
+  const name = t("chats.family");
 
   return (
     <Page>
-      <PageHeader title="О чате" to={`/chats/${id}`} />
+      <PageHeader title={t("chats.about")} to={`/chats/${id}`} />
 
       <div className={styles.top}>
-        <Avatar letter="С" size={96} />
-        <h2 className={styles.name}>Семья</h2>
+        <Avatar letter={name[0]} size={96} />
+        <h2 className={styles.name}>{name}</h2>
         <span className={styles.count}>{count}</span>
         <a href="#" className={styles.photo}>
-          Сменить фото
+          {t("profile.changePhoto")}
         </a>
       </div>
 
       <Card flush>
         <label className={styles.setting}>
           <span className={styles.settingText}>
-            <span className={styles.settingTitle}>Уведомления</span>
-            <span className={styles.settingHint}>Сообщения из этого чата</span>
+            <span className={styles.settingTitle}>{t("nav.notifications")}</span>
+            <span className={styles.settingHint}>{t("chats.notifyHint")}</span>
           </span>
           <input
             type="checkbox"
@@ -50,8 +51,8 @@ function ChatInfo() {
         </label>
         <label className={styles.setting}>
           <span className={styles.settingText}>
-            <span className={styles.settingTitle}>Закрепить чат</span>
-            <span className={styles.settingHint}>Показывать вверху списка</span>
+            <span className={styles.settingTitle}>{t("chats.pin")}</span>
+            <span className={styles.settingHint}>{t("chats.pinHint")}</span>
           </span>
           <input
             type="checkbox"
@@ -64,10 +65,10 @@ function ChatInfo() {
       </Card>
 
       <Card flush>
-        <h3 className={styles.membersTitle}>Участники: {members.length}</h3>
+        <h3 className={styles.membersTitle}>{t("chats.membersCount", { count: members.length })}</h3>
         {members.map((m) => (
           <Link key={m.id} to={`/more/family/${m.id}`} className={styles.member}>
-            <Avatar letter={m.letter} tone={m.tone} size={44} />
+            <Avatar letter={m.letter} tone={m.tone} photo={m.photo} size={44} />
             <div className={styles.memberText}>
               <span className={styles.memberName}>{m.name}</span>
               <span className={styles.memberRole}>{roleLabels[m.role]}</span>

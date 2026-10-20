@@ -15,6 +15,9 @@ import {
   removeBlockedReason,
 } from "../../utils/permissions";
 import { roleLabels } from "../../utils/roles";
+import { t } from "../../i18n";
+import { memberNote } from "../../utils/members";
+import { foodLabel } from "../ProfileFood/food";
 import styles from "./Member.module.css";
 
 function Member() {
@@ -44,10 +47,10 @@ function Member() {
 
   return (
     <Page>
-      <PageHeader title={member.name} subtitle={isMe ? "Это вы" : member.note} to="/more/family" />
+      <PageHeader title={member.name} subtitle={isMe ? t("member.itsYou") : memberNote(member, currentUserId)} to="/more/family" />
 
       <div className={styles.top}>
-        <Avatar letter={member.letter} tone={member.tone} size={72} />
+        <Avatar letter={member.letter} tone={member.tone} photo={member.photo} size={72} />
         <div className={styles.topText}>
           <span className={styles.name}>{member.name}</span>
           <span className={`${styles.role} ${styles[member.role]}`}>{roleLabels[member.role]}</span>
@@ -56,18 +59,18 @@ function Member() {
 
       {canChange && (
         <Card className={styles.card}>
-          <h2 className={styles.cardTitle}>Роль</h2>
+          <h2 className={styles.cardTitle}>{t("member.role")}</h2>
           <Segmented
             options={roleOptions}
             value={member.role}
             onChange={(role) => updateMemberRole(member.id, role)}
-            label="Роль участника"
+            label={t("member.roleLabel")}
           />
         </Card>
       )}
 
       <Card flush className={styles.homes}>
-        <h2 className={styles.homesTitle}>Живёт в</h2>
+        <h2 className={styles.homesTitle}>{t("member.livesIn")}</h2>
         {memberHomes.map((h) => (
           <Link key={h.id} to={`/more/home/${h.id}`} className={styles.home}>
             <span className={styles.homeIcon}>
@@ -80,33 +83,55 @@ function Member() {
             <Icon name="chevron" size={18} className={styles.chevron} />
           </Link>
         ))}
-        {memberHomes.length === 0 && <p className={styles.empty}>Не указан ни в одном доме</p>}
+        {memberHomes.length === 0 && <p className={styles.empty}>{t("member.noHome")}</p>}
       </Card>
+
+      {(member.birthday || member.foodPrefs?.length > 0 || member.foodNote) && (
+        <Card className={styles.card}>
+          {member.birthday && (
+            <p className={styles.text}>
+              {t("member.birthday")} <b>{member.birthday.slice(0, 5)}</b>
+            </p>
+          )}
+          {(member.foodPrefs?.length > 0 || member.foodNote) && (
+            <>
+              <h2 className={styles.cardTitle}>{t("profile.food")}</h2>
+              <div className={styles.prefs}>
+                {member.foodPrefs.map((pref) => (
+                  <span key={pref} className={styles.pref}>
+                    {foodLabel(pref)}
+                  </span>
+                ))}
+              </div>
+              {member.foodNote && <p className={styles.text}>{member.foodNote}</p>}
+            </>
+          )}
+        </Card>
+      )}
 
       {isMe && (
         <Link to="/profile" className={styles.profileLink}>
-          Открыть мой профиль
+          {t("member.openProfile")}
         </Link>
       )}
 
       {canRemove && !confirming && (
         <button type="button" className={styles.remove} onClick={() => setConfirming(true)}>
-          Удалить из семьи
+          {t("member.remove")}
         </button>
       )}
 
       {canRemove && confirming && (
         <div className={styles.confirm} role="alert">
           <p className={styles.confirmText}>
-            Удалить участника «{member.name}» из семьи? Он перестанет быть жильцом и потеряет доступ к
-            данным семьи.
+            {t("member.removeConfirm", { name: member.name })}
           </p>
           <div className={styles.confirmButtons}>
             <button type="button" className={styles.cancel} onClick={() => setConfirming(false)}>
-              Отмена
+              {t("common.cancel")}
             </button>
             <button type="button" className={styles.confirmRemove} onClick={handleRemove}>
-              Удалить
+              {t("common.delete")}
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Card from "../../components/Card/Card";
 import Input from "../../components/Input/Input";
@@ -6,30 +6,40 @@ import Select from "../../components/Select/Select";
 import Button from "../../components/Button/Button";
 import FormScreen from "../../components/FormScreen/FormScreen";
 import PageHeader from "../../components/PageHeader/PageHeader";
+import { useData } from "../../store/DataContext";
 import { copyText } from "../../utils/clipboard";
+import { INVITE_HOURS, inviteCode, timeLeftLabel } from "../../utils/invite";
+import { t } from "../../i18n";
+import { roleLabels } from "../../utils/roles";
 import styles from "./Invite.module.css";
-
-const LINK = "famigo.app/invite/8X72K";
 
 function Invite() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
+  const [now, setNow] = useState(() => new Date());
+  const { familyName } = useData();
+  const link = `famigo.app/invite/${inviteCode(familyName, now)}`;
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   function handleSubmit(e) {
     e.preventDefault();
     if (!email.trim()) {
-      setError("Введите email");
+      setError(t("validation.emailRequired"));
     } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-      setError("Некорректный email");
+      setError(t("validation.emailInvalid"));
     } else {
       navigate("/more/family");
     }
   }
 
   async function handleCopy() {
-    const ok = await copyText(LINK);
+    const ok = await copyText(link);
     setCopyStatus(ok ? "done" : "failed");
     setTimeout(() => setCopyStatus(""), 2000);
   }
@@ -38,17 +48,17 @@ function Invite() {
     <FormScreen
       onSubmit={handleSubmit}
       className={styles.body}
-      footer={<Button type="submit">Отправить приглашение</Button>}
+      footer={<Button type="submit">{t("invite.send")}</Button>}
     >
-      <PageHeader title="Пригласить в семью" to="/more/family" />
+      <PageHeader title={t("invite.title")} to="/more/family" />
 
       <Card>
-        <h2 className={styles.cardTitle}>По email</h2>
+        <h2 className={styles.cardTitle}>{t("invite.byEmail")}</h2>
         <Input
           id="email"
           label="Email"
           type="email"
-          placeholder="sister@example.com"
+          placeholder={t("invite.emailPlaceholder")}
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
@@ -56,22 +66,24 @@ function Invite() {
           }}
           hint={error}
         />
-        <Select id="role" label="Роль">
-          <option>Участник</option>
-          <option>Администратор</option>
+        <Select id="role" label={t("member.role")}>
+          <option value="Member">{roleLabels.Member}</option>
+          <option value="Admin">{roleLabels.Admin}</option>
         </Select>
       </Card>
 
       <Card className={styles.linkCard}>
         <div className={styles.linkHead}>
-          <h2 className={styles.cardTitle}>По ссылке</h2>
-          <span className={styles.linkNote}>Ссылка действует 12 часов.</span>
+          <h2 className={styles.cardTitle}>{t("invite.byLink")}</h2>
+          <span className={styles.linkNote}>
+            {t("invite.rotates", { count: INVITE_HOURS, left: timeLeftLabel(now) })}
+          </span>
         </div>
-        <div className={styles.link}>{LINK}</div>
+        <div className={styles.link}>{link}</div>
         <button type="button" className={styles.copy} onClick={handleCopy}>
-          {copyStatus === "done" && "Скопировано"}
-          {copyStatus === "failed" && "Не удалось скопировать"}
-          {copyStatus === "" && "Скопировать ссылку"}
+          {copyStatus === "done" && t("invite.copied")}
+          {copyStatus === "failed" && t("invite.copyFailed")}
+          {copyStatus === "" && t("invite.copy")}
         </button>
       </Card>
     </FormScreen>

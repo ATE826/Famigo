@@ -8,22 +8,33 @@
   font-weight: 700;
 }
 
+.photo {
+  object-fit: cover;
+}
+
 .green {
-  background: var(--primary);
+  background: #667A55;
   color: #fff;
 }
 
 .terra {
-  background: var(--accent);
+  background: #D38A62;
   color: #20221F;
 }
 
-.sage {
-  background: #B9C7AC;
-  color: #20221F;
+.mint {
+  background: #E5EBE0;
+  color: #3E4F32;
 }
 
-.gray {
-  background: var(--avatar-gray-bg);
-  color: var(--avatar-gray-text);
+.cream {
+  background: #F5F3EE;
+  color: #20221F;
+  box-shadow: inset 0 0 0 1px rgba(32, 34, 31, 0.14);
+}
+
+.graphite {
+  background: #20221F;
+  color: #F5F3EE;
+  box-shadow: inset 0 0 0 1px rgba(245, 243, 238, 0.2);
 }

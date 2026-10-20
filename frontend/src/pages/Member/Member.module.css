@@ -213,3 +213,18 @@
   font-size: 14px;
   font-weight: 500;
 }
+
+.prefs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pref {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--warn-soft);
+  color: var(--warn-text);
+  font-size: 12px;
+  font-weight: 600;
+}

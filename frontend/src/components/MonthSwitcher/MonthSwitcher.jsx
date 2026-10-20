@@ -1,5 +1,6 @@
 import Icon from "../Icon/Icon";
 import styles from "./MonthSwitcher.module.css";
+import { t } from "../../i18n";
 
 export default function MonthSwitcher({ label, onPrev, onNext, prevDisabled = false, nextDisabled = false }) {
   return (
@@ -7,7 +8,7 @@ export default function MonthSwitcher({ label, onPrev, onNext, prevDisabled = fa
       <button
         type="button"
         className={styles.button}
-        aria-label="Предыдущий месяц"
+        aria-label={t("common.prevMonth")}
         disabled={prevDisabled}
         onClick={onPrev}
       >
@@ -19,7 +20,7 @@ export default function MonthSwitcher({ label, onPrev, onNext, prevDisabled = fa
       <button
         type="button"
         className={styles.button}
-        aria-label="Следующий месяц"
+        aria-label={t("common.nextMonth")}
         disabled={nextDisabled}
         onClick={onNext}
       >

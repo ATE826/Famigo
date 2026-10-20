@@ -1,21 +1,22 @@
 import EventCard from "./EventCard";
 import {
   TODAY,
-  WEEKDAYS,
-  WEEKDAYS_FULL,
   addDays,
   dayTitle,
   eventsOn,
   sameDay,
   weekStart,
   weekdayIndex,
+  weekdays,
+  weekdaysFull,
 } from "./data";
+import { t } from "../../i18n";
 import styles from "./Calendar.module.css";
 
-export default function WeekView({ selected, onSelect }) {
+export default function WeekView({ selected, onSelect, extra }) {
   const start = weekStart(selected);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  const withEvents = days.filter((day) => eventsOn(day).length > 0);
+  const withEvents = days.filter((day) => eventsOn(day, extra).length > 0);
 
   return (
     <>
@@ -29,24 +30,24 @@ export default function WeekView({ selected, onSelect }) {
             aria-pressed={sameDay(day, selected)}
             onClick={() => onSelect(day)}
           >
-            <span className={styles.weekDayName}>{WEEKDAYS[i]}</span>
+            <span className={styles.weekDayName}>{weekdays()[i]}</span>
             <span className={`${styles.weekDayNum} ${sameDay(day, TODAY) ? styles.weekToday : ""}`}>
               {day.getDate()}
             </span>
-            <span className={`${styles.dot} ${eventsOn(day).length ? styles.hasEvent : ""}`} />
+            <span className={`${styles.dot} ${eventsOn(day, extra).length ? styles.hasEvent : ""}`} />
           </button>
         ))}
       </div>
 
-      {withEvents.length === 0 && <p className={styles.empty}>На этой неделе событий нет</p>}
+      {withEvents.length === 0 && <p className={styles.empty}>{t("calendar.noEventsWeek")}</p>}
 
       {withEvents.map((day) => (
         <section key={day.getTime()} className={styles.events}>
           <h2 className={styles.eventsTitle}>
-            {WEEKDAYS_FULL[weekdayIndex(day)]}, {dayTitle(day)}
-            {sameDay(day, TODAY) && <span className={styles.badge}>Сегодня</span>}
+            {weekdaysFull()[weekdayIndex(day)]}, {dayTitle(day)}
+            {sameDay(day, TODAY) && <span className={styles.badge}>{t("calendar.today")}</span>}
           </h2>
-          {eventsOn(day).map((event) => (
+          {eventsOn(day, extra).map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </section>

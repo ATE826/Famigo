@@ -9,6 +9,7 @@ import { useData } from "../../store/DataContext";
 import { kinds } from "../../utils/homes";
 import { canManageHomes } from "../../utils/permissions";
 import { countError } from "../../utils/validation";
+import { t } from "../../i18n";
 import styles from "./HomeCreate.module.css";
 
 function HomeCreate() {
@@ -44,17 +45,17 @@ function HomeCreate() {
   }
 
   function peopleError() {
-    const error = countError(values.people, 1, 30);
+    const error = countError(values.people, 0, 30);
     if (error) return error;
     const residents = home?.residents.length ?? 0;
-    return Number(values.people) < residents ? `В списке жильцов уже ${residents}` : "";
+    return Number(values.people) < residents ? t("homeCreate.residentsAlready", { count: residents }) : "";
   }
 
   function handleSubmit(e) {
     e.preventDefault();
     const found = {
-      name: values.name.trim() ? "" : "Введите название",
-      place: values.place.trim() ? "" : "Введите город или адрес",
+      name: values.name.trim() ? "" : t("homeCreate.nameRequired"),
+      place: values.place.trim() ? "" : t("homeCreate.placeRequired"),
       rooms: countError(values.rooms, 1, 99),
       people: peopleError(),
     };
@@ -85,10 +86,10 @@ function HomeCreate() {
   return (
     <FormScreen
       onSubmit={handleSubmit}
-      footer={<Button type="submit">{isEdit ? "Сохранить" : "Добавить дом"}</Button>}
+      footer={<Button type="submit">{isEdit ? t("common.save") : t("homes.add")}</Button>}
     >
       <PageHeader
-        title={isEdit ? "Редактировать дом" : "Новый дом"}
+        title={isEdit ? t("house.edit") : t("homeCreate.newTitle")}
         to={isEdit ? `/more/home/${home.id}` : "/more/homes"}
         icon="close"
       />
@@ -96,16 +97,16 @@ function HomeCreate() {
       <Input
         id="name"
         name="name"
-        label="Название"
+        label={t("homeCreate.name")}
         type="text"
-        placeholder="Квартира"
+        placeholder={t("homeCreate.namePlaceholder")}
         maxLength={40}
         value={values.name}
         onChange={handleChange}
         hint={errors.name}
       />
 
-      <Select id="kind" name="kind" label="Тип" value={values.kind} onChange={handleChange}>
+      <Select id="kind" name="kind" label={t("homeCreate.kind")} value={values.kind} onChange={handleChange}>
         {kinds.map((k) => (
           <option key={k.value} value={k.value}>
             {k.label}
@@ -116,9 +117,9 @@ function HomeCreate() {
       <Input
         id="place"
         name="place"
-        label="Город или адрес"
+        label={t("homeCreate.place")}
         type="text"
-        placeholder="Москва"
+        placeholder={t("homeCreate.place")}
         maxLength={80}
         value={values.place}
         onChange={handleChange}
@@ -130,10 +131,10 @@ function HomeCreate() {
           <Input
             id="rooms"
             name="rooms"
-            label="Комнат"
+            label={t("homeCreate.rooms")}
             type="text"
             inputMode="numeric"
-            placeholder="3"
+            placeholder="0"
             maxLength={2}
             value={values.rooms}
             onChange={handleChange}
@@ -144,10 +145,10 @@ function HomeCreate() {
           <Input
             id="people"
             name="people"
-            label="Живёт человек"
+            label={t("homeCreate.people")}
             type="text"
             inputMode="numeric"
-            placeholder="2"
+            placeholder="0"
             maxLength={2}
             value={values.people}
             onChange={handleChange}

@@ -72,3 +72,17 @@
   font-size: 15px;
   font-weight: 600;
 }
+
+@media (min-width: 1024px) {
+  .brand {
+    padding: 32px 48px 0;
+  }
+
+  .form {
+    width: 100%;
+    max-width: 440px;
+    align-self: center;
+    justify-content: center;
+    padding: 32px 0 80px;
+  }
+}

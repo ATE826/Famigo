@@ -6,9 +6,10 @@ import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
-import { categories, units } from "../Fridge/products";
+import { categories, categoryLabel, unitLabel, units } from "../Fridge/products";
 import { fullToShort, shortToFull, todayShort } from "../../utils/dates";
 import { formatShortDate, quantityError, shortDateError } from "../../utils/validation";
+import { t } from "../../i18n";
 import styles from "./FridgeProduct.module.css";
 
 function FridgeProduct() {
@@ -46,7 +47,7 @@ function FridgeProduct() {
   function handleSubmit(e) {
     e.preventDefault();
     const found = {
-      name: values.name.trim() ? "" : "Введите название",
+      name: values.name.trim() ? "" : t("fridgeProduct.nameRequired"),
       qty: quantityError(values.qty),
       expires: shortDateError(values.expires),
     };
@@ -63,7 +64,7 @@ function FridgeProduct() {
       spoiled: values.spoiled,
     };
     if (isEdit) {
-      updateProduct(product.id, { ...data, low: false });
+      updateProduct(product.id, data);
     } else {
       addProduct(data);
     }
@@ -77,10 +78,10 @@ function FridgeProduct() {
   return (
     <FormScreen
       onSubmit={handleSubmit}
-      footer={<Button type="submit">{isEdit ? "Сохранить" : "Добавить продукт"}</Button>}
+      footer={<Button type="submit">{isEdit ? t("common.save") : t("fridge.add")}</Button>}
     >
       <PageHeader
-        title={isEdit ? "Редактировать продукт" : "Новый продукт"}
+        title={isEdit ? t("fridgeProduct.editTitle") : t("fridgeProduct.newTitle")}
         subtitle={home.name}
         to={`/more/fridge?home=${homeId}`}
         icon="close"
@@ -89,18 +90,20 @@ function FridgeProduct() {
       <Input
         id="name"
         name="name"
-        label="Название"
+        label={t("fridgeProduct.name")}
         type="text"
-        placeholder="Молоко"
+        placeholder={t("fridgeProduct.namePlaceholder")}
         maxLength={60}
         value={values.name}
         onChange={handleChange}
         hint={errors.name}
       />
 
-      <Select id="cat" name="cat" label="Категория" value={values.cat} onChange={handleChange}>
+      <Select id="cat" name="cat" label={t("fridgeProduct.category")} value={values.cat} onChange={handleChange}>
         {categories.map((c) => (
-          <option key={c}>{c}</option>
+          <option key={c} value={c}>
+            {categoryLabel(c)}
+          </option>
         ))}
       </Select>
 
@@ -109,10 +112,10 @@ function FridgeProduct() {
           <Input
             id="qty"
             name="qty"
-            label="Количество"
+            label={t("fridgeProduct.quantity")}
             type="text"
             inputMode="decimal"
-            placeholder="2"
+            placeholder="0"
             maxLength={8}
             value={values.qty}
             onChange={handleChange}
@@ -120,9 +123,11 @@ function FridgeProduct() {
           />
         </div>
         <div className={styles.unit}>
-          <Select id="unit" name="unit" label="Единица" value={values.unit} onChange={handleChange}>
+          <Select id="unit" name="unit" label={t("fridgeProduct.unit")} value={values.unit} onChange={handleChange}>
             {units.map((u) => (
-              <option key={u}>{u}</option>
+              <option key={u} value={u}>
+                {unitLabel(u)}
+              </option>
             ))}
           </Select>
         </div>
@@ -131,7 +136,7 @@ function FridgeProduct() {
       <Input
         id="expires"
         name="expires"
-        label="Годен до"
+        label={t("fridgeProduct.expires")}
         type="text"
         inputMode="numeric"
         placeholder={todayShort()}
@@ -149,9 +154,9 @@ function FridgeProduct() {
             onChange={(e) => setValues({ ...values, spoiled: e.target.checked })}
           />
           <span className={styles.spoiledText}>
-            <span className={styles.spoiledTitle}>Продукт испорчен</span>
+            <span className={styles.spoiledTitle}>{t("fridgeProduct.spoiled")}</span>
             <span className={styles.spoiledHint}>
-              Также отмечается автоматически, когда срок годности истёк
+              {t("fridgeProduct.spoiledHint")}
             </span>
           </span>
         </label>

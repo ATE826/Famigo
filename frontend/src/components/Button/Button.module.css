@@ -14,8 +14,13 @@
   color: #fff;
 }
 
-.primary:hover {
+.primary:hover:not(:disabled) {
   background: var(--primary-dark);
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .soft {

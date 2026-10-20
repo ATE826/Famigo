@@ -2,12 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
+import { useData } from "../../store/DataContext";
+import { t } from "../../i18n";
 import styles from "./FamilyCreate.module.css";
 
 const CODE_LENGTH = 6;
 
 function FamilyCreate() {
   const navigate = useNavigate();
+  const { renameFamily } = useData();
   const [familyName, setFamilyName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [familyError, setFamilyError] = useState("");
@@ -16,9 +19,10 @@ function FamilyCreate() {
   function handleCreate(event) {
     event.preventDefault();
     if (!familyName.trim()) {
-      setFamilyError("Введите название семьи");
+      setFamilyError(t("familyCreate.nameRequired"));
       return;
     }
+    renameFamily(familyName.trim());
     navigate("/main");
   }
 
@@ -26,9 +30,9 @@ function FamilyCreate() {
     event.preventDefault();
     const code = inviteCode.trim();
     if (!code) {
-      setInviteError("Введите код приглашения");
+      setInviteError(t("familyCreate.codeRequired"));
     } else if (code.length !== CODE_LENGTH) {
-      setInviteError(`Код состоит из ${CODE_LENGTH} символов`);
+      setInviteError(t("familyCreate.codeLength", { count: CODE_LENGTH }));
     } else {
       navigate("/main");
     }
@@ -41,18 +45,18 @@ function FamilyCreate() {
         <span className={styles.brandName}>Famigo</span>
       </header>
       <div className={styles.intro}>
-        <h1 className={styles.title}>Воссоединитесь с вашей семьей</h1>
+        <h1 className={styles.title}>{t("familyCreate.title")}</h1>
         <p className={styles.subtitle}>
-          Создайте новую группу или присоединитесь к существующей.
+          {t("familyCreate.subtitle")}
         </p>
       </div>
       <form className={`${styles.card} ${styles.main}`} onSubmit={handleCreate} noValidate>
-        <h2 className={styles.cardTitle}>Создать семью</h2>
+        <h2 className={styles.cardTitle}>{t("familyCreate.create")}</h2>
         <Input
           id="family"
-          label="Название семьи"
+          label={t("familyCreate.name")}
           type="text"
-          placeholder="Семья Ивановых"
+          placeholder={t("familyCreate.name")}
           value={familyName}
           onChange={(e) => {
             setFamilyName(e.target.value);
@@ -60,16 +64,16 @@ function FamilyCreate() {
           }}
           hint={familyError}
         />
-        <Button type="submit">Создать</Button>
+        <Button type="submit">{t("common.create")}</Button>
       </form>
 
       <form className={styles.card} onSubmit={handleJoin} noValidate>
-        <h2 className={styles.cardTitle}>Присоединиться</h2>
+        <h2 className={styles.cardTitle}>{t("familyCreate.join")}</h2>
         <Input
           id="invite"
-          label="Код приглашения"
+          label={t("familyCreate.code")}
           type="text"
-          placeholder="8X72K"
+          placeholder={t("familyCreate.code")}
           maxLength={CODE_LENGTH}
           value={inviteCode}
           onChange={(e) => {
@@ -78,7 +82,7 @@ function FamilyCreate() {
           }}
           hint={inviteError}
         />
-        <Button type="submit">Присоединиться</Button>
+        <Button type="submit">{t("familyCreate.join")}</Button>
       </form>
     </main>
   );

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
+import { t } from "../../i18n";
 import styles from "./Verify.module.css";
 
 const CODE_LENGTH = 6;
@@ -23,7 +24,7 @@ function Verify() {
     if (code.length === CODE_LENGTH) {
       navigate(next);
     } else {
-      setError(`Введите ${CODE_LENGTH} цифр`);
+      setError(t("auth.codeDigits", { count: CODE_LENGTH }));
     }
   }
 
@@ -36,15 +37,15 @@ function Verify() {
 
       <form className={styles.form} onSubmit={handleSubmit}>
         <div className={styles.intro}>
-          <h1 className={styles.title}>Введите код</h1>
+          <h1 className={styles.title}>{t("auth.enterCode")}</h1>
           <p className={styles.subtitle}>
-            Мы отправили 6-значный код подтверждения на вашу почту
+            {t("auth.codeSent", { count: CODE_LENGTH })}
           </p>
         </div>
 
         <Input
           id="code"
-          label="Код подтверждения"
+          label={t("auth.code")}
           type="text"
           inputMode="numeric"
           autoComplete="one-time-code"
@@ -54,10 +55,10 @@ function Verify() {
           hint={error}
         />
 
-        <Button type="submit">Подтвердить</Button>
+        <Button type="submit">{t("common.confirm")}</Button>
         <p className={styles.back}>
           <Link to="/" className={styles.link}>
-            Вернуться ко входу
+            {t("auth.backToLogin")}
           </Link>
         </p>
       </form>

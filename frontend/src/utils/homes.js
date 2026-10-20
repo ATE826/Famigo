@@ -1,16 +1,31 @@
-export const kinds = [
-  { value: "apartment", label: "Квартира" },
-  { value: "house", label: "Дом" },
-  { value: "dacha", label: "Дача" },
-  { value: "other", label: "Другое" },
-];
+import { t } from "../i18n";
+
+export const kinds = ["apartment", "house", "dacha", "other"].map((value) => ({
+  value,
+  get label() {
+    return t(`homeKinds.${value}`);
+  },
+}));
+
+export function homeOf(homes, memberId) {
+  return homes.find((h) => h.residents.includes(memberId));
+}
+
+const looks = {
+  apartment: { icon: "apartment", gradient: "linear-gradient(160deg, #B9C7AC, #7E946D)" },
+  house: { icon: "home", gradient: "linear-gradient(160deg, #E6B597, #C9764D)" },
+  dacha: { icon: "cottage", gradient: "linear-gradient(160deg, #D9C29A, #A8844F)" },
+  other: { icon: "pin", gradient: "linear-gradient(160deg, #929292, #4A4D47)" },
+};
+
+function lookOf(kind) {
+  return looks[kind] ?? looks.other;
+}
 
 export function homeIcon(kind) {
-  return kind === "apartment" ? "home" : "cottage";
+  return lookOf(kind).icon;
 }
 
 export function homeGradient(kind) {
-  if (kind === "apartment") return "linear-gradient(160deg, #B9C7AC, #8FA37E)";
-  if (kind === "house") return "linear-gradient(160deg, #B9C7AC, #7E946D)";
-  return "linear-gradient(160deg, #EBCFBF, #D9A07E)";
+  return lookOf(kind).gradient;
 }
