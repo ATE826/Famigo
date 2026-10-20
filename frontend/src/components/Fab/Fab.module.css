@@ -22,3 +22,10 @@
   padding: 0 22px;
   border-radius: 28px;
 }
+
+@media (min-width: 1024px) {
+  .fab {
+    right: 40px;
+    bottom: 40px;
+  }
+}

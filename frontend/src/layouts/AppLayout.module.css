@@ -4,9 +4,34 @@
   flex-direction: column;
 }
 
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .content {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.withNav .content {
   padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .main {
+    min-height: 100dvh;
+  }
+
+  .withNav .content {
+    padding-bottom: 0;
+  }
 }

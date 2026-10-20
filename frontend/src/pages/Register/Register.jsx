@@ -3,7 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
 import { useData } from "../../store/DataContext";
-import { TODAY, dayTitle } from "../Calendar/data";
+import { TODAY } from "../Calendar/data";
+import { monthKey } from "../../utils/budget";
+import { t } from "../../i18n";
 import styles from "./Register.module.css";
 
 const Register = () => {
@@ -20,13 +22,13 @@ const Register = () => {
 
   function validate() {
     const found = {};
-    if (!values.name.trim()) found.name = "Введите имя";
-    if (!values.email.trim()) found.email = "Введите email";
-    else if (!/^\S+@\S+\.\S+$/.test(values.email)) found.email = "Некорректный email";
-    if (!values.password) found.password = "Введите пароль";
-    else if (values.password.length < 8) found.password = "Не короче 8 символов";
-    if (!values.password2) found.password2 = "Подтвердите пароль";
-    else if (values.password2 !== values.password) found.password2 = "Пароли не совпадают";
+    if (!values.name.trim()) found.name = t("auth.nameRequired");
+    if (!values.email.trim()) found.email = t("validation.emailRequired");
+    else if (!/^\S+@\S+\.\S+$/.test(values.email)) found.email = t("validation.emailInvalid");
+    if (!values.password) found.password = t("auth.passwordRequired");
+    else if (values.password.length < 8) found.password = t("auth.passwordShort", { count: 8 });
+    if (!values.password2) found.password2 = t("auth.confirmRequired");
+    else if (values.password2 !== values.password) found.password2 = t("auth.passwordsMismatch");
     return found;
   }
 
@@ -45,7 +47,7 @@ const Register = () => {
         birthday: "",
         foodPrefs: [],
         foodNote: "",
-        joined: dayTitle(TODAY).split(" ")[1],
+        joined: monthKey(TODAY),
       });
       navigate("/verify", { state: { next: "/family-create" } });
     }
@@ -60,16 +62,16 @@ const Register = () => {
 
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
         <div className={styles.intro}>
-          <h1 className={styles.title}>Создать аккаунт</h1>
-          <p className={styles.subtitle}>Один аккаунт для всех ваших семейных групп</p>
+          <h1 className={styles.title}>{t("auth.createAccount")}</h1>
+          <p className={styles.subtitle}>{t("auth.registerSubtitle")}</p>
         </div>
 
         <Input
           id="name"
           name="name"
-          label="Имя"
+          label={t("auth.name")}
           type="text"
-          placeholder="Ваше имя"
+          placeholder={t("auth.namePlaceholder")}
           maxLength={30}
           value={values.name}
           onChange={handleChange}
@@ -80,7 +82,7 @@ const Register = () => {
           name="email"
           label="Email"
           type="email"
-          placeholder="Ваш email"
+          placeholder={t("auth.emailPlaceholder")}
           value={values.email}
           onChange={handleChange}
           hint={errors.email}
@@ -88,9 +90,9 @@ const Register = () => {
         <Input
           id="password"
           name="password"
-          label="Пароль"
+          label={t("auth.password")}
           type="password"
-          placeholder="Придумайте пароль"
+          placeholder={t("auth.newPasswordPlaceholder")}
           value={values.password}
           onChange={handleChange}
           hint={errors.password}
@@ -98,17 +100,20 @@ const Register = () => {
         <Input
           id="password2"
           name="password2"
-          label="Подтверждение пароля"
+          label={t("auth.confirmPassword")}
           type="password"
-          placeholder="Повторите пароль"
+          placeholder={t("auth.repeatPassword")}
           value={values.password2}
           onChange={handleChange}
           hint={errors.password2}
         />
 
-        <Button type="submit">Продолжить</Button>
+        <Button type="submit">{t("common.continue")}</Button>
         <p className={styles.login}>
-          Уже есть аккаунт? <Link to="/" className={styles.link}>Войти</Link>
+          {t("auth.haveAccount")}{" "}
+          <Link to="/" className={styles.link}>
+            {t("auth.signIn")}
+          </Link>
         </p>
 
       </form>

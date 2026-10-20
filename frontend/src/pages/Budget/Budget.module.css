@@ -173,3 +173,62 @@
     animation: none;
   }
 }
+
+@media (min-width: 1024px) {
+  .view {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 24px;
+    align-items: start;
+  }
+
+  .summary,
+  .stat {
+    grid-column: span 2;
+    padding: 24px;
+    gap: 6px;
+  }
+
+  .stats {
+    display: contents;
+  }
+
+  .stat {
+    border-radius: var(--radius-card);
+  }
+
+  .summaryLabel,
+  .statLabel {
+    font-size: 15px;
+  }
+
+  .summaryAmount,
+  .statValue {
+    font-size: 40px;
+    letter-spacing: -0.02em;
+  }
+
+  .card {
+    grid-column: span 3;
+    padding: 24px;
+    gap: 18px;
+  }
+
+  .cardTitle {
+    font-size: 20px;
+  }
+
+  .categoryRow {
+    font-size: 15px;
+  }
+
+  .track,
+  .fill {
+    height: 8px;
+    border-radius: 4px;
+  }
+
+  .empty {
+    grid-column: 1 / -1;
+  }
+}

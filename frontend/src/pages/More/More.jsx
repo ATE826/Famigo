@@ -5,6 +5,7 @@ import Avatar from "../../components/Avatar/Avatar";
 import Icon from "../../components/Icon/Icon";
 import Page from "../../components/Page/Page";
 import { useData } from "../../store/DataContext";
+import { t } from "../../i18n";
 import styles from "./More.module.css";
 
 function More() {
@@ -14,15 +15,15 @@ function More() {
   const [confirming, setConfirming] = useState(false);
 
   const items = [
-    { label: "Семья", sub: "Участники и роли", to: "/more/family", icon: "users" },
-    { label: "Дома", sub: homes.map((h) => h.name).join(", "), to: "/more/homes", icon: "home" },
-    { label: "Холодильник", sub: "Продукты по домам", to: "/more/fridge", icon: "fridge" },
-    { label: "Настройки", sub: "Профиль, тема, уведомления", to: "/profile", icon: "settings" },
+    { label: t("nav.family"), sub: t("more.familySub"), to: "/more/family", icon: "users" },
+    { label: t("nav.homes"), sub: homes.map((h) => h.name).join(", "), to: "/more/homes", icon: "home" },
+    { label: t("nav.fridge"), sub: t("more.fridgeSub"), to: "/more/fridge", icon: "fridge" },
+    { label: t("nav.settings"), sub: t("more.settingsSub"), to: "/settings", icon: "settings" },
   ];
 
   return (
     <Page className={styles.page}>
-      <h1 className={styles.title}>Ещё</h1>
+      <h1 className={styles.title}>{t("nav.more")}</h1>
 
       <Link to="/profile" className={styles.link}>
         <Card className={styles.profile}>
@@ -52,23 +53,23 @@ function More() {
 
       {confirming ? (
         <div className={styles.confirm} role="alert">
-          <p className={styles.confirmText}>Выйти из аккаунта? Чтобы вернуться, понадобится войти заново.</p>
+          <p className={styles.confirmText}>{t("more.logoutConfirm")}</p>
           <div className={styles.confirmButtons}>
             <button type="button" className={styles.cancel} onClick={() => setConfirming(false)}>
-              Отмена
+              {t("common.cancel")}
             </button>
             <button
               type="button"
               className={styles.confirmAction}
               onClick={() => navigate("/", { replace: true })}
             >
-              Выйти
+              {t("more.logout")}
             </button>
           </div>
         </div>
       ) : (
         <button type="button" className={styles.logout} onClick={() => setConfirming(true)}>
-          Выйти
+          {t("more.logout")}
         </button>
       )}
     </Page>

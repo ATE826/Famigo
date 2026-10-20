@@ -1,5 +1,6 @@
 import EventCard from "./EventCard";
 import { eventsOn } from "./data";
+import { t } from "../../i18n";
 import styles from "./Calendar.module.css";
 
 const hours = Array.from({ length: 16 }, (_, i) => i + 8);
@@ -34,7 +35,7 @@ export default function DayView({ selected, extra }) {
         })}
       </div>
 
-      {dayEvents.length === 0 && <p className={styles.empty}>В этот день событий нет</p>}
+      {dayEvents.length === 0 && <p className={styles.empty}>{t("calendar.noEventsDay")}</p>}
     </>
   );
 }

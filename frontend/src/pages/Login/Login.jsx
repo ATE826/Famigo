@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
+import { t } from "../../i18n";
 import styles from "./Login.module.css";
 
 function Login() {
@@ -18,9 +19,9 @@ function Login() {
   function handleSubmit(e) {
     e.preventDefault();
     const found = {};
-    if (!values.email.trim()) found.email = "Введите email";
-    else if (!/^\S+@\S+\.\S+$/.test(values.email)) found.email = "Некорректный email";
-    if (!values.password) found.password = "Введите пароль";
+    if (!values.email.trim()) found.email = t("validation.emailRequired");
+    else if (!/^\S+@\S+\.\S+$/.test(values.email)) found.email = t("validation.emailInvalid");
+    if (!values.password) found.password = t("auth.passwordRequired");
     setErrors(found);
     if (Object.keys(found).length === 0) {
       navigate("/verify", { state: { next: "/main" } });
@@ -35,17 +36,17 @@ function Login() {
           <span className={styles.logo}>F</span>
           <span className={styles.brandName}>Famigo</span>
         </div>
-        <p className={styles.slogan}>Вся семья, дом и бюджет в одном месте</p>
+        <p className={styles.slogan}>{t("auth.slogan")}</p>
       </header>
 
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
-        <h1 className={styles.title}>Добро пожаловать!</h1>
+        <h1 className={styles.title}>{t("auth.welcome")}</h1>
         <Input
           id="email"
           name="email"
           label="Email"
           type="email"
-          placeholder="Ваш email"
+          placeholder={t("auth.emailPlaceholder")}
           value={values.email}
           onChange={handleChange}
           hint={errors.email}
@@ -53,18 +54,21 @@ function Login() {
         <Input
           id="password"
           name="password"
-          label="Пароль"
+          label={t("auth.password")}
           type="password"
-          placeholder="Ваш пароль"
+          placeholder={t("auth.passwordPlaceholder")}
           value={values.password}
           onChange={handleChange}
           hint={errors.password}
           action={
-          <a href="#" className={styles.link}>Забыли пароль?</a>
+          <a href="#" className={styles.link}>{t("auth.forgot")}</a>
         }/>
-        <Button type="submit">Войти</Button>
+        <Button type="submit">{t("auth.signIn")}</Button>
         <p className={styles.signup}>
-          Нет аккаунта? <Link to="/register" className={styles.link}>Создать аккаунт</Link>
+          {t("auth.noAccount")}{" "}
+          <Link to="/register" className={styles.link}>
+            {t("auth.createAccount")}
+          </Link>
         </p>
       </form>
     </main>

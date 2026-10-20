@@ -1,15 +1,16 @@
 import EventCard from "./EventCard";
 import {
   TODAY,
-  WEEKDAYS,
-  WEEKDAYS_FULL,
   addDays,
   dayTitle,
   eventsOn,
   sameDay,
   weekStart,
   weekdayIndex,
+  weekdays,
+  weekdaysFull,
 } from "./data";
+import { t } from "../../i18n";
 import styles from "./Calendar.module.css";
 
 export default function WeekView({ selected, onSelect, extra }) {
@@ -29,7 +30,7 @@ export default function WeekView({ selected, onSelect, extra }) {
             aria-pressed={sameDay(day, selected)}
             onClick={() => onSelect(day)}
           >
-            <span className={styles.weekDayName}>{WEEKDAYS[i]}</span>
+            <span className={styles.weekDayName}>{weekdays()[i]}</span>
             <span className={`${styles.weekDayNum} ${sameDay(day, TODAY) ? styles.weekToday : ""}`}>
               {day.getDate()}
             </span>
@@ -38,13 +39,13 @@ export default function WeekView({ selected, onSelect, extra }) {
         ))}
       </div>
 
-      {withEvents.length === 0 && <p className={styles.empty}>На этой неделе событий нет</p>}
+      {withEvents.length === 0 && <p className={styles.empty}>{t("calendar.noEventsWeek")}</p>}
 
       {withEvents.map((day) => (
         <section key={day.getTime()} className={styles.events}>
           <h2 className={styles.eventsTitle}>
-            {WEEKDAYS_FULL[weekdayIndex(day)]}, {dayTitle(day)}
-            {sameDay(day, TODAY) && <span className={styles.badge}>Сегодня</span>}
+            {weekdaysFull()[weekdayIndex(day)]}, {dayTitle(day)}
+            {sameDay(day, TODAY) && <span className={styles.badge}>{t("calendar.today")}</span>}
           </h2>
           {eventsOn(day, extra).map((event) => (
             <EventCard key={event.id} event={event} />

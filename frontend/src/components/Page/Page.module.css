@@ -9,3 +9,21 @@
 .fab {
   padding-bottom: 96px;
 }
+
+@media (min-width: 1024px) {
+  .page {
+    width: 100%;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 8px 40px 48px;
+    gap: 20px;
+  }
+
+  .page.wide {
+    max-width: 1240px;
+  }
+
+  .fab {
+    padding-bottom: 120px;
+  }
+}

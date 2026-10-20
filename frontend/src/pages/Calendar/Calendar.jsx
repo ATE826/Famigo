@@ -11,7 +11,6 @@ import DayView from "./DayView";
 import ListView from "./ListView";
 import {
   TODAY,
-  WEEKDAYS_FULL,
   addDays,
   addMonths,
   birthdayEvents,
@@ -22,15 +21,17 @@ import {
   weekLabel,
   weekStart,
   weekdayIndex,
+  weekdaysFull,
 } from "./data";
 import { useData } from "../../store/DataContext";
+import { t } from "../../i18n";
 import styles from "./Calendar.module.css";
 
 const views = [
-  { value: "month", label: "Месяц" },
-  { value: "week", label: "Неделя" },
-  { value: "day", label: "День" },
-  { value: "list", label: "Список" },
+  { value: "month", label: "month" },
+  { value: "week", label: "week" },
+  { value: "day", label: "day" },
+  { value: "list", label: "list" },
 ];
 
 const viewComponents = {
@@ -48,7 +49,7 @@ function shift(view, date, direction) {
 
 function periodLabel(view, date) {
   if (view === "week") return weekLabel(date);
-  if (view === "day") return `${dayTitle(date)}, ${WEEKDAYS_FULL[weekdayIndex(date)].toLowerCase()}`;
+  if (view === "day") return `${dayTitle(date)}, ${weekdaysFull()[weekdayIndex(date)].toLowerCase()}`;
   return monthLabel(date);
 }
 
@@ -85,10 +86,10 @@ function Calendar() {
   }
 
   return (
-    <Page fab {...swipe}>
+    <Page fab wide {...swipe}>
       <PageHeader
-        title="Календарь"
-        subtitle="Общий календарь семьи"
+        title={t("calendar.title")}
+        subtitle={t("calendar.subtitle")}
         right={
           <button
             type="button"
@@ -96,21 +97,21 @@ function Calendar() {
             disabled={sameDay(selected, TODAY)}
             onClick={goToday}
           >
-            Сегодня
+            {t("calendar.today")}
           </button>
         }
       />
 
-      <Segmented size="sm" options={views} value={view} onChange={changeView} label="Вид календаря" />
+      <Segmented size="sm" options={views.map((v) => ({ value: v.value, label: t(`calendar.views.${v.label}`) }))} value={view} onChange={changeView} label={t("calendar.viewLabel")} />
 
       <div className={styles.nav}>
-        <button type="button" className={styles.navButton} aria-label="Назад" onClick={() => go(-1)}>
+        <button type="button" className={styles.navButton} aria-label={t("common.back")} onClick={() => go(-1)}>
           <Icon name="back" size={20} />
         </button>
         <span className={styles.navLabel} aria-live="polite">
           {periodLabel(view, selected)}
         </span>
-        <button type="button" className={styles.navButton} aria-label="Вперёд" onClick={() => go(1)}>
+        <button type="button" className={styles.navButton} aria-label={t("common.forward")} onClick={() => go(1)}>
           <Icon name="chevron" size={20} />
         </button>
       </div>
@@ -122,7 +123,7 @@ function Calendar() {
         <View selected={selected} onSelect={setSelected} extra={extra} />
       </div>
 
-      <Fab to="/calendar/create" label="Создать событие" />
+      <Fab to="/calendar/create" label={t("calendar.create")} />
     </Page>
   );
 }

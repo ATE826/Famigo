@@ -6,6 +6,7 @@ import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
 import { formatPhone } from "../../utils/validation";
+import { t } from "../../i18n";
 
 function PhoneForm() {
   const navigate = useNavigate();
@@ -29,22 +30,22 @@ function PhoneForm() {
       onSubmit={handleSubmit}
       footer={
         <Button type="submit" disabled={!valid}>
-          Подтвердить номер
+          {t("phone.confirm")}
         </Button>
       }
     >
-      <PageHeader title={hasPhone ? "Новый номер" : "Добавить телефон"} to="/profile" icon="close" />
+      <PageHeader title={hasPhone ? t("phone.newTitle") : t("phone.addTitle")} to="/profile" icon="close" />
 
       <Input
         id="phone"
-        label={hasPhone ? "Новый номер телефона" : "Номер телефона"}
+        label={hasPhone ? t("phone.newLabel") : t("phone.label")}
         type="tel"
         inputMode="tel"
         autoComplete="tel"
         placeholder="+7(000)000-00-00"
         value={phone}
         onChange={(e) => setPhone(formatPhone(e.target.value))}
-        hint={isSame ? "Это ваш текущий номер" : "Мы отправим SMS с 6-значным кодом на этот номер"}
+        hint={isSame ? t("phone.same") : t("phone.hint", { count: 6 })}
       />
     </FormScreen>
   );

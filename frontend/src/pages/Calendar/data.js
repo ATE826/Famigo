@@ -1,47 +1,27 @@
+import { getLang, getLocale, t } from "../../i18n";
 import { todayStart } from "../../utils/dates";
 
 export const TODAY = todayStart();
 
-const MONTHS = [
-  "Январь",
-  "Февраль",
-  "Март",
-  "Апрель",
-  "Май",
-  "Июнь",
-  "Июль",
-  "Август",
-  "Сентябрь",
-  "Октябрь",
-  "Ноябрь",
-  "Декабрь",
-];
-const MONTHS_GENITIVE = [
-  "января",
-  "февраля",
-  "марта",
-  "апреля",
-  "мая",
-  "июня",
-  "июля",
-  "августа",
-  "сентября",
-  "октября",
-  "ноября",
-  "декабря",
-];
-const MONTHS_SHORT = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+const MONDAY = new Date(2024, 0, 1);
 
-export const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-export const WEEKDAYS_FULL = [
-  "Понедельник",
-  "Вторник",
-  "Среда",
-  "Четверг",
-  "Пятница",
-  "Суббота",
-  "Воскресенье",
-];
+function capitalize(text) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function format(date, options) {
+  return new Intl.DateTimeFormat(getLocale(), options).format(date);
+}
+
+export function weekdays() {
+  if (getLang() === "ru") return t("weekdays.short");
+  return Array.from({ length: 7 }, (_, i) => format(addDays(MONDAY, i), { weekday: "short" }));
+}
+
+export function weekdaysFull() {
+  if (getLang() === "ru") return t("weekdays.full");
+  return Array.from({ length: 7 }, (_, i) => capitalize(format(addDays(MONDAY, i), { weekday: "long" })));
+}
 
 export function addDays(date, n) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + n);
@@ -73,20 +53,34 @@ export function dateKey(date) {
 }
 
 export function monthLabel(date) {
-  return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+  if (getLang() === "ru") return `${t("months.nominative")[date.getMonth()]} ${date.getFullYear()}`;
+  return capitalize(format(date, { month: "long", year: "numeric" }));
 }
 
 export function dayTitle(date) {
-  return `${date.getDate()} ${MONTHS_GENITIVE[date.getMonth()]}`;
+  if (getLang() === "ru") return `${date.getDate()} ${t("months.genitive")[date.getMonth()]}`;
+  return format(date, { day: "numeric", month: "long" });
+}
+
+export function joinedLabel(key) {
+  const match = /^(\d{4})-(\d{2})$/.exec(key ?? "");
+  if (!match) return "";
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+  if (getLang() === "ru") return t("months.genitive")[date.getMonth()];
+  return format(date, { month: "long", year: "numeric" });
 }
 
 export function weekLabel(date) {
   const start = weekStart(date);
   const end = addDays(start, 6);
-  if (start.getMonth() === end.getMonth()) {
-    return `${start.getDate()}–${end.getDate()} ${MONTHS_GENITIVE[end.getMonth()]}`;
+  if (getLang() !== "ru") {
+    return new Intl.DateTimeFormat(getLocale(), { day: "numeric", month: "short" }).formatRange(start, end);
   }
-  return `${start.getDate()} ${MONTHS_SHORT[start.getMonth()]} – ${end.getDate()} ${MONTHS_SHORT[end.getMonth()]}`;
+  if (start.getMonth() === end.getMonth()) {
+    return `${start.getDate()}–${end.getDate()} ${t("months.genitive")[end.getMonth()]}`;
+  }
+  const short = t("months.shortGenitive");
+  return `${start.getDate()} ${short[start.getMonth()]} – ${end.getDate()} ${short[end.getMonth()]}`;
 }
 
 export function monthCells(date) {
@@ -134,8 +128,8 @@ export function birthdayEvents(members, year) {
       return {
         id: `bday-${m.id}-${year}`,
         date: `${year}-${month}-${day}`,
-        time: "Весь день",
-        title: `День рождения: ${m.name}`,
+        time: t("calendar.allDay"),
+        title: t("calendar.birthdayOf", { name: m.name }),
         allDay: true,
       };
     });

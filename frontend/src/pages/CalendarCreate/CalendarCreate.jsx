@@ -9,6 +9,7 @@ import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
 import { todayString } from "../../utils/dates";
 import { dateError, formatDate, formatTime, timeError } from "../../utils/validation";
+import { t } from "../../i18n";
 import styles from "./CalendarCreate.module.css";
 
 function CalendarCreate() {
@@ -36,10 +37,10 @@ function CalendarCreate() {
   function handleSubmit(e) {
     e.preventDefault();
     const found = {
-      title: values.title.trim() ? "" : "Введите название",
+      title: values.title.trim() ? "" : t("eventCreate.nameRequired"),
       date: dateError(values.date),
       time: timeError(values.time),
-      members: selected.length ? "" : "Выберите хотя бы одного участника",
+      members: selected.length ? "" : t("eventCreate.membersRequired"),
     };
     setErrors(found);
     if (Object.values(found).every((message) => !message)) {
@@ -50,16 +51,16 @@ function CalendarCreate() {
   return (
     <FormScreen
       onSubmit={handleSubmit}
-      footer={<Button type="submit">Создать событие</Button>}
+      footer={<Button type="submit">{t("calendar.create")}</Button>}
     >
-      <PageHeader title="Новое событие" to="/calendar" icon="close" />
+      <PageHeader title={t("eventCreate.title")} to="/calendar" icon="close" />
 
       <Input
         id="title"
         name="title"
-        label="Название"
+        label={t("eventCreate.name")}
         type="text"
-        placeholder="Название события"
+        placeholder={t("eventCreate.namePlaceholder")}
         maxLength={60}
         value={values.title}
         onChange={handleChange}
@@ -71,7 +72,7 @@ function CalendarCreate() {
           <Input
             id="date"
             name="date"
-            label="Дата"
+            label={t("eventCreate.date")}
             type="text"
             inputMode="numeric"
             placeholder={todayString()}
@@ -85,7 +86,7 @@ function CalendarCreate() {
           <Input
             id="time"
             name="time"
-            label="Время"
+            label={t("eventCreate.time")}
             type="text"
             inputMode="numeric"
             placeholder="00:00"
@@ -98,7 +99,7 @@ function CalendarCreate() {
       </div>
 
       <div className={styles.members}>
-        <span className={styles.label}>Участники</span>
+        <span className={styles.label}>{t("eventCreate.members")}</span>
         <div className={styles.chips}>
           {members.map((m) => {
             const on = selected.includes(m.id);
@@ -119,25 +120,25 @@ function CalendarCreate() {
         {errors.members && <span className={styles.error}>{errors.members}</span>}
       </div>
 
-      <Select id="place" label="Место">
-        <option>Квартира</option>
-        <option>Дача</option>
-        <option>Кафе</option>
-        <option>Ресторан</option>
-        <option>Другое</option>
+      <Select id="place" label={t("eventCreate.place")}>
+        {["apartment", "dacha", "cafe", "restaurant", "other"].map((place) => (
+          <option key={place} value={place}>
+            {t(`eventCreate.places.${place}`)}
+          </option>
+        ))}
       </Select>
 
-      <Select id="reminder" label="Напоминание">
-        <option>За 30 минут</option>
-        <option>За 1 час</option>
+      <Select id="reminder" label={t("eventCreate.reminder")}>
+        <option value="30">{t("eventCreate.before30")}</option>
+        <option value="60">{t("eventCreate.before60")}</option>
       </Select>
 
       <Input
         id="desc"
         name="desc"
-        label="Описание"
+        label={t("eventCreate.description")}
         type="text"
-        placeholder="Описание события"
+        placeholder={t("eventCreate.descriptionPlaceholder")}
         maxLength={200}
         value={values.desc}
         onChange={handleChange}

@@ -12,6 +12,7 @@ import {
   balanceUpTo,
   CURRENT_MONTH,
   byCategory,
+  categoryLabel,
   earliestMonthKey,
   formatMoney,
   monthKey,
@@ -19,6 +20,7 @@ import {
   parseMonth,
   totalOf,
 } from "../../utils/budget";
+import { t } from "../../i18n";
 import styles from "./Budget.module.css";
 
 function CategoryList({ items }) {
@@ -26,7 +28,7 @@ function CategoryList({ items }) {
   return items.map((c) => (
     <div key={c.name} className={styles.category}>
       <div className={styles.categoryRow}>
-        <span className={styles.categoryName}>{c.name}</span>
+        <span className={styles.categoryName}>{categoryLabel(c.name)}</span>
         <span className={styles.categorySum}>{formatMoney(c.amount)}</span>
       </div>
       <div className={styles.track}>
@@ -66,12 +68,12 @@ function Budget() {
   });
 
   return (
-    <Page fab {...swipe}>
+    <Page fab wide {...swipe}>
       <PageHeader
-        title="Бюджет"
+        title={t("budget.title")}
         right={
           <Link to={`/budget/history?month=${key}`} className={styles.history}>
-            История
+            {t("budget.history")}
           </Link>
         }
       />
@@ -86,35 +88,35 @@ function Budget() {
 
       <div key={key} className={`${styles.view} ${styles[direction]}`}>
         <div className={styles.summary}>
-          <span className={styles.summaryLabel}>{isCurrent ? "Доступно" : "Остаток на конец месяца"}</span>
+          <span className={styles.summaryLabel}>{isCurrent ? t("budget.available") : t("budget.endBalance")}</span>
           <span className={styles.summaryAmount}>{formatMoney(balance)}</span>
         </div>
 
         <div className={styles.stats}>
           <div className={styles.stat}>
-            <span className={styles.statLabel}>Расходы</span>
+            <span className={styles.statLabel}>{t("budget.expenses")}</span>
             <span className={styles.statValue}>{formatMoney(expenses)}</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.statLabel}>Доходы</span>
+            <span className={styles.statLabel}>{t("budget.income")}</span>
             <span className={styles.statValue}>{formatMoney(income)}</span>
           </div>
         </div>
 
         {monthOps.length === 0 ? (
-          <p className={styles.empty}>В этом месяце операций нет</p>
+          <p className={styles.empty}>{t("budget.noOperations")}</p>
         ) : (
           <>
             {expenseCategories.length > 0 && (
               <Card className={styles.card}>
-                <h2 className={styles.cardTitle}>Категории расходов</h2>
+                <h2 className={styles.cardTitle}>{t("budget.expenseCategories")}</h2>
                 <CategoryList items={expenseCategories} />
               </Card>
             )}
 
             {incomeCategories.length > 0 && (
               <Card className={styles.card}>
-                <h2 className={styles.cardTitle}>Доходы по категориям</h2>
+                <h2 className={styles.cardTitle}>{t("budget.incomeCategories")}</h2>
                 <CategoryList items={incomeCategories} />
               </Card>
             )}
@@ -122,7 +124,7 @@ function Budget() {
         )}
       </div>
 
-      <Fab to="/budget/add" label="Добавить операцию" />
+      <Fab to="/budget/add" label={t("budget.add")} />
     </Page>
   );
 }

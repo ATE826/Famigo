@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import DataProvider from "./store/DataProvider.jsx";
 import ThemeProvider from "./store/ThemeProvider.jsx";
+import LanguageProvider from "./i18n/LanguageProvider.jsx";
 
 import AppLayout from "./layouts/AppLayout.jsx";
 
@@ -37,51 +38,56 @@ import ProfileFood from "./pages/ProfileFood/ProfileFood.jsx";
 import ProfileNotifications from "./pages/ProfileNotifications/ProfileNotifications.jsx";
 import ProfilePassword from "./pages/ProfilePassword/ProfilePassword.jsx";
 import Notifications from "./pages/Notifications/Notifications.jsx";
+import Settings from "./pages/Settings/Settings.jsx";
+import Language from "./pages/Language/Language.jsx";
 
 function App() {
   return (
     <ThemeProvider>
       <DataProvider>
-        <BrowserRouter basename="/Famigo">
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/verify" element={<Verify />} />
-            <Route path="/family-create" element={<FamilyCreate />} />
-            <Route path="/budget/add" element={<BudgetAdd />} />
-            <Route path="/calendar/create" element={<CalendarCreate />} />
-            <Route path="/chats/:id" element={<Chat />} />
-          <Route path="/chats/:id/info" element={<ChatInfo />} />
-            <Route path="/more/invite" element={<Invite />} />
-            <Route path="/more/homes/add" element={<HomeCreate />} />
-          <Route path="/more/home/:id/edit" element={<HomeCreate />} />
-        <Route path="/more/home/:id/tasks/add" element={<TaskCreate />} />
-            <Route path="/more/fridge/add" element={<FridgeProduct />} />
-            <Route path="/more/fridge/:id/edit" element={<FridgeProduct />} />
-            <Route path="/profile" element={<Profile />} />
-          <Route path="/profile/personal" element={<ProfilePersonal />} />
-          <Route path="/profile/food" element={<ProfileFood />} />
-          <Route path="/profile/notifications" element={<ProfileNotifications />} />
-          <Route path="/profile/password" element={<ProfilePassword />} />
-          <Route path="/profile/phone" element={<PhoneForm />} />
-          <Route path="/profile/phone/verify" element={<PhoneVerify />} />
-            <Route path="/notifications" element={<Notifications />} />
-
-            <Route element={<AppLayout />}>
-              <Route path="/main" element={<Main />} />
-              <Route path="/budget" element={<Budget />} />
-              <Route path="/budget/history" element={<BudgetHistory />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/chats" element={<Chats />} />
-              <Route path="/more" element={<More />} />
-              <Route path="/more/family" element={<Family />} />
-            <Route path="/more/family/:id" element={<Member />} />
-              <Route path="/more/homes" element={<Homes />} />
-              <Route path="/more/home/:id" element={<House />} />
-              <Route path="/more/fridge" element={<Fridge />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+        <LanguageProvider>
+          <BrowserRouter basename="/Famigo">
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/verify" element={<Verify />} />
+              <Route path="/family-create" element={<FamilyCreate />} />
+              <Route element={<AppLayout />}>
+                <Route path="/main" element={<Main />} />
+                <Route path="/budget" element={<Budget />} />
+                <Route path="/budget/history" element={<BudgetHistory />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/chats" element={<Chats />} />
+                <Route path="/more" element={<More />} />
+                <Route path="/more/family" element={<Family />} />
+                <Route path="/more/family/:id" element={<Member />} />
+                <Route path="/more/homes" element={<Homes />} />
+                <Route path="/more/home/:id" element={<House />} />
+                <Route path="/more/fridge" element={<Fridge />} />
+                <Route path="/budget/add" element={<BudgetAdd />} />
+                <Route path="/calendar/create" element={<CalendarCreate />} />
+                <Route path="/chats/:id" element={<Chat />} />
+                <Route path="/chats/:id/info" element={<ChatInfo />} />
+                <Route path="/more/invite" element={<Invite />} />
+                <Route path="/more/homes/add" element={<HomeCreate />} />
+                <Route path="/more/home/:id/edit" element={<HomeCreate />} />
+                <Route path="/more/home/:id/tasks/add" element={<TaskCreate />} />
+                <Route path="/more/fridge/add" element={<FridgeProduct />} />
+                <Route path="/more/fridge/:id/edit" element={<FridgeProduct />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/personal" element={<ProfilePersonal />} />
+                <Route path="/profile/food" element={<ProfileFood />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/settings/language" element={<Language />} />
+                <Route path="/settings/notifications" element={<ProfileNotifications />} />
+                <Route path="/settings/password" element={<ProfilePassword />} />
+                <Route path="/profile/phone" element={<PhoneForm />} />
+                <Route path="/profile/phone/verify" element={<PhoneVerify />} />
+                <Route path="/notifications" element={<Notifications />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </LanguageProvider>
       </DataProvider>
     </ThemeProvider>
   );

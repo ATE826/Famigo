@@ -1,26 +1,15 @@
+import { getLang, getLocale, t, tValue } from "../i18n";
 import { OPENING_BALANCE } from "../store/operations";
 
 export const CURRENT_MONTH = "2026-10";
 
-const MONTHS_PREPOSITIONAL = [
-  "январе",
-  "феврале",
-  "марте",
-  "апреле",
-  "мае",
-  "июне",
-  "июле",
-  "августе",
-  "сентябре",
-  "октябре",
-  "ноябре",
-  "декабре",
-];
 
 const pad = (n) => String(n).padStart(2, "0");
 
-export function monthPrepositional(date) {
-  return MONTHS_PREPOSITIONAL[date.getMonth()];
+export function monthInSentence(date) {
+  if (getLang() === "ru") return t("months.prepositional")[date.getMonth()];
+  const month = getLang() === "zh" ? "short" : "long";
+  return new Intl.DateTimeFormat(getLocale(), { month }).format(date);
 }
 
 export function monthKey(date) {
@@ -52,7 +41,10 @@ export function earliestMonthKey(operations) {
   return operations.reduce((min, o) => (o.date.slice(0, 7) < min ? o.date.slice(0, 7) : min), CURRENT_MONTH);
 }
 
-const MONTHS_SHORT = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
+function monthShort(date) {
+  if (getLang() === "ru") return t("months.short")[date.getMonth()];
+  return new Intl.DateTimeFormat(getLocale(), { month: "short" }).format(date);
+}
 
 export function monthlyTotals(operations, endKey, count) {
   const end = parseMonth(endKey);
@@ -61,7 +53,7 @@ export function monthlyTotals(operations, endKey, count) {
     const ops = opsInMonth(operations, monthKey(date));
     return {
       key: monthKey(date),
-      label: MONTHS_SHORT[date.getMonth()],
+      label: monthShort(date),
       income: totalOf(ops, "income"),
       expense: totalOf(ops, "expense"),
     };
@@ -78,6 +70,8 @@ export function byCategory(operations, type) {
     .sort((a, b) => b.amount - a.amount);
 }
 
+export const categoryLabel = (name) => tValue("budgetCategories", name);
+
 export function formatMoney(amount) {
-  return `${new Intl.NumberFormat("ru-RU").format(amount)} ₽`;
+  return `${new Intl.NumberFormat(getLocale()).format(amount)} ₽`;
 }

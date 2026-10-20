@@ -5,6 +5,7 @@ import FormScreen from "../../components/FormScreen/FormScreen";
 import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
+import { t } from "../../i18n";
 
 const TITLE_MIN = 3;
 const TITLE_MAX = 60;
@@ -27,15 +28,15 @@ function TaskCreate() {
     e.preventDefault();
     const title = text.trim();
     if (!title) {
-      setError("Введите название задачи");
+      setError(t("taskCreate.required"));
       return;
     }
     if (title.length < TITLE_MIN) {
-      setError(`Не короче ${TITLE_MIN} символов`);
+      setError(t("taskCreate.tooShort", { count: TITLE_MIN }));
       return;
     }
-    if (home.tasks.some((t) => t.text.toLowerCase() === title.toLowerCase())) {
-      setError("Такая задача уже есть");
+    if (home.tasks.some((task) => task.text.toLowerCase() === title.toLowerCase())) {
+      setError(t("taskCreate.duplicate"));
       return;
     }
     addTask(home.id, title, description.trim());
@@ -47,9 +48,9 @@ function TaskCreate() {
   }
 
   return (
-    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">Добавить задачу</Button>}>
+    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">{t("house.addTask")}</Button>}>
       <PageHeader
-        title="Новая задача"
+        title={t("taskCreate.title")}
         subtitle={home.name}
         to={`/more/home/${home.id}`}
         icon="close"
@@ -57,9 +58,9 @@ function TaskCreate() {
 
       <Input
         id="task"
-        label="Задача"
+        label={t("taskCreate.task")}
         type="text"
-        placeholder="Название задачи"
+        placeholder={t("taskCreate.taskPlaceholder")}
         maxLength={TITLE_MAX}
         value={text}
         onChange={(e) => {
@@ -71,9 +72,9 @@ function TaskCreate() {
 
       <Input
         id="description"
-        label="Описание"
+        label={t("taskCreate.description")}
         type="text"
-        placeholder="Описание задачи"
+        placeholder={t("taskCreate.descriptionPlaceholder")}
         maxLength={300}
         value={description}
         onChange={(e) => setDescription(e.target.value)}

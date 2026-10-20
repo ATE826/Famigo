@@ -1,0 +1,70 @@
+.bar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .bar {
+    flex: none;
+    height: 72px;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 20px;
+  }
+}
+
+.home {
+  margin-right: auto;
+  height: 36px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bell {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #20221F;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+}

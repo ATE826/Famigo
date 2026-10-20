@@ -5,6 +5,7 @@ import FormScreen from "../../components/FormScreen/FormScreen";
 import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
+import { t } from "../../i18n";
 import styles from "./PhoneVerify.module.css";
 
 const CODE_LENGTH = 6;
@@ -32,7 +33,7 @@ function PhoneVerify() {
   function handleSubmit(e) {
     e.preventDefault();
     if (code.length !== CODE_LENGTH) {
-      setError(`Введите ${CODE_LENGTH} цифр`);
+      setError(t("auth.codeDigits", { count: CODE_LENGTH }));
       return;
     }
     updateMember(currentUserId, { phone, phoneVerified: true });
@@ -40,16 +41,16 @@ function PhoneVerify() {
   }
 
   return (
-    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">Подтвердить</Button>}>
-      <PageHeader title="Подтверждение номера" to="/profile/phone" />
+    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">{t("common.confirm")}</Button>}>
+      <PageHeader title={t("phone.verifyTitle")} to="/profile/phone" />
 
       <p className={styles.text}>
-        Мы отправили SMS с {CODE_LENGTH}-значным кодом на номер <b>{phone}</b>
+        {t("phone.sent", { count: CODE_LENGTH })} <b>{phone}</b>
       </p>
 
       <Input
         id="code"
-        label="Код из SMS"
+        label={t("phone.code")}
         type="text"
         inputMode="numeric"
         autoComplete="one-time-code"
@@ -68,7 +69,7 @@ function PhoneVerify() {
         disabled={seconds > 0}
         onClick={() => setSeconds(RESEND_SECONDS)}
       >
-        {seconds > 0 ? `Отправить код ещё раз через ${seconds} с` : "Отправить код ещё раз"}
+        {seconds > 0 ? t("phone.resendIn", { count: seconds }) : t("phone.resend")}
       </button>
     </FormScreen>
   );

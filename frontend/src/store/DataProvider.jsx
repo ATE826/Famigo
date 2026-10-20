@@ -19,7 +19,7 @@ export default function DataProvider({ children }) {
   const [messages, setMessages] = useState(initialMessages);
   const [unread, setUnread] = useState(initialUnread);
   const [chatSettings, setChatSettings] = useState(initialChatSettings);
-  const [fridgeHomeId, setFridgeHomeId] = useState(initialHomes[0].id);
+  const [fridgeHomeId, setFridgeHomeId] = useState(null);
   const [members, setMembers] = useState(initialMembers);
   const [familyName, setFamilyName] = useState("Семья Ивановых");
   const [notificationSettings, setNotificationSettings] = useState({

@@ -4,6 +4,7 @@ import Button from "../../components/Button/Button";
 import FormScreen from "../../components/FormScreen/FormScreen";
 import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
+import { t } from "../../i18n";
 
 function ProfilePassword() {
   const navigate = useNavigate();
@@ -19,29 +20,29 @@ function ProfilePassword() {
   function handleSubmit(e) {
     e.preventDefault();
     const found = {};
-    if (!values.current) found.current = "Введите текущий пароль";
-    if (!values.next) found.next = "Введите новый пароль";
-    else if (values.next.length < 8) found.next = "Не короче 8 символов";
-    else if (values.next === values.current) found.next = "Новый пароль совпадает с текущим";
-    if (!values.repeat) found.repeat = "Повторите пароль";
-    else if (values.repeat !== values.next) found.repeat = "Пароли не совпадают";
+    if (!values.current) found.current = t("password.currentRequired");
+    if (!values.next) found.next = t("password.newRequired");
+    else if (values.next.length < 8) found.next = t("auth.passwordShort", { count: 8 });
+    else if (values.next === values.current) found.next = t("password.same");
+    if (!values.repeat) found.repeat = t("auth.repeatPassword");
+    else if (values.repeat !== values.next) found.repeat = t("auth.passwordsMismatch");
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
-    navigate("/profile", { replace: true, state: { notice: "Пароль изменён" } });
+    navigate("/settings", { replace: true, state: { notice: t("password.changed") } });
   }
 
   return (
-    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">Сменить пароль</Button>}>
-      <PageHeader title="Смена пароля" to="/profile" icon="close" />
+    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">{t("settings.changePassword")}</Button>}>
+      <PageHeader title={t("password.title")} to="/settings" icon="close" />
 
       <Input
         id="current"
         name="current"
-        label="Текущий пароль"
+        label={t("password.current")}
         type="password"
         autoComplete="current-password"
-        placeholder="Ваш пароль"
+        placeholder={t("auth.passwordPlaceholder")}
         value={values.current}
         onChange={handleChange}
         hint={errors.current}
@@ -49,21 +50,21 @@ function ProfilePassword() {
       <Input
         id="next"
         name="next"
-        label="Новый пароль"
+        label={t("password.new")}
         type="password"
         autoComplete="new-password"
-        placeholder="Придумайте пароль"
+        placeholder={t("auth.newPasswordPlaceholder")}
         value={values.next}
         onChange={handleChange}
-        hint={errors.next || "Не короче 8 символов"}
+        hint={errors.next || t("auth.passwordShort", { count: 8 })}
       />
       <Input
         id="repeat"
         name="repeat"
-        label="Повторите новый пароль"
+        label={t("password.repeatNew")}
         type="password"
         autoComplete="new-password"
-        placeholder="Повторите пароль"
+        placeholder={t("auth.repeatPassword")}
         value={values.repeat}
         onChange={handleChange}
         hint={errors.repeat}

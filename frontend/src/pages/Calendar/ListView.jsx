@@ -1,5 +1,6 @@
 import EventCard from "./EventCard";
-import { TODAY, WEEKDAYS_FULL, dateKey, dayTitle, eventsInMonth, weekdayIndex } from "./data";
+import { TODAY, dateKey, dayTitle, eventsInMonth, weekdayIndex, weekdaysFull } from "./data";
+import { t } from "../../i18n";
 import styles from "./Calendar.module.css";
 
 export default function ListView({ selected, extra }) {
@@ -7,7 +8,7 @@ export default function ListView({ selected, extra }) {
   const keys = [...new Set(monthEvents.map((event) => event.date))].sort();
 
   if (keys.length === 0) {
-    return <p className={styles.empty}>В этом месяце событий нет</p>;
+    return <p className={styles.empty}>{t("calendar.noEventsMonth")}</p>;
   }
 
   return (
@@ -18,8 +19,8 @@ export default function ListView({ selected, extra }) {
         return (
           <section key={key} className={styles.events}>
             <h2 className={styles.eventsTitle}>
-              {WEEKDAYS_FULL[weekdayIndex(date)]}, {dayTitle(date)}
-              {key === dateKey(TODAY) && <span className={styles.badge}>Сегодня</span>}
+              {weekdaysFull()[weekdayIndex(date)]}, {dayTitle(date)}
+              {key === dateKey(TODAY) && <span className={styles.badge}>{t("calendar.today")}</span>}
             </h2>
             {monthEvents
               .filter((event) => event.date === key)

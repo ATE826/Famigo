@@ -2,7 +2,6 @@
   flex: none;
   height: 130px;
   border-radius: var(--radius-card);
-  background: linear-gradient(160deg, #B9C7AC, #7E946D);
   color: #fff;
   display: flex;
   align-items: center;

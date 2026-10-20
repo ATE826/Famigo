@@ -6,18 +6,9 @@ import FormScreen from "../../components/FormScreen/FormScreen";
 import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
+import { t } from "../../i18n";
+import { foodLabel, foodOptions } from "./food";
 import styles from "./ProfileFood.module.css";
-
-const options = [
-  "Без лактозы",
-  "Без глютена",
-  "Без сахара",
-  "Вегетарианство",
-  "Веганство",
-  "Аллергия на орехи",
-  "Аллергия на морепродукты",
-  "Халяль",
-];
 
 function ProfileFood() {
   const navigate = useNavigate();
@@ -42,28 +33,28 @@ function ProfileFood() {
   }
 
   return (
-    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">Сохранить</Button>}>
-      <PageHeader title="Предпочтения в еде" to="/profile" icon="close" />
-      <p className={styles.intro}>Это увидят все участники семьи. Пригодится для покупок и холодильника.</p>
+    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">{t("common.save")}</Button>}>
+      <PageHeader title={t("profile.food")} to="/profile" icon="close" />
+      <p className={styles.intro}>{t("food.intro")}</p>
 
-      <div className={styles.options} role="group" aria-label="Предпочтения в еде">
-        {options.map((option) => (
+      <div className={styles.options} role="group" aria-label={t("profile.food")}>
+        {foodOptions.map((option) => (
           <Chip
             key={option}
             active={selected.includes(option)}
             aria-pressed={selected.includes(option)}
             onClick={() => toggle(option)}
           >
-            {option}
+            {foodLabel(option)}
           </Chip>
         ))}
       </div>
 
       <Input
         id="note"
-        label="Другое"
+        label={t("food.other")}
         type="text"
-        placeholder="Например, не ест острое"
+        placeholder={t("food.otherPlaceholder")}
         maxLength={60}
         value={note}
         onChange={(e) => setNote(e.target.value)}

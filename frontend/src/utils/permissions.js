@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 export function canRemoveMember(actor, target) {
   if (!actor || !target || actor.id === target.id) return false;
   if (actor.role === "Owner") return true;
@@ -8,10 +10,10 @@ export function canRemoveMember(actor, target) {
 export function removeBlockedReason(actor, target) {
   if (!actor || !target || actor.id === target.id) return "";
   if (actor.role === "Admin" && target.role !== "Member") {
-    return "Администратор не может удалить другого администратора или владельца";
+    return t("permissions.adminCannotRemove");
   }
   if (actor.role === "Member") {
-    return "Удалять участников могут только владелец и администраторы";
+    return t("permissions.memberCannotRemove");
   }
   return "";
 }

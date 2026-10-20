@@ -1,8 +1,12 @@
+import { t, tValue } from "../../i18n";
 import { todayStart } from "../../utils/dates";
 
 export const categories = ["Молочные", "Овощи", "Мясо", "Напитки", "Другое"];
 
 export const units = ["шт.", "мл", "л", "кг", "г"];
+
+export const categoryLabel = (value) => tValue("productCategories", value);
+export const unitLabel = (value) => tValue("units", value);
 
 const WARN_DAYS = 3;
 
@@ -20,7 +24,7 @@ export function isSpoiled(product) {
 }
 
 export function isLow(product) {
-  return Boolean(product.low) && !isSpoiled(product);
+  return product.qty <= unitStep(product.unit) && !isSpoiled(product);
 }
 
 export function needsAttention(product) {
@@ -34,7 +38,7 @@ export function statusOf(product) {
 }
 
 export function expiryLabel(product) {
-  if (isSpoiled(product)) return "Испорчено";
+  if (isSpoiled(product)) return t("fridge.spoiled");
   const [day, month, year] = product.expires.split(".");
-  return `до ${day}.${month}.${year.slice(-2)}`;
+  return t("fridge.until", { date: `${day}.${month}.${year.slice(-2)}` });
 }

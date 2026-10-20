@@ -7,13 +7,14 @@ import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
 import { todayStart } from "../../utils/dates";
 import { dateError, formatDate } from "../../utils/validation";
+import { t } from "../../i18n";
 
 function birthdayError(value) {
   if (!value.trim()) return "";
   const error = dateError(value);
   if (error) return error;
   const [day, month, year] = value.split(".").map(Number);
-  return new Date(year, month - 1, day) > todayStart() ? "Дата не может быть в будущем" : "";
+  return new Date(year, month - 1, day) > todayStart() ? t("validation.dateFuture") : "";
 }
 
 function ProfilePersonal() {
@@ -34,7 +35,7 @@ function ProfilePersonal() {
     e.preventDefault();
     const name = values.name.trim();
     const found = {
-      name: name ? "" : "Введите имя",
+      name: name ? "" : t("auth.nameRequired"),
       birthday: birthdayError(values.birthday),
     };
     setErrors(found);
@@ -53,15 +54,15 @@ function ProfilePersonal() {
   }
 
   return (
-    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">Сохранить</Button>}>
-      <PageHeader title="Личные данные" to="/profile" icon="close" />
+    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">{t("common.save")}</Button>}>
+      <PageHeader title={t("profile.personal")} to="/profile" icon="close" />
 
       <Input
         id="name"
         name="name"
-        label="Имя"
+        label={t("auth.name")}
         type="text"
-        placeholder="Ваше имя"
+        placeholder={t("auth.namePlaceholder")}
         maxLength={30}
         value={values.name}
         onChange={handleChange}
@@ -71,14 +72,14 @@ function ProfilePersonal() {
       <Input
         id="birthday"
         name="birthday"
-        label="День рождения"
+        label={t("personal.birthday")}
         type="text"
         inputMode="numeric"
-        placeholder="ДД.ММ.ГГГГ"
+        placeholder={t("personal.datePlaceholder")}
         maxLength={10}
         value={values.birthday}
         onChange={handleChange}
-        hint={errors.birthday || "Появится в семейном календаре, семья получит напоминание"}
+        hint={errors.birthday || t("personal.birthdayHint")}
       />
     </FormScreen>
   );

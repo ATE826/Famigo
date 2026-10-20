@@ -1,6 +1,7 @@
 import Card from "../../components/Card/Card";
 import EventCard from "./EventCard";
-import { TODAY, WEEKDAYS, dayTitle, eventsOn, monthCells, sameDay } from "./data";
+import { TODAY, dayTitle, eventsOn, monthCells, sameDay, weekdays } from "./data";
+import { t } from "../../i18n";
 import styles from "./Calendar.module.css";
 
 export default function MonthView({ selected, onSelect, extra }) {
@@ -11,7 +12,7 @@ export default function MonthView({ selected, onSelect, extra }) {
     <>
       <Card className={styles.calendar}>
         <div className={styles.grid}>
-          {WEEKDAYS.map((d) => (
+          {weekdays().map((d) => (
             <div key={d} className={styles.weekDay}>
               {d}
             </div>
@@ -44,10 +45,10 @@ export default function MonthView({ selected, onSelect, extra }) {
 
       <section className={styles.events}>
         <h2 className={styles.eventsTitle}>
-          {sameDay(selected, TODAY) && "Сегодня, "}
+          {sameDay(selected, TODAY) && `${t("calendar.today")}, `}
           {dayTitle(selected)}
         </h2>
-        {dayEvents.length === 0 && <p className={styles.empty}>Событий нет</p>}
+        {dayEvents.length === 0 && <p className={styles.empty}>{t("calendar.noEvents")}</p>}
         {dayEvents.map((event) => (
           <EventCard key={event.id} event={event} />
         ))}
