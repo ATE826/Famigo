@@ -102,18 +102,28 @@ function Calendar() {
         }
       />
 
-      <Segmented size="sm" options={views.map((v) => ({ value: v.value, label: t(`calendar.views.${v.label}`) }))} value={view} onChange={changeView} label={t("calendar.viewLabel")} />
+      <div className={styles.toolbar}>
+        <div className={styles.segment}>
+          <Segmented
+            size="sm"
+            options={views.map((v) => ({ value: v.value, label: t(`calendar.views.${v.label}`) }))}
+            value={view}
+            onChange={changeView}
+            label={t("calendar.viewLabel")}
+          />
+        </div>
 
-      <div className={styles.nav}>
-        <button type="button" className={styles.navButton} aria-label={t("common.back")} onClick={() => go(-1)}>
-          <Icon name="back" size={20} />
-        </button>
-        <span className={styles.navLabel} aria-live="polite">
-          {periodLabel(view, selected)}
-        </span>
-        <button type="button" className={styles.navButton} aria-label={t("common.forward")} onClick={() => go(1)}>
-          <Icon name="chevron" size={20} />
-        </button>
+        <div className={styles.nav}>
+          <button type="button" className={styles.navButton} aria-label={t("common.back")} onClick={() => go(-1)}>
+            <Icon name="back" size={20} />
+          </button>
+          <span className={styles.navLabel} aria-live="polite">
+            {periodLabel(view, selected)}
+          </span>
+          <button type="button" className={styles.navButton} aria-label={t("common.forward")} onClick={() => go(1)}>
+            <Icon name="chevron" size={20} />
+          </button>
+        </div>
       </div>
 
       <div

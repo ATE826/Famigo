@@ -12,6 +12,8 @@ import { formatShortDate, quantityError, shortDateError } from "../../utils/vali
 import { t } from "../../i18n";
 import styles from "./FridgeProduct.module.css";
 
+const NAME_MAX = 20;
+
 function FridgeProduct() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,7 +30,6 @@ function FridgeProduct() {
     qty: product ? String(product.qty) : "",
     unit: product?.unit ?? units[0],
     expires: product ? fullToShort(product.expires) : "",
-    spoiled: product?.spoiled ?? false,
   });
   const [errors, setErrors] = useState({});
 
@@ -61,7 +62,6 @@ function FridgeProduct() {
       qty: Number(values.qty.replace(/\s/g, "").replace(",", ".")),
       unit: values.unit,
       expires: shortToFull(values.expires),
-      spoiled: values.spoiled,
     };
     if (isEdit) {
       updateProduct(product.id, data);
@@ -93,10 +93,10 @@ function FridgeProduct() {
         label={t("fridgeProduct.name")}
         type="text"
         placeholder={t("fridgeProduct.namePlaceholder")}
-        maxLength={60}
+        maxLength={NAME_MAX}
         value={values.name}
         onChange={handleChange}
-        hint={errors.name}
+        hint={errors.name || `${values.name.length}/${NAME_MAX}`}
       />
 
       <Select id="cat" name="cat" label={t("fridgeProduct.category")} value={values.cat} onChange={handleChange}>
@@ -114,7 +114,8 @@ function FridgeProduct() {
             name="qty"
             label={t("fridgeProduct.quantity")}
             type="text"
-            inputMode="decimal"
+            inputMode="numeric"
+            numeric
             placeholder="0"
             maxLength={8}
             value={values.qty}
@@ -139,28 +140,13 @@ function FridgeProduct() {
         label={t("fridgeProduct.expires")}
         type="text"
         inputMode="numeric"
+        numeric
         placeholder={todayShort()}
         maxLength={8}
         value={values.expires}
         onChange={handleChange}
         hint={errors.expires}
       />
-
-      {isEdit && (
-        <label className={styles.spoiled}>
-          <input
-            type="checkbox"
-            checked={values.spoiled}
-            onChange={(e) => setValues({ ...values, spoiled: e.target.checked })}
-          />
-          <span className={styles.spoiledText}>
-            <span className={styles.spoiledTitle}>{t("fridgeProduct.spoiled")}</span>
-            <span className={styles.spoiledHint}>
-              {t("fridgeProduct.spoiledHint")}
-            </span>
-          </span>
-        </label>
-      )}
     </FormScreen>
   );
 }

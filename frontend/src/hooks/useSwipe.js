@@ -1,9 +1,26 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 const SWIPE_DISTANCE = 60;
+const TEXT_FIELDS = ["INPUT", "TEXTAREA", "SELECT"];
 
 export default function useSwipe({ onLeft, onRight }) {
   const start = useRef(null);
+  const handlers = useRef({ onLeft, onRight });
+
+  useEffect(() => {
+    handlers.current = { onLeft, onRight };
+  });
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      if (TEXT_FIELDS.includes(document.activeElement?.tagName)) return;
+      if (e.key === "ArrowRight") handlers.current.onLeft?.();
+      else if (e.key === "ArrowLeft") handlers.current.onRight?.();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   function onTouchStart(e) {
     const touch = e.touches[0];

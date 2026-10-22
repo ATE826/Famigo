@@ -3,7 +3,7 @@
 }
 
 .title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -62,7 +62,7 @@
   flex: none;
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--primary-soft);
   color: var(--on-soft);
   display: flex;
@@ -89,7 +89,7 @@
 
 .logout {
   height: 52px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--card);
   border: 1px solid var(--field-border);
   color: var(--neutral-text);
@@ -129,7 +129,7 @@
 .confirmAction {
   flex: 1;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   font: inherit;
   font-weight: 600;
   font-size: 15px;

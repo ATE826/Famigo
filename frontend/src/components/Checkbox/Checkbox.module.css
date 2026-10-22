@@ -1,0 +1,82 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.box {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border: 1.5px solid var(--field-border);
+  border-radius: 7px;
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.boxError {
+  border-color: var(--accent);
+}
+
+.tick {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+.input:checked + .box {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.input:checked + .box .tick {
+  opacity: 1;
+}
+
+.input:focus-visible + .box {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.text {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.text a {
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.error {
+  padding-left: 34px;
+  font-size: 12px;
+  color: var(--accent-text);
+}

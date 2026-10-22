@@ -8,7 +8,7 @@ import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
-import { homeGradient, homeIcon, homeOf } from "../../utils/homes";
+import { homeIcon, homeOf, homeStyle } from "../../utils/homes";
 import { canManageHomes } from "../../utils/permissions";
 import { productsLabel } from "../../utils/plural";
 import { t } from "../../i18n";
@@ -70,7 +70,7 @@ function House() {
         }
       />
 
-      <div className={styles.hero} style={{ background: homeGradient(home.kind) }}>
+      <div className={styles.hero} style={homeStyle(home.kind)}>
         <Icon name={homeIcon(home.kind)} size={52} strokeWidth={1.1} />
       </div>
 

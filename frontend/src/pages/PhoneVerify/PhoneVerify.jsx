@@ -53,6 +53,7 @@ function PhoneVerify() {
         label={t("phone.code")}
         type="text"
         inputMode="numeric"
+        numeric
         autoComplete="one-time-code"
         placeholder="000000"
         value={code}

@@ -24,12 +24,22 @@
   --soft-border-strong: #B9C7AC;
   --unread: #F3F6EF;
   --chat-bg: #FBFAF7;
-  --danger-soft: #F6DAD5;
-  --danger-text: #8A2F25;
-  --warn-soft: #FBEFC4;
-  --warn-text: #6B5300;
+  --danger-soft: #F3E2D8;
+  --danger-text: #7A4528;
+  --warn-soft: #F3E2D8;
+  --warn-text: #7A4528;
+  --critical: #D38A62;
+  --on-critical: #20221F;
   --avatar-gray-bg: #E4E4DE;
   --avatar-gray-text: #20221F;
+  --map-land: #EFEDE6;
+  --map-park: #E5EBE0;
+  --map-water: #C9D5C1;
+  --map-road: #FFFFFF;
+  --map-road-edge: #E4E4DE;
+  --map-block: #E6E3DA;
+  --radius-sm: 12px;
+  --radius-md: 16px;
   --radius-card: 20px;
   --radius-field: 12px;
 }
@@ -58,10 +68,16 @@
   --soft-border-strong: #4B5C42;
   --unread: #232A20;
   --chat-bg: #151713;
-  --danger-soft: #3D2220;
-  --danger-text: #F2B8B0;
-  --warn-soft: #3A3218;
-  --warn-text: #F2DC8B;
+  --danger-soft: #3A2B21;
+  --danger-text: #F2C7AB;
+  --warn-soft: #3A2B21;
+  --warn-text: #F2C7AB;
   --avatar-gray-bg: #3A3D36;
   --avatar-gray-text: #ECEAE3;
+  --map-land: #1A1C18;
+  --map-park: #222E1F;
+  --map-water: #2A3A31;
+  --map-road: #2D312A;
+  --map-road-edge: #141612;
+  --map-block: #232720;
 }

@@ -3,76 +3,6 @@ p{
     font-size: 14px;
 }
 
-.page{
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--bg);
-}
-
-.hero{
-    background: linear-gradient(145deg, #778B66 0%, #667A55 45%, #52663F 100%);
-    position: relative;
-    height: 230px;
-    flex: none;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 24px 24px 28px;
-    overflow: hidden;
-}
-
-.bigLetter{
-    font-family: "Pacifico", cursive;
-    font-size: 300px;
-    color: rgba(255, 255, 255, 0.12);
-    position: absolute;
-    right: -20px;
-    top: -40px;
-    line-height: 1;
-}
-
-.brand{
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.logo{
-    font-family: "Pacifico", cursive;
-    color: var(--primary);
-    font-size: 24px;
-
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    background-color: var(--bg);
-    border-radius: 12px;
-    padding-right: 4px;
-}
-
-.brandName{
-    font-family: "Golos Text", sans-serif;
-    font-weight: 800;
-    font-size: 22px;
-    color: var(--bg);
-}
-
-.slogan{
-    position: relative;
-    margin: 0px;
-    font-family: "Golos Text", sans-serif;
-    font-weight: 700;
-    font-size: 24px;
-    line-height: 1.15;
-    letter-spacing: -0.01em;
-    color: var(--bg);
-}
-
 .form{
     flex: 1;
     padding: 28px 24px 24px;
@@ -97,31 +27,7 @@ p{
     font-weight: 500;
 }
 @media (min-width: 1024px) {
-  .page {
-    flex-direction: row-reverse;
-  }
-
-  .hero {
-    flex: 1 1 50%;
-    height: auto;
-    min-height: 100dvh;
-    padding: 48px 64px 64px;
-  }
-
-  .bigLetter {
-    font-size: 620px;
-    right: -40px;
-    top: -60px;
-  }
-
-  .slogan {
-    max-width: 460px;
-    font-size: 44px;
-    line-height: 1.1;
-  }
-
   .form {
-    flex: 1 1 50%;
     justify-content: center;
     padding: 48px 64px;
   }
@@ -135,4 +41,20 @@ p{
   .title {
     font-size: 36px;
   }
+}
+
+.legal {
+    margin: 8px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 10px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.legalLink {
+    color: var(--muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }

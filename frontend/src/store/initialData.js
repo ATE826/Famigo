@@ -21,7 +21,8 @@ export const initialMembers = [
     joined: "2026-07",
     role: "Admin",
     birthday: "14.03.1975",
-    foodPrefs: ["Без глютена"],
+    checkin: { enabled: true, time: "11:00" },
+    foodPrefs: ["Без глютена", "Непереносимость гистамина"],
     foodNote: "",
   },
   {
@@ -32,7 +33,7 @@ export const initialMembers = [
     joined: "2026-07",
     role: "Admin",
     birthday: "02.06.1972",
-    foodPrefs: [],
+    foodPrefs: ["Без лактозы", "Непереносимость фруктозы"],
     foodNote: "",
   },
   {
@@ -43,7 +44,7 @@ export const initialMembers = [
     joined: "2026-08",
     role: "Member",
     birthday: "26.10.2008",
-    foodPrefs: ["Аллергия на орехи"],
+    foodPrefs: ["Аллергия на орехи", "Аллергия на арахис", "Аллергия на цитрусовые", "Аллергия на мёд"],
     foodNote: "",
   },
 ];

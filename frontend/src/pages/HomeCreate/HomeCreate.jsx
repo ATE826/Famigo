@@ -12,11 +12,13 @@ import { countError } from "../../utils/validation";
 import { t } from "../../i18n";
 import styles from "./HomeCreate.module.css";
 
+const NAME_MAX = 20;
+
 function HomeCreate() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
-  const { homes, members, currentUserId, addHome, updateHome } = useData();
+  const { homes, members, currentUserId, addHome, updateHome, plan } = useData();
   const home = id ? homes.find((h) => h.id === id) : null;
 
   const [values, setValues] = useState({
@@ -34,6 +36,10 @@ function HomeCreate() {
 
   if (!id && !canManageHomes(members.find((m) => m.id === currentUserId))) {
     return <Navigate to="/more/homes" replace />;
+  }
+
+  if (!id && homes.length >= plan.homes) {
+    return <Navigate to="/premium" replace state={{ reason: "homes" }} />;
   }
 
   const isEdit = Boolean(home);
@@ -100,10 +106,10 @@ function HomeCreate() {
         label={t("homeCreate.name")}
         type="text"
         placeholder={t("homeCreate.namePlaceholder")}
-        maxLength={40}
+        maxLength={NAME_MAX}
         value={values.name}
         onChange={handleChange}
-        hint={errors.name}
+        hint={errors.name || `${values.name.length}/${NAME_MAX}`}
       />
 
       <Select id="kind" name="kind" label={t("homeCreate.kind")} value={values.kind} onChange={handleChange}>
@@ -134,6 +140,7 @@ function HomeCreate() {
             label={t("homeCreate.rooms")}
             type="text"
             inputMode="numeric"
+            numeric
             placeholder="0"
             maxLength={2}
             value={values.rooms}
@@ -148,6 +155,7 @@ function HomeCreate() {
             label={t("homeCreate.people")}
             type="text"
             inputMode="numeric"
+            numeric
             placeholder="0"
             maxLength={2}
             value={values.people}

@@ -6,7 +6,8 @@ import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
 import { daysUntilBirthday } from "../../utils/dates";
-import { t } from "../../i18n";
+import { overdueMembers } from "../../utils/checkin";
+import { getLocale, t } from "../../i18n";
 import styles from "./Notifications.module.css";
 
 const filters = ["all", "budget", "calendar", "fridge", "chat"];
@@ -44,6 +45,37 @@ function birthdayItems(members, currentUserId) {
       to: "/calendar",
       read: false,
     }));
+}
+
+function safetyItems(alerts, members, checkIns, currentUserId) {
+  const nameOf = (id) => members.find((m) => m.id === id)?.name ?? "";
+  const sos = alerts
+    .filter((a) => a.from !== currentUserId)
+    .map((a) => ({
+      id: `sos-${a.id}`,
+      day: "today",
+      type: "family",
+      tone: "terra",
+      title: t("safety.banner.from", { name: nameOf(a.from) }),
+      text: a.place ? t(`map.places.${a.place}`) : t("safety.sos.unknownPlace"),
+      time: new Date(a.at).toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" }),
+      to: "/map",
+      read: false,
+    }));
+  const overdue = overdueMembers(members, checkIns)
+    .filter((m) => m.id !== currentUserId)
+    .map((m) => ({
+      id: `checkin-${m.id}`,
+      day: "today",
+      type: "family",
+      tone: "terra",
+      title: t("safety.checkin.overdue", { name: m.name }),
+      text: t("safety.checkin.overdueTime", { time: m.checkin.time }),
+      time: m.checkin.time,
+      to: `/chats/${m.id}`,
+      read: false,
+    }));
+  return [...sos, ...overdue];
 }
 
 const buildItems = (userName) => [
@@ -107,9 +139,10 @@ const buildItems = (userName) => [
 const days = ["today", "yesterday"];
 
 function Notifications() {
-  const { members, currentUserId, notificationSettings } = useData();
+  const { members, currentUserId, notificationSettings, alerts, checkIns } = useData();
   const userName = members.find((m) => m.id === currentUserId)?.name ?? "";
   const [items, setItems] = useState(() => [
+    ...safetyItems(alerts, members, checkIns, currentUserId),
     ...birthdayItems(members, currentUserId),
     ...buildItems(userName),
   ]);

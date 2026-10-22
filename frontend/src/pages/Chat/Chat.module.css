@@ -128,7 +128,7 @@
   align-self: center;
   margin-top: 6px;
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--accent-soft);
   color: var(--accent-text-2);
   font-size: 13px;

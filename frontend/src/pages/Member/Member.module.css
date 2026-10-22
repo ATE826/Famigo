@@ -46,7 +46,7 @@
 }
 
 .cardTitle {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -63,7 +63,7 @@
 
 .homesTitle {
   padding: 16px 0 4px;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -85,7 +85,7 @@
   flex: none;
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--primary-soft);
   color: var(--on-soft);
   display: flex;
@@ -125,7 +125,7 @@
 
 .profileLink {
   height: 52px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--card);
   border: 1px solid var(--field-border);
   color: inherit;
@@ -140,7 +140,7 @@
 .remove {
   height: 52px;
   border: 1px solid var(--accent-border);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--accent-soft);
   color: var(--accent-text);
   font: inherit;
@@ -175,7 +175,7 @@
 .confirmRemove {
   flex: 1;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   font: inherit;
   font-weight: 600;
   font-size: 15px;

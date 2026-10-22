@@ -11,6 +11,16 @@ import {
   initialUnread,
 } from "./initialData";
 import { initialOperations } from "./operations";
+import { initialLocations, initialSharing } from "./locations";
+import { initialGallery } from "./gallery";
+import {
+  initialPlaceEvents,
+  initialQuests,
+  initialRewards,
+  initialWatchedPlaces,
+} from "./safety";
+import { t } from "../i18n";
+import { FREE_SUBSCRIPTION, PLANS, activePlanId, renewalDate } from "../utils/plans";
 
 export default function DataProvider({ children }) {
   const [homes, setHomes] = useState(initialHomes);
@@ -29,7 +39,19 @@ export default function DataProvider({ children }) {
     chat: true,
     family: true,
   });
+  const [locations] = useState(initialLocations);
+  const [subscription, setSubscription] = useState(FREE_SUBSCRIPTION);
+  const [gallery, setGallery] = useState(initialGallery);
+  const [sharing, setSharingState] = useState(initialSharing);
+  const [alerts, setAlerts] = useState([]);
+  const [checkIns, setCheckIns] = useState({});
+  const [watchedPlaces, setWatchedPlaces] = useState(initialWatchedPlaces);
+  const [placeEvents] = useState(initialPlaceEvents);
+  const [quests, setQuests] = useState(initialQuests);
+  const [rewards, setRewards] = useState(initialRewards);
+  const [redemptions, setRedemptions] = useState([]);
   const currentUserId = "anton";
+  const plan = PLANS[activePlanId(subscription)];
 
   function addHome(home) {
     const id = `home-${Date.now()}`;
@@ -112,6 +134,88 @@ export default function DataProvider({ children }) {
     setNotificationSettings((current) => ({ ...current, [key]: value }));
   }
 
+  function subscribe(planId, period) {
+    setSubscription({
+      planId,
+      period,
+      renewsAt: renewalDate(period),
+      cancelAtPeriodEnd: false,
+      payerId: currentUserId,
+    });
+  }
+
+  function setAutoRenew(on) {
+    setSubscription((current) => ({ ...current, cancelAtPeriodEnd: !on }));
+  }
+
+  function addGalleryItems(items) {
+    setGallery((current) => [...items, ...current]);
+  }
+
+  function removeGalleryItem(id) {
+    setGallery((current) => {
+      const item = current.find((g) => g.id === id);
+      if (item?.url.startsWith("blob:")) URL.revokeObjectURL(item.url);
+      return current.filter((g) => g.id !== id);
+    });
+  }
+
+  function setSharing(value) {
+    setSharingState((current) => ({ ...current, [currentUserId]: value }));
+  }
+
+  function sendSos() {
+    const place = plan.geo ? (locations[currentUserId]?.place ?? null) : null;
+    const alert = { id: `sos-${Date.now()}`, from: currentUserId, place, at: new Date().toISOString(), resolved: false, seenBy: [] };
+    setAlerts((current) => [alert, ...current]);
+    sendMessage("family", t("safety.sos.chatMessage", { place: place ? t(`map.places.${place}`) : t("safety.sos.unknownPlace") }));
+  }
+
+  function resolveSos(id) {
+    setAlerts((current) => current.map((a) => (a.id === id ? { ...a, resolved: true } : a)));
+  }
+
+  function seeSos(id) {
+    setAlerts((current) => current.map((a) => (a.id === id ? { ...a, seenBy: [...a.seenBy, currentUserId] } : a)));
+  }
+
+  function checkIn() {
+    setCheckIns((current) => ({ ...current, [currentUserId]: new Date().toISOString() }));
+  }
+
+  function watchPlace(id, value) {
+    setWatchedPlaces((current) => ({ ...current, [id]: value }));
+  }
+
+  function addQuest(quest) {
+    setQuests((current) => [...current, { ...quest, id: `q-${Date.now()}`, status: "open" }]);
+  }
+
+  function setQuestStatus(id, status) {
+    setQuests((current) => current.map((q) => (q.id === id ? { ...q, status } : q)));
+  }
+
+  function removeQuest(id) {
+    setQuests((current) => current.filter((q) => q.id !== id));
+  }
+
+  function addReward(reward) {
+    setRewards((current) => [...current, { ...reward, id: `r-${Date.now()}` }]);
+  }
+
+  function removeReward(id) {
+    setRewards((current) => current.filter((r) => r.id !== id));
+  }
+
+  function redeemReward(rewardId, memberId) {
+    const reward = rewards.find((r) => r.id === rewardId);
+    if (!reward) return;
+    setRedemptions((current) => [
+      ...current,
+      { id: `x-${Date.now()}`, memberId, title: reward.title, cost: reward.cost, at: new Date().toISOString() },
+    ]);
+  }
+
   function updateMember(id, patch) {
     setMembers((current) => current.map((m) => (m.id === id ? { ...m, ...patch } : m)));
   }
@@ -168,6 +272,34 @@ export default function DataProvider({ children }) {
         renameFamily,
         notificationSettings,
         setNotificationSetting,
+        locations,
+        alerts,
+        sendSos,
+        resolveSos,
+        seeSos,
+        checkIns,
+        checkIn,
+        watchedPlaces,
+        watchPlace,
+        placeEvents,
+        quests,
+        rewards,
+        redemptions,
+        addQuest,
+        setQuestStatus,
+        removeQuest,
+        addReward,
+        removeReward,
+        redeemReward,
+        sharing,
+        setSharing,
+        subscription,
+        plan,
+        subscribe,
+        setAutoRenew,
+        gallery,
+        addGalleryItems,
+        removeGalleryItem,
         currentUserId,
         products,
         operations,

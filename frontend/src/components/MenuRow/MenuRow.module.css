@@ -22,7 +22,7 @@
   flex: none;
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--primary-soft);
   color: var(--on-soft);
   display: flex;

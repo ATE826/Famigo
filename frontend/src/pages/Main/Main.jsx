@@ -2,12 +2,17 @@ import { Link } from "react-router-dom";
 import Avatar from "../../components/Avatar/Avatar";
 import Card from "../../components/Card/Card";
 import Icon from "../../components/Icon/Icon";
+import SosButton from "../../components/SosButton/SosButton";
 import { isSpoiled, needsAttention } from "../Fridge/products";
 import { useData } from "../../store/DataContext";
 import { chatList, lastMessageOf, lastMessageText } from "../../utils/chats";
 import { homeOf } from "../../utils/homes";
 import { productsLabel } from "../../utils/plural";
 import { greeting } from "../../utils/greeting";
+import { checkedToday, overdueMembers } from "../../utils/checkin";
+import useNow from "../../hooks/useNow";
+import { isMinor } from "../../utils/age";
+import { pointsOf } from "../../utils/quests";
 import {
   CURRENT_MONTH,
   balanceUpTo,
@@ -16,7 +21,7 @@ import {
   parseMonth,
   monthlyTotals,
 } from "../../utils/budget";
-import { t } from "../../i18n";
+import { getLocale, t } from "../../i18n";
 import { TODAY, birthdayEvents, eventsOn } from "../Calendar/data";
 import styles from "./Main.module.css";
 
@@ -25,7 +30,21 @@ const MAX_ALERTS = 2;
 const MAX_TASKS = 3;
 
 function Main() {
-  const { operations, members, currentUserId, products, homes, messages, unread, chatSettings } = useData();
+  const {
+    operations,
+    members,
+    currentUserId,
+    products,
+    homes,
+    messages,
+    unread,
+    chatSettings,
+    plan,
+    checkIns,
+    checkIn,
+    quests,
+    redemptions,
+  } = useData();
   const myHome = homeOf(homes, currentUserId);
   const myProducts = myHome ? products.filter((p) => p.homeId === myHome.id) : [];
   const alerts = myProducts
@@ -43,6 +62,13 @@ function Main() {
   const month = parseMonth(key);
   const months = monthlyTotals(operations, key, CHART_MONTHS);
   const maxAmount = Math.max(1, ...months.flatMap((m) => [m.income, m.expense]));
+  const current = months[months.length - 1];
+  const net = current.income - current.expense;
+  const hasSpoiled = alerts.some(isSpoiled);
+  const now = useNow();
+  const showCheckin = plan.checkin && Boolean(me?.checkin?.enabled);
+  const overdue = plan.checkin ? overdueMembers(members, checkIns, now).filter((m) => m.id !== currentUserId) : [];
+  const showQuests = plan.quests && isMinor(me);
   const barHeight = (amount) => `${Math.max((amount / maxAmount) * 100, amount > 0 ? 6 : 2)}%`;
 
   return (
@@ -53,6 +79,7 @@ function Main() {
           <span className={styles.brandName}>Famigo</span>
         </div>
         <div className={styles.actions}>
+          <SosButton />
           <Link to="/notifications" className={styles.bell} aria-label={t("nav.notifications")}>
             <svg
               width="20"
@@ -93,6 +120,70 @@ function Main() {
         </Link>
       </div>
 
+      {(showCheckin || overdue.length > 0 || showQuests) && (
+        <div className={styles.notices}>
+          {overdue.map((member) => (
+            <div key={member.id} className={`${styles.notice} ${styles.noticeWarn}`}>
+              <Avatar letter={member.letter} tone={member.tone} photo={member.photo} size={44} />
+              <span className={styles.noticeText}>
+                <span className={styles.noticeTitle}>{member.name}</span>
+                <span className={styles.noticeSub}>{t("safety.checkin.overdueShort", { time: member.checkin.time })}</span>
+              </span>
+              <Link to={`/chats/${member.id}`} className={styles.noticeAction}>
+                {t("safety.checkin.write")}
+              </Link>
+            </div>
+          ))}
+
+          {showCheckin &&
+            (checkedToday(checkIns, me.id) ? (
+              <div className={styles.notice}>
+                <span className={`${styles.noticeIcon} ${styles.noticeIconOk}`}>
+                  <Icon name="check" size={22} strokeWidth={2.2} />
+                </span>
+                <span className={styles.noticeText}>
+                  <span className={styles.noticeTitle}>
+                    {t("safety.checkin.done", {
+                      time: new Date(checkIns[me.id]).toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" }),
+                    })}
+                  </span>
+                  <span className={styles.noticeSub}>{t("safety.checkin.doneSub")}</span>
+                </span>
+              </div>
+            ) : (
+              <div className={styles.notice}>
+                <span className={styles.noticeIcon}>
+                  <Icon name="shield" size={22} strokeWidth={1.8} />
+                </span>
+                <span className={styles.noticeText}>
+                  <span className={styles.noticeTitle}>{t("safety.checkin.title")}</span>
+                  <span className={styles.noticeSub}>{t("safety.checkin.prompt", { time: me.checkin.time })}</span>
+                </span>
+                <button type="button" className={styles.noticeAction} onClick={checkIn}>
+                  {t("safety.checkin.action")}
+                </button>
+              </div>
+            ))}
+
+          {showQuests && (
+            <Link to="/more/quests" className={`${styles.link} ${styles.notice} ${styles.noticeWarn}`}>
+              <span className={`${styles.noticeIcon} ${styles.noticeIconWarn}`}>
+                <Icon name="star" size={22} strokeWidth={1.8} />
+              </span>
+              <span className={styles.noticeText}>
+                <span className={styles.noticeTitle}>
+                  {t("quests.title")} · {t("quests.pointsShort", { count: pointsOf(quests, redemptions, me.id) })}
+                </span>
+                <span className={styles.noticeSub}>
+                  {t("quests.openCount", { count: quests.filter((q) => q.to === me.id && q.status === "open").length })}
+                </span>
+              </span>
+              <Icon name="chevron" size={18} className={styles.noticeChevron} />
+            </Link>
+          )}
+        </div>
+      )}
+
       <div className={styles.grid}>
         <div className={styles.colMain}>
           <Link to="/budget" className={styles.link}>
@@ -100,12 +191,15 @@ function Main() {
               <div className={styles.balance}>
                 <span className={styles.label}>{t("main.availableIn", { month: monthInSentence(month) })}</span>
                 <span className={styles.amount}>{formatMoney(balanceUpTo(operations, key))}</span>
+                <span className={`${styles.net} ${net < 0 ? styles.netDown : ""}`}>
+                  {t("main.monthNet", { amount: `${net < 0 ? "−" : "+"}${formatMoney(Math.abs(net))}` })}
+                </span>
               </div>
               <div className={styles.chart} role="img" aria-label={t("main.chartLabel")}>
                 {months.map((m) => (
                   <div
                     key={m.key}
-                    className={styles.monthCol}
+                    className={`${styles.monthCol} ${m.key === key ? styles.monthCurrent : ""}`}
                     title={t("main.chartTooltip", {
                       month: m.label,
                       income: formatMoney(m.income),
@@ -136,7 +230,7 @@ function Main() {
           {myHome && myProducts.length === 0 && (
             <Link
               to={`/more/fridge/add?home=${myHome.id}`}
-              className={`${styles.link} ${styles.fridgeOk} ${styles.fridgeEmpty}`}
+              className={`${styles.link} ${styles.fridgeOk} ${styles.fridgeEmpty} ${styles.later}`}
             >
               <span className={styles.fridgeIcon}>
                 <Icon name="fridge" size={20} strokeWidth={1.8} />
@@ -150,7 +244,7 @@ function Main() {
           )}
 
           {myHome && myProducts.length > 0 && alerts.length === 0 && (
-            <Link to={fridgeLink} className={`${styles.link} ${styles.fridgeOk}`}>
+            <Link to={fridgeLink} className={`${styles.link} ${styles.fridgeOk} ${styles.later}`}>
               <span className={`${styles.fridgeIcon} ${styles.fridgeIconOk}`}>
                 <Icon name="fridge" size={20} strokeWidth={1.8} />
               </span>
@@ -164,8 +258,21 @@ function Main() {
             </Link>
           )}
 
-          {alerts.length > 0 && (
-            <section className={styles.fridge}>
+          {alerts.length > 0 && !hasSpoiled && (
+            <Link to={fridgeLink} className={`${styles.link} ${styles.fridgeOk} ${styles.fridgeEmpty} ${styles.later}`}>
+              <span className={styles.fridgeIcon}>
+                <Icon name="fridge" size={20} strokeWidth={1.8} />
+              </span>
+              <div className={styles.fridgeText}>
+                <span className={styles.fridgeTitle}>{t("main.fridgeTitle", { home: myHome.name })}</span>
+                <span className={styles.fridgeSub}>{t("main.needAttention", { count: alerts.length })}</span>
+              </div>
+              <Icon name="chevron" size={18} className={styles.emptyPlus} />
+            </Link>
+          )}
+
+          {hasSpoiled && (
+            <section className={`${styles.fridge} ${styles.later}`}>
               <div className={styles.fridgeHead}>
                 <span className={styles.fridgeIcon}>
                   <Icon name="fridge" size={20} strokeWidth={1.8} />
@@ -214,7 +321,7 @@ function Main() {
             </Card>
           </Link>
 
-          <Card>
+          <Card className={styles.later}>
             <div className={styles.cardHead}>
               <div className={styles.cardHeadText}>
                 <h2 className={styles.cardTitle}>{t("main.tasks")}</h2>
@@ -243,7 +350,7 @@ function Main() {
             )}
           </Card>
 
-          <Card className={styles.desktopOnly}>
+          <Card className={`${styles.desktopOnly} ${styles.later}`}>
             <div className={styles.cardHead}>
               <h2 className={styles.cardTitle}>{t("nav.chats")}</h2>
               <Link to="/chats" className={styles.open}>

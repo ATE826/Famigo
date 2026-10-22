@@ -16,9 +16,9 @@
 .logo {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--primary);
-  color: var(--bg);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;

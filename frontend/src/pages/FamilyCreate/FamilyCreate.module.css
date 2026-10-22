@@ -23,7 +23,7 @@ p{
   width: 40px;
   height: 40px;
   padding-right: 4px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--primary);
   color: #fff;
   display: flex;
@@ -76,7 +76,7 @@ p{
 }
 
 .cardTitle {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
 }
 @media (min-width: 1024px) {

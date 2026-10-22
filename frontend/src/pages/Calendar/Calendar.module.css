@@ -18,7 +18,7 @@
 
 @keyframes fadeIn {
   from {
-    opacity: 0;
+    opacity: 0.4;
     transform: translateY(8px);
   }
   to {
@@ -29,7 +29,7 @@
 
 @keyframes slideNext {
   from {
-    opacity: 0;
+    opacity: 0.4;
     transform: translateX(32px);
   }
   to {
@@ -40,7 +40,7 @@
 
 @keyframes slidePrev {
   from {
-    opacity: 0;
+    opacity: 0.4;
     transform: translateX(-32px);
   }
   to {
@@ -167,7 +167,7 @@
   gap: 12px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-md);
 }
 
 .eventLine {
@@ -200,7 +200,7 @@
 .weekDayButton {
   padding: 8px 0;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text);
   font: inherit;
@@ -266,7 +266,7 @@
   width: 44px;
   height: 44px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--card);
   color: var(--text);
   display: flex;
@@ -322,7 +322,47 @@
   background: var(--primary);
 }
 
+.toolbar {
+  display: contents;
+}
+
 @media (min-width: 1024px) {
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .nav {
+    order: -1;
+    flex: none;
+    width: 380px;
+    max-width: none;
+    align-self: auto;
+  }
+
+  .segment {
+    flex: none;
+    width: 400px;
+  }
+
+  .view:has(> .events) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    align-items: start;
+    gap: 20px 24px;
+  }
+
+  .weekStrip,
+  .empty {
+    grid-column: 1 / -1;
+  }
+
+  .weekStrip {
+    gap: 12px;
+  }
+
   .view:has(> .calendar) {
     display: grid;
     grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
@@ -354,7 +394,16 @@
     height: 6px;
   }
 
-  .nav {
-    max-width: 480px;
+  .todayButton {
+    height: 44px;
+    padding: 0 20px;
+    border: 1px solid var(--field-border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+  }
+
+  .todayButton:disabled {
+    background: transparent;
+    border-color: var(--border);
   }
 }

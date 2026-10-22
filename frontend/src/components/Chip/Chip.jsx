@@ -17,6 +17,10 @@ export default function Chip({ active = false, to, children, ...props }) {
   );
 }
 
-export function ChipRow({ children }) {
-  return <div className={styles.row}>{children}</div>;
+export function ChipRow({ children, ...props }) {
+  return (
+    <div className={styles.row} role="group" {...props}>
+      {children}
+    </div>
+  );
 }

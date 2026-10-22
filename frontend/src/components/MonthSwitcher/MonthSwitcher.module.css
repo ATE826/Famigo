@@ -16,7 +16,7 @@
   width: 44px;
   height: 44px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--card);
   color: var(--text);
   display: flex;
@@ -28,4 +28,12 @@
 .button:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+@media (min-width: 1024px) {
+  .nav {
+    width: 100%;
+    max-width: 480px;
+    align-self: center;
+  }
 }

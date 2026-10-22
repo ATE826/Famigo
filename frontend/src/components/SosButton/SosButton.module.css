@@ -1,0 +1,18 @@
+.button {
+  flex: none;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--critical);
+  color: var(--on-critical);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.button:active {
+  transform: scale(0.96);
+}

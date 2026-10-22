@@ -75,6 +75,7 @@ function CalendarCreate() {
             label={t("eventCreate.date")}
             type="text"
             inputMode="numeric"
+            numeric
             placeholder={todayString()}
             maxLength={10}
             value={values.date}
@@ -89,6 +90,7 @@ function CalendarCreate() {
             label={t("eventCreate.time")}
             type="text"
             inputMode="numeric"
+            numeric
             placeholder="00:00"
             maxLength={5}
             value={values.time}

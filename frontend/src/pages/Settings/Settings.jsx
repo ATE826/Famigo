@@ -9,6 +9,8 @@ import { useData } from "../../store/DataContext";
 import { useTheme } from "../../store/ThemeContext";
 import { LANGUAGES, t } from "../../i18n";
 import { useLanguage } from "../../i18n/LanguageContext";
+import Switch from "../../components/Switch/Switch";
+import useGeoSharing from "../../hooks/useGeoSharing";
 import styles from "./Settings.module.css";
 
 const themes = [
@@ -24,7 +26,8 @@ function Settings() {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { lang } = useLanguage();
-  const { notificationSettings } = useData();
+  const { notificationSettings, plan } = useData();
+  const geo = useGeoSharing();
   const [confirm, setConfirm] = useState(null);
 
   const enabledCount = Object.values(notificationSettings).filter(Boolean).length;
@@ -54,6 +57,18 @@ function Settings() {
       </section>
 
       <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>{t("nav.premium")}</h2>
+        <Card flush>
+          <MenuRow
+            to="/premium"
+            icon="crown"
+            label={t("nav.premium")}
+            sub={t("premium.currentPlan", { plan: t(`premium.plans.${plan.id}.name`) })}
+          />
+        </Card>
+      </section>
+
+      <section className={styles.section}>
         <h2 className={styles.sectionTitle}>{t("settings.language")}</h2>
         <Card flush>
           <MenuRow
@@ -74,6 +89,29 @@ function Settings() {
             label={t("nav.notifications")}
             sub={t("settings.enabledOf", { count: enabledCount, total: NOTIFICATION_KINDS })}
           />
+        </Card>
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>{t("settings.privacy")}</h2>
+        <Card className={styles.shareCard}>
+          <label className={styles.shareRow}>
+            <span className={styles.shareText}>
+              <span className={styles.label}>{t("map.share")}</span>
+              <span className={styles.shareHint}>{t("map.shareHint")}</span>
+            </span>
+            <Switch checked={geo.on} onChange={(e) => geo.request(e.target.checked)} />
+          </label>
+        </Card>
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>{t("settings.documents")}</h2>
+        <Card flush>
+          <MenuRow to="/legal/terms" icon="edit" label={t("legal.docs.terms")} />
+          <MenuRow to="/legal/privacy" icon="lock" label={t("legal.docs.privacy")} />
+          <MenuRow to="/legal/consent" icon="user" label={t("legal.docs.consent")} />
+          <MenuRow to="/legal/geo" icon="pin" label={t("legal.docs.geo")} />
         </Card>
       </section>
 
@@ -107,6 +145,7 @@ function Settings() {
           </div>
         )}
       </section>
+      {geo.dialog}
     </Page>
   );
 }

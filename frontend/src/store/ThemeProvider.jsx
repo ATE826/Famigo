@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { ThemeContext } from "./ThemeContext";
 
-const STORAGE_KEY = "famigo-theme";
+const STORAGE_KEY = "famigo-theme-v2";
 const THEMES = ["light", "dark", "system"];
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -11,9 +11,9 @@ const TRANSITION_MS = 400;
 function readTheme() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return THEMES.includes(saved) ? saved : "light";
+    return THEMES.includes(saved) ? saved : "system";
   } catch {
-    return "light";
+    return "system";
   }
 }
 
@@ -37,7 +37,7 @@ export default function ThemeProvider({ children }) {
   const timer = useRef(null);
 
   // Плавная смена: браузер делает снимок страницы до и после и плавно переходит
-  // между ними, так что все цвета меняются одновременно. Если API недоступен
+  // между ними (мягкое затухание), так что все цвета меняются одновременно. Если API недоступен
   // (старые браузеры), включаем обычные CSS-переходы на короткое время.
   function animateThemeChange(update) {
     const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;

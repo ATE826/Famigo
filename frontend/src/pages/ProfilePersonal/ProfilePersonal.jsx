@@ -5,17 +5,8 @@ import FormScreen from "../../components/FormScreen/FormScreen";
 import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
-import { todayStart } from "../../utils/dates";
-import { dateError, formatDate } from "../../utils/validation";
+import { birthdayError, formatDate } from "../../utils/validation";
 import { t } from "../../i18n";
-
-function birthdayError(value) {
-  if (!value.trim()) return "";
-  const error = dateError(value);
-  if (error) return error;
-  const [day, month, year] = value.split(".").map(Number);
-  return new Date(year, month - 1, day) > todayStart() ? t("validation.dateFuture") : "";
-}
 
 function ProfilePersonal() {
   const navigate = useNavigate();
@@ -75,6 +66,7 @@ function ProfilePersonal() {
         label={t("personal.birthday")}
         type="text"
         inputMode="numeric"
+        numeric
         placeholder={t("personal.datePlaceholder")}
         maxLength={10}
         value={values.birthday}

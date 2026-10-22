@@ -121,6 +121,12 @@ function Profile() {
           />
           <MenuRow to="/profile/phone" icon="phone" label={t("profile.phone")} sub={me.phone || t("profile.notSet")} />
           <MenuRow
+            to="/profile/checkin"
+            icon="shield"
+            label={t("safety.checkin.title")}
+            sub={me.checkin?.enabled ? t("safety.checkin.on", { time: me.checkin.time }) : t("safety.checkin.off")}
+          />
+          <MenuRow
             to="/profile/food"
             icon="food"
             label={t("profile.food")}

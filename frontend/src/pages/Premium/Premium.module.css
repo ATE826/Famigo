@@ -1,0 +1,262 @@
+.reason {
+  margin: 0;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.toggle > :first-child {
+  flex: 1;
+  max-width: 320px;
+}
+
+.saving {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.card {
+  position: relative;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.popular {
+  border: 2px solid var(--primary);
+}
+
+.current {
+  background: var(--primary-soft);
+}
+
+.badges {
+  min-height: 24px;
+  display: flex;
+  gap: 8px;
+}
+
+.badgePopular,
+.badgeCurrent {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badgePopular {
+  background: var(--accent);
+  color: #20221F;
+}
+
+.badgeCurrent {
+  background: var(--primary);
+  color: #fff;
+}
+
+.name {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.tagline {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.price {
+  margin: 6px 0 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.amount {
+  font-family: 'Golos Text', sans-serif;
+  font-weight: 800;
+  font-size: 36px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.per {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.features {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.feature svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--primary);
+}
+
+.off {
+  color: var(--muted);
+}
+
+.off svg {
+  color: var(--field-border);
+}
+
+.soon {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.cta {
+  margin-top: 8px;
+  height: 52px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cta:disabled {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--on-soft);
+  cursor: default;
+}
+
+.manage {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.manageTitle {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.manageList {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.manageList dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.manageList dd {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.manageNote {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.secondary {
+  align-self: flex-start;
+  height: 46px;
+  padding: 0 20px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancelButton {
+  align-self: flex-start;
+  height: 46px;
+  padding: 0 20px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancelled {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .card {
+    padding: 28px 24px;
+  }
+}

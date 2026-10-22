@@ -20,11 +20,14 @@ function daysLeft(expires) {
 }
 
 export function isSpoiled(product) {
-  return Boolean(product.spoiled) || daysLeft(product.expires) < 0;
+  return daysLeft(product.expires) < 0;
 }
 
+const LOW_LIMITS = { "шт.": 3, "мл": 300, "г": 300, "л": 0.3, "кг": 0.3 };
+
 export function isLow(product) {
-  return product.qty <= unitStep(product.unit) && !isSpoiled(product);
+  const limit = LOW_LIMITS[product.unit] ?? 1;
+  return product.qty < limit && !isSpoiled(product);
 }
 
 export function needsAttention(product) {
@@ -37,8 +40,14 @@ export function statusOf(product) {
   return "ok";
 }
 
-export function expiryLabel(product) {
-  if (isSpoiled(product)) return t("fridge.spoiled");
+export function expiryDate(product) {
   const [day, month, year] = product.expires.split(".");
   return t("fridge.until", { date: `${day}.${month}.${year.slice(-2)}` });
+}
+
+export function productBadge(product) {
+  if (isSpoiled(product)) return { tone: "spoiled", text: t("fridge.spoiled") };
+  if (isLow(product)) return { tone: "warn", text: t("fridge.low") };
+  if (statusOf(product) === "warn") return { tone: "warn", text: expiryDate(product) };
+  return { tone: "ok", text: expiryDate(product) };
 }

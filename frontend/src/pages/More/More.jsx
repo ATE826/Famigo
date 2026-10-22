@@ -9,7 +9,7 @@ import { t } from "../../i18n";
 import styles from "./More.module.css";
 
 function More() {
-  const { homes, members, currentUserId } = useData();
+  const { homes, members, currentUserId, plan } = useData();
   const me = members.find((m) => m.id === currentUserId);
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
@@ -17,7 +17,11 @@ function More() {
   const items = [
     { label: t("nav.family"), sub: t("more.familySub"), to: "/more/family", icon: "users" },
     { label: t("nav.homes"), sub: homes.map((h) => h.name).join(", "), to: "/more/homes", icon: "home" },
+    { label: t("nav.gallery"), sub: t("more.gallerySub"), to: "/gallery", icon: "image" },
+    { label: t("nav.map"), sub: t("more.mapSub"), to: "/map", icon: "pin" },
     { label: t("nav.fridge"), sub: t("more.fridgeSub"), to: "/more/fridge", icon: "fridge" },
+    { label: t("nav.quests"), sub: t("more.questsSub"), to: "/more/quests", icon: "star" },
+    { label: t("nav.premium"), sub: t("premium.currentPlan", { plan: t(`premium.plans.${plan.id}.name`) }), to: "/premium", icon: "crown" },
     { label: t("nav.settings"), sub: t("more.settingsSub"), to: "/settings", icon: "settings" },
   ];
 

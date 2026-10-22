@@ -63,7 +63,7 @@
   width: 46px;
   height: 28px;
   margin: 0;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--field-border);
   cursor: pointer;
   transition: background-color 0.25s ease;
@@ -96,7 +96,7 @@
 
 .membersTitle {
   padding: 16px 0 4px;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
 }
 
