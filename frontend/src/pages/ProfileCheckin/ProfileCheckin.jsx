@@ -1,6 +1,5 @@
-import { Link } from "react-router-dom";
 import Card from "../../components/Card/Card";
-import Icon from "../../components/Icon/Icon";
+import Paywall from "../../components/Paywall/Paywall";
 import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
@@ -26,16 +25,12 @@ function ProfileCheckin() {
       <p className={styles.intro}>{t("safety.checkin.hint")}</p>
 
       {!plan.checkin ? (
-        <Card className={styles.locked}>
-          <span className={styles.lockIcon}>
-            <Icon name="crown" size={24} strokeWidth={1.8} />
-          </span>
-          <h2 className={styles.lockTitle}>{t("safety.checkin.lockedTitle")}</h2>
-          <p className={styles.lockText}>{t("safety.checkin.lockedText")}</p>
-          <Link to="/premium" state={{ reason: "checkin" }} className={styles.cta}>
-            {t("safety.checkin.lockedCta")}
-          </Link>
-        </Card>
+        <Paywall
+          title={t("safety.checkin.lockedTitle")}
+          text={t("safety.checkin.lockedText")}
+          cta={t("safety.checkin.lockedCta")}
+          reason="checkin"
+        />
       ) : (
         <Card flush>
           <label className={styles.row}>

@@ -15,14 +15,3 @@ export const initialPlaceEvents = [
   { id: "e9", memberId: "mama", place: "shop", type: "arrive", at: ago(60 * 24 * 15) },
   { id: "e10", memberId: "sister", place: "school", type: "arrive", at: ago(60 * 24 * 22) },
 ];
-
-export const initialQuests = [
-  { id: "q1", title: "Вынести мусор", points: 20, to: "sister", status: "open" },
-  { id: "q2", title: "Сделать уроки", points: 30, to: "sister", status: "done" },
-  { id: "q3", title: "Помыть посуду", points: 50, to: "sister", status: "approved" },
-];
-
-export const initialRewards = [
-  { id: "r1", title: "Час компьютерных игр", cost: 40 },
-  { id: "r2", title: "Поход в кино", cost: 150 },
-];

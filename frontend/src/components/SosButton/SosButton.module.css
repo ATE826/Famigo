@@ -3,7 +3,7 @@
   height: 40px;
   padding: 0 16px;
   border: 0;
-  border-radius: 20px;
+  border-radius: var(--radius-sm);
   background: var(--critical);
   color: var(--on-critical);
   font: inherit;

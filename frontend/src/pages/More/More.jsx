@@ -20,7 +20,6 @@ function More() {
     { label: t("nav.gallery"), sub: t("more.gallerySub"), to: "/gallery", icon: "image" },
     { label: t("nav.map"), sub: t("more.mapSub"), to: "/map", icon: "pin" },
     { label: t("nav.fridge"), sub: t("more.fridgeSub"), to: "/more/fridge", icon: "fridge" },
-    { label: t("nav.quests"), sub: t("more.questsSub"), to: "/more/quests", icon: "star" },
     { label: t("nav.premium"), sub: t("premium.currentPlan", { plan: t(`premium.plans.${plan.id}.name`) }), to: "/premium", icon: "crown" },
     { label: t("nav.settings"), sub: t("more.settingsSub"), to: "/settings", icon: "settings" },
   ];

@@ -43,12 +43,12 @@ import Settings from "./pages/Settings/Settings.jsx";
 import Language from "./pages/Language/Language.jsx";
 import Map from "./pages/Map/Map.jsx";
 import Legal from "./pages/Legal/Legal.jsx";
+import NotFound from "./pages/NotFound/NotFound.jsx";
 import Gallery from "./pages/Gallery/Gallery.jsx";
 import Premium from "./pages/Premium/Premium.jsx";
 import MapPlaces from "./pages/MapPlaces/MapPlaces.jsx";
 import ProfileCheckin from "./pages/ProfileCheckin/ProfileCheckin.jsx";
 import Recipes from "./pages/Recipes/Recipes.jsx";
-import Quests from "./pages/Quests/Quests.jsx";
 import ReceiptScan from "./pages/ReceiptScan/ReceiptScan.jsx";
 
 function App() {
@@ -68,6 +68,7 @@ function App() {
                   <Route path="/family-create" element={<FamilyCreate />} />
                   <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
                   <Route path="/legal/:doc" element={<Legal />} />
+                  <Route path="*" element={<NotFound />} />
                 </Route>
                 <Route element={<AppLayout />}>
                   <Route path="/main" element={<Main />} />
@@ -84,7 +85,6 @@ function App() {
                   <Route path="/map" element={<Map />} />
                   <Route path="/map/places" element={<MapPlaces />} />
                   <Route path="/more/fridge/recipes" element={<Recipes />} />
-                  <Route path="/more/quests" element={<Quests />} />
                   <Route path="/budget/scan" element={<ReceiptScan />} />
                   <Route path="/profile/checkin" element={<ProfileCheckin />} />
                   <Route path="/gallery" element={<Gallery />} />

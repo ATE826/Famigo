@@ -420,6 +420,19 @@
   }
 }
 
+/* На телефоне кнопка «Добавить» только с плюсом, чтобы подзаголовок не ломался в две строки */
+@media (max-width: 1023px) {
+  .addButton {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .addLabel {
+    display: none;
+  }
+}
+
 .addButton:disabled {
   opacity: 0.6;
   cursor: default;

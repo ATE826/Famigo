@@ -163,9 +163,15 @@ function Gallery() {
                 {selecting ? t("common.cancel") : t("gallery.select")}
               </button>
             )}
-            <button type="button" className={styles.addButton} disabled={busy} onClick={() => inputRef.current?.click()}>
+            <button
+              type="button"
+              className={styles.addButton}
+              disabled={busy}
+              aria-label={t("gallery.add")}
+              onClick={() => inputRef.current?.click()}
+            >
               <Icon name="plus" size={18} />
-              {t("gallery.add")}
+              <span className={styles.addLabel}>{t("gallery.add")}</span>
             </button>
           </div>
         }

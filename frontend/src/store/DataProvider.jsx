@@ -15,8 +15,6 @@ import { initialLocations, initialSharing } from "./locations";
 import { initialGallery } from "./gallery";
 import {
   initialPlaceEvents,
-  initialQuests,
-  initialRewards,
   initialWatchedPlaces,
 } from "./safety";
 import { t } from "../i18n";
@@ -47,9 +45,6 @@ export default function DataProvider({ children }) {
   const [checkIns, setCheckIns] = useState({});
   const [watchedPlaces, setWatchedPlaces] = useState(initialWatchedPlaces);
   const [placeEvents] = useState(initialPlaceEvents);
-  const [quests, setQuests] = useState(initialQuests);
-  const [rewards, setRewards] = useState(initialRewards);
-  const [redemptions, setRedemptions] = useState([]);
   const currentUserId = "anton";
   const plan = PLANS[activePlanId(subscription)];
 
@@ -187,35 +182,6 @@ export default function DataProvider({ children }) {
     setWatchedPlaces((current) => ({ ...current, [id]: value }));
   }
 
-  function addQuest(quest) {
-    setQuests((current) => [...current, { ...quest, id: `q-${Date.now()}`, status: "open" }]);
-  }
-
-  function setQuestStatus(id, status) {
-    setQuests((current) => current.map((q) => (q.id === id ? { ...q, status } : q)));
-  }
-
-  function removeQuest(id) {
-    setQuests((current) => current.filter((q) => q.id !== id));
-  }
-
-  function addReward(reward) {
-    setRewards((current) => [...current, { ...reward, id: `r-${Date.now()}` }]);
-  }
-
-  function removeReward(id) {
-    setRewards((current) => current.filter((r) => r.id !== id));
-  }
-
-  function redeemReward(rewardId, memberId) {
-    const reward = rewards.find((r) => r.id === rewardId);
-    if (!reward) return;
-    setRedemptions((current) => [
-      ...current,
-      { id: `x-${Date.now()}`, memberId, title: reward.title, cost: reward.cost, at: new Date().toISOString() },
-    ]);
-  }
-
   function updateMember(id, patch) {
     setMembers((current) => current.map((m) => (m.id === id ? { ...m, ...patch } : m)));
   }
@@ -282,15 +248,6 @@ export default function DataProvider({ children }) {
         watchedPlaces,
         watchPlace,
         placeEvents,
-        quests,
-        rewards,
-        redemptions,
-        addQuest,
-        setQuestStatus,
-        removeQuest,
-        addReward,
-        removeReward,
-        redeemReward,
         sharing,
         setSharing,
         subscription,

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Avatar from "../Avatar/Avatar";
 import Icon from "../Icon/Icon";
+import SosButton from "../SosButton/SosButton";
 import { useData } from "../../store/DataContext";
 import { homeOf } from "../../utils/homes";
 import styles from "./TopBar.module.css";
@@ -19,6 +20,7 @@ export default function TopBar() {
           {t("common.nowAt", { name: myHome.name })}
         </Link>
       )}
+      <SosButton />
       <Link to="/notifications" className={styles.bell} aria-label={t("nav.notifications")}>
         <Icon name="bell" size={20} strokeWidth={1.8} />
         <span className={styles.badge}>3</span>

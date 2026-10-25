@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Card from "../../components/Card/Card";
 import Chip, { ChipRow } from "../../components/Chip/Chip";
 import Icon from "../../components/Icon/Icon";
+import Paywall from "../../components/Paywall/Paywall";
 import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Switch from "../../components/Switch/Switch";
@@ -45,16 +46,12 @@ function Recipes() {
       <PageHeader title={t("recipes.title")} subtitle={t("recipes.subtitle")} to="/more/fridge" />
 
       {!plan.recipes ? (
-        <Card className={styles.locked}>
-          <span className={styles.lockIcon}>
-            <Icon name="crown" size={24} strokeWidth={1.8} />
-          </span>
-          <h2 className={styles.lockTitle}>{t("recipes.lockedTitle")}</h2>
-          <p className={styles.lockText}>{t("recipes.lockedText")}</p>
-          <Link to="/premium" state={{ reason: "recipes" }} className={styles.cta}>
-            {t("recipes.lockedCta")}
-          </Link>
-        </Card>
+        <Paywall
+          title={t("recipes.lockedTitle")}
+          text={t("recipes.lockedText")}
+          cta={t("recipes.lockedCta")}
+          reason="recipes"
+        />
       ) : (
         <>
           {homes.length > 1 && (

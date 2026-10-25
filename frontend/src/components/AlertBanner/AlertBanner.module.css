@@ -67,7 +67,7 @@
 .ghost {
   height: 36px;
   padding: 0 14px;
-  border-radius: 18px;
+  border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   font: inherit;

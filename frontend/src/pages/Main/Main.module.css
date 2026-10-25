@@ -728,10 +728,6 @@
   background: var(--primary);
 }
 
-.noticeIconWarn {
-  background: var(--accent);
-  color: #20221F;
-}
 
 .noticeText {
   flex: 1;
@@ -756,7 +752,7 @@
   height: 38px;
   padding: 0 16px;
   border: 0;
-  border-radius: 19px;
+  border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   background: var(--primary);
@@ -773,9 +769,6 @@
   color: #20221F;
 }
 
-.noticeChevron {
-  flex: none;
-}
 
 @media (min-width: 1024px) {
   .notices {

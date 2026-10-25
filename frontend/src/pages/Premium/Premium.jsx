@@ -29,7 +29,6 @@ function featuresOf(planId) {
   }
   features.push({ text: plan.geo ? t("premium.feat.sosMap") : t("premium.feat.sos"), on: true });
   if (plan.receipts) features.push({ text: t("premium.feat.receipts"), on: true });
-  if (plan.quests) features.push({ text: t("premium.feat.quests"), on: true });
   if (plan.recipes) features.push({ text: t("premium.feat.recipes"), on: true });
   if (plan.checkin) features.push({ text: t("premium.feat.checkin"), on: true });
   if (planId === "premiumPlus") features.push({ text: t("premium.feat.soon"), on: true, soon: true });

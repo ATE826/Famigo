@@ -11,8 +11,6 @@ import { productsLabel } from "../../utils/plural";
 import { greeting } from "../../utils/greeting";
 import { checkedToday, overdueMembers } from "../../utils/checkin";
 import useNow from "../../hooks/useNow";
-import { isMinor } from "../../utils/age";
-import { pointsOf } from "../../utils/quests";
 import {
   CURRENT_MONTH,
   balanceUpTo,
@@ -42,8 +40,6 @@ function Main() {
     plan,
     checkIns,
     checkIn,
-    quests,
-    redemptions,
   } = useData();
   const myHome = homeOf(homes, currentUserId);
   const myProducts = myHome ? products.filter((p) => p.homeId === myHome.id) : [];
@@ -68,7 +64,6 @@ function Main() {
   const now = useNow();
   const showCheckin = plan.checkin && Boolean(me?.checkin?.enabled);
   const overdue = plan.checkin ? overdueMembers(members, checkIns, now).filter((m) => m.id !== currentUserId) : [];
-  const showQuests = plan.quests && isMinor(me);
   const barHeight = (amount) => `${Math.max((amount / maxAmount) * 100, amount > 0 ? 6 : 2)}%`;
 
   return (
@@ -120,7 +115,7 @@ function Main() {
         </Link>
       </div>
 
-      {(showCheckin || overdue.length > 0 || showQuests) && (
+      {(showCheckin || overdue.length > 0) && (
         <div className={styles.notices}>
           {overdue.map((member) => (
             <div key={member.id} className={`${styles.notice} ${styles.noticeWarn}`}>
@@ -165,22 +160,6 @@ function Main() {
               </div>
             ))}
 
-          {showQuests && (
-            <Link to="/more/quests" className={`${styles.link} ${styles.notice} ${styles.noticeWarn}`}>
-              <span className={`${styles.noticeIcon} ${styles.noticeIconWarn}`}>
-                <Icon name="star" size={22} strokeWidth={1.8} />
-              </span>
-              <span className={styles.noticeText}>
-                <span className={styles.noticeTitle}>
-                  {t("quests.title")} · {t("quests.pointsShort", { count: pointsOf(quests, redemptions, me.id) })}
-                </span>
-                <span className={styles.noticeSub}>
-                  {t("quests.openCount", { count: quests.filter((q) => q.to === me.id && q.status === "open").length })}
-                </span>
-              </span>
-              <Icon name="chevron" size={18} className={styles.noticeChevron} />
-            </Link>
-          )}
         </div>
       )}
 

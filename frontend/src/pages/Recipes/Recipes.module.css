@@ -126,7 +126,7 @@
   height: 40px;
   padding: 0 16px;
   border: 1px solid var(--field-border);
-  border-radius: 20px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text);
   display: inline-flex;
@@ -158,50 +158,4 @@
   color: var(--muted);
   font-size: 13px;
   line-height: 1.4;
-}
-
-.locked {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 28px 20px;
-  text-align: center;
-}
-
-.lockIcon {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--accent-soft);
-  color: var(--accent-text);
-}
-
-.lockTitle {
-  margin: 0;
-  font-size: 18px;
-}
-
-.lockText {
-  margin: 0;
-  max-width: 360px;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.cta {
-  margin-top: 6px;
-  height: 46px;
-  padding: 0 24px;
-  border-radius: var(--radius-sm);
-  display: inline-flex;
-  align-items: center;
-  background: var(--primary);
-  color: #fff;
-  font-weight: 600;
-  text-decoration: none;
 }
