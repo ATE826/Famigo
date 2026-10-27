@@ -51,7 +51,7 @@ Famigo представляет семью как единое цифровое 
 | Слой           | Технологии                                             |
 | -------------- | ------------------------------------------------------ |
 | Frontend       | React, TypeScript, React Router                        |
-| Backend        | Node.js, Express.js / NestJS, REST API, WebSocket, JWT |
+| Backend        | Go, WebSocket, JWT                                     |
 | Database       | PostgreSQL                                             |
 | Инфраструктура | Docker, Git, CI/CD, Swagger/OpenAPI                    |
 
