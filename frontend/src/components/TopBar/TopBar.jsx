@@ -8,7 +8,7 @@ import styles from "./TopBar.module.css";
 import { t } from "../../i18n";
 
 export default function TopBar() {
-  const { members, homes, currentUserId } = useData();
+  const { members, homes, currentUserId, unreadNotifications } = useData();
   const me = members.find((m) => m.id === currentUserId);
   const myHome = homeOf(homes, currentUserId);
 
@@ -23,7 +23,9 @@ export default function TopBar() {
       <SosButton />
       <Link to="/notifications" className={styles.bell} aria-label={t("nav.notifications")}>
         <Icon name="bell" size={20} strokeWidth={1.8} />
-        <span className={styles.badge}>3</span>
+        {unreadNotifications > 0 && (
+          <span className={styles.badge}>{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>
+        )}
       </Link>
       <Link to="/profile" className={styles.profile}>
         <Avatar letter={me?.letter ?? ""} tone={me?.tone} photo={me?.photo} size={40} />

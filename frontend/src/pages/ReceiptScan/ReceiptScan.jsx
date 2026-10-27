@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import Button from "../../components/Button/Button";
+import FutureNotice from "../../components/FutureNotice/FutureNotice";
 import Icon from "../../components/Icon/Icon";
 import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
@@ -88,6 +89,8 @@ function ReceiptScan() {
   return (
     <Page>
       <PageHeader title={t("receipt.title")} to="/budget/add" icon="close" />
+
+      <FutureNotice />
 
       {!cameraOff ? (
         <div className={styles.camera}>

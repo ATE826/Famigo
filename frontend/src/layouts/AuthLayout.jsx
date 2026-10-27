@@ -1,12 +1,20 @@
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
+import Splash from "../components/Splash/Splash";
+import { useData } from "../store/DataContext";
 import { t } from "../i18n";
 import styles from "./AuthLayout.module.css";
 
 export default function AuthLayout() {
   const { pathname } = useLocation();
   const mode = pathname === "/register" ? "register" : "login";
+  const { status } = useData();
+
+  // Уже вошли — сразу в приложение.
+  if (status === "loading") return <Splash />;
+  if (status === "ready") return <Navigate to="/main" replace />;
+  if (status === "noFamily") return <Navigate to="/family-create" replace />;
 
   return (
     <main className={styles.shell} data-mode={mode}>

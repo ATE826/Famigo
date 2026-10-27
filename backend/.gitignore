@@ -1,0 +1,5 @@
+secrets.env
+bin/
+*.exe
+uploads/*
+!uploads/.gitkeep

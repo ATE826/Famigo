@@ -4,6 +4,7 @@ import Card from "../../components/Card/Card";
 import Chip, { ChipRow } from "../../components/Chip/Chip";
 import Icon from "../../components/Icon/Icon";
 import Fab from "../../components/Fab/Fab";
+import NoHomes from "../../components/NoHomes/NoHomes";
 import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
@@ -28,13 +29,23 @@ function Fridge() {
     homes.find((h) => h.id === fridgeHomeId) ??
     homeOf(homes, currentUserId) ??
     homes[0];
-  const homeProducts = products.filter((p) => p.homeId === home.id);
+  // home?.id, а не home.id: без домов home пуст, а React Compiler вычисляет такие выражения заранее.
+  const homeProducts = products.filter((p) => p.homeId === home?.id);
 
   const visible = homeProducts.filter(
     (p) =>
       (category === ALL || p.cat === category) &&
       p.name.toLowerCase().includes(query.trim().toLowerCase()),
   );
+
+  if (!home) {
+    return (
+      <Page>
+        <PageHeader title={t("fridge.title")} to="/more" />
+        <NoHomes />
+      </Page>
+    );
+  }
 
   return (
     <Page fab>

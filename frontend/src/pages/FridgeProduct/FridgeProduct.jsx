@@ -6,6 +6,7 @@ import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
+import { errorText } from "../../api/client";
 import { categories, categoryLabel, unitLabel, units } from "../Fridge/products";
 import { fullToShort, shortToFull, todayShort } from "../../utils/dates";
 import { formatShortDate, quantityError, shortDateError } from "../../utils/validation";
@@ -20,8 +21,8 @@ function FridgeProduct() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const { homes, products, addProduct, updateProduct } = useData();
-  const product = id ? products.find((p) => p.id === Number(id)) : null;
-  const homeId = product?.homeId ?? homes.find((h) => h.id === params.get("home"))?.id ?? homes[0].id;
+  const product = id ? products.find((p) => p.id === id) : null;
+  const homeId = product?.homeId ?? homes.find((h) => h.id === params.get("home"))?.id ?? homes[0]?.id;
   const home = homes.find((h) => h.id === homeId);
 
   const [values, setValues] = useState({
@@ -33,7 +34,7 @@ function FridgeProduct() {
   });
   const [errors, setErrors] = useState({});
 
-  if (id && !product) {
+  if ((id && !product) || !home) {
     return <Navigate to="/more/fridge" replace />;
   }
 
@@ -45,7 +46,7 @@ function FridgeProduct() {
     setErrors({ ...errors, [name]: "" });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const found = {
       name: values.name.trim() ? "" : t("fridgeProduct.nameRequired"),
@@ -63,10 +64,15 @@ function FridgeProduct() {
       unit: values.unit,
       expires: shortToFull(values.expires),
     };
-    if (isEdit) {
-      updateProduct(product.id, data);
-    } else {
-      addProduct(data);
+    try {
+      if (isEdit) {
+        await updateProduct(product.id, data);
+      } else {
+        await addProduct(data);
+      }
+    } catch (error) {
+      setErrors({ name: errorText(error) });
+      return;
     }
     if (location.key !== "default") {
       navigate(-1);

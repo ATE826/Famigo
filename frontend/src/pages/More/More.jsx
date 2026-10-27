@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Card from "../../components/Card/Card";
 import Avatar from "../../components/Avatar/Avatar";
 import Icon from "../../components/Icon/Icon";
@@ -9,9 +9,8 @@ import { t } from "../../i18n";
 import styles from "./More.module.css";
 
 function More() {
-  const { homes, members, currentUserId, plan } = useData();
+  const { homes, members, currentUserId, plan, logout } = useData();
   const me = members.find((m) => m.id === currentUserId);
-  const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
 
   const items = [
@@ -64,7 +63,7 @@ function More() {
             <button
               type="button"
               className={styles.confirmAction}
-              onClick={() => navigate("/", { replace: true })}
+              onClick={logout}
             >
               {t("more.logout")}
             </button>

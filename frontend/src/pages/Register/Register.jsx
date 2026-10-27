@@ -1,20 +1,20 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
 import { useData } from "../../store/DataContext";
-import { TODAY } from "../Calendar/data";
-import { monthKey } from "../../utils/budget";
 import { birthdayError, formatDate } from "../../utils/validation";
 import { t } from "../../i18n";
+import { errorText } from "../../api/client";
 import Checkbox from "../../components/Checkbox/Checkbox";
 import LinkedText from "../../components/LinkedText/LinkedText";
 import LegalLink from "../../components/LegalModal/LegalLink";
 import styles from "./Register.module.css";
 
 const Register = () => {
-  const navigate = useNavigate();
-  const { currentUserId, updateMember } = useData();
+  const { register } = useData();
+  const [formError, setFormError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [values, setValues] = useState({ name: "", email: "", birthday: "", password: "", password2: "" });
   const [agreed, setAgreed] = useState({ terms: false, data: false });
   const [errors, setErrors] = useState({});
@@ -23,6 +23,7 @@ const Register = () => {
     const { name, value } = e.target;
     setValues({ ...values, [name]: name === "birthday" ? formatDate(value) : value });
     setErrors({ ...errors, [name]: "" });
+    setFormError("");
   }
 
   function validate() {
@@ -41,25 +42,26 @@ const Register = () => {
     return found;
   }
 
-  function handleSubmit(e) {
+  // После регистрации AuthLayout перекинет на создание семьи.
+  async function handleSubmit(e) {
     e.preventDefault();
     const found = validate();
     setErrors(found);
-    if (Object.keys(found).length === 0) {
-      const name = values.name.trim();
-      updateMember(currentUserId, {
-        name,
-        letter: name[0].toUpperCase(),
+    if (Object.keys(found).length > 0 || busy) return;
+    setBusy(true);
+    try {
+      await register({
+        name: values.name.trim(),
         email: values.email.trim(),
-        phone: "",
-        phoneVerified: false,
+        password: values.password,
         birthday: values.birthday.trim(),
-        foodPrefs: [],
-        foodNote: "",
-        joined: monthKey(TODAY),
-        consents: { terms: new Date().toISOString(), data: new Date().toISOString(), geo: null },
       });
-      navigate("/verify", { state: { next: "/family-create" } });
+    } catch (error) {
+      if (error.code === "email_taken") setErrors({ email: errorText(error) });
+      else if (Object.keys(error.fields ?? {}).length > 0) setErrors(error.fields);
+      else setFormError(errorText(error));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -159,7 +161,12 @@ const Register = () => {
         </Checkbox>
       </div>
 
-      <Button type="submit">{t("common.continue")}</Button>
+      {formError && (
+        <p className={styles.formError} role="alert">
+          {formError}
+        </p>
+      )}
+      <Button type="submit" disabled={busy}>{t("common.continue")}</Button>
       <p className={styles.login}>
         {t("auth.haveAccount")}{" "}
         <Link to="/" className={styles.link}>

@@ -58,3 +58,13 @@ p{
     text-decoration: underline;
     text-underline-offset: 2px;
 }
+
+.formError {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger-text);
+  font-size: 14px;
+  line-height: 1.4;
+}

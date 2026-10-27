@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Card from "../../components/Card/Card";
 import MenuRow from "../../components/MenuRow/MenuRow";
 import Page from "../../components/Page/Page";
@@ -10,6 +10,8 @@ import { useTheme } from "../../store/ThemeContext";
 import { LANGUAGES, t } from "../../i18n";
 import { useLanguage } from "../../i18n/LanguageContext";
 import Switch from "../../components/Switch/Switch";
+import Input from "../../components/Input/Input";
+import { errorText } from "../../api/client";
 import useGeoSharing from "../../hooks/useGeoSharing";
 import styles from "./Settings.module.css";
 
@@ -22,13 +24,37 @@ const themes = [
 const NOTIFICATION_KINDS = 5;
 
 function Settings() {
-  const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { lang } = useLanguage();
-  const { notificationSettings, plan } = useData();
+  const { notificationSettings, plan, logoutAll, deleteAccount } = useData();
   const geo = useGeoSharing();
   const [confirm, setConfirm] = useState(null);
+  const [password, setPassword] = useState("");
+  const [confirmError, setConfirmError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  function askConfirm(kind) {
+    setConfirm(kind);
+    setPassword("");
+    setConfirmError("");
+  }
+
+  // После выхода или удаления DataProvider сбросит сессию, и AppLayout отправит на экран входа.
+  async function handleConfirm() {
+    if (confirm === "delete" && !password) {
+      setConfirmError(t("auth.passwordRequired"));
+      return;
+    }
+    setBusy(true);
+    try {
+      if (confirm === "logout") await logoutAll();
+      else await deleteAccount(password);
+    } catch (error) {
+      setConfirmError(errorText(error));
+      setBusy(false);
+    }
+  }
 
   const enabledCount = Object.values(notificationSettings).filter(Boolean).length;
   const notice = location.state?.notice;
@@ -119,8 +145,8 @@ function Settings() {
         <h2 className={styles.sectionTitle}>{t("settings.security")}</h2>
         <Card flush>
           <MenuRow to="/settings/password" icon="lock" label={t("settings.changePassword")} />
-          <MenuRow icon="logout" label={t("settings.logoutAll")} onClick={() => setConfirm("logout")} />
-          <MenuRow icon="trash" label={t("settings.deleteAccount")} danger onClick={() => setConfirm("delete")} />
+          <MenuRow icon="logout" label={t("settings.logoutAll")} onClick={() => askConfirm("logout")} />
+          <MenuRow icon="trash" label={t("settings.deleteAccount")} danger onClick={() => askConfirm("delete")} />
         </Card>
 
         {confirm && (
@@ -130,6 +156,20 @@ function Settings() {
                 ? t("settings.logoutAllConfirm")
                 : t("settings.deleteConfirm")}
             </p>
+            {confirm === "delete" && (
+              <Input
+                id="delete-password"
+                label={t("password.current")}
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setConfirmError("");
+                }}
+              />
+            )}
+            {confirmError && <p className={styles.confirmError}>{confirmError}</p>}
             <div className={styles.confirmButtons}>
               <button type="button" className={styles.cancel} onClick={() => setConfirm(null)}>
                 {t("common.cancel")}
@@ -137,7 +177,8 @@ function Settings() {
               <button
                 type="button"
                 className={styles.confirmAction}
-                onClick={() => navigate("/", { replace: true })}
+                disabled={busy}
+                onClick={handleConfirm}
               >
                 {confirm === "logout" ? t("more.logout") : t("common.delete")}
               </button>

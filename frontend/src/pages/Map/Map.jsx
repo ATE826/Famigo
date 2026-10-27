@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "../../components/Avatar/Avatar";
 import Icon from "../../components/Icon/Icon";
+import FutureNotice from "../../components/FutureNotice/FutureNotice";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import SosButton from "../../components/SosButton/SosButton";
 import Switch from "../../components/Switch/Switch";
@@ -101,7 +102,8 @@ function Map() {
   return (
     <main className={styles.page}>
       <div className={styles.head}>
-        <PageHeader title={t("nav.map")} subtitle={t("map.subtitle")} right={<SosButton />} />
+        <PageHeader title={t("nav.map")} subtitle={t("map.subtitle")} right={<SosButton className={styles.sosMobile} />} />
+        <FutureNotice className={styles.future} />
       </div>
 
       <div className={`${styles.stage} ${locked ? styles.locked : ""}`} inert={locked}>

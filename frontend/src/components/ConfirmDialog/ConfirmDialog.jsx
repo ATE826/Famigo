@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import Icon from "../Icon/Icon";
 import styles from "./ConfirmDialog.module.css";
 
-export default function ConfirmDialog({ icon = "crown", title, text, cancelLabel, confirmLabel, onConfirm, onClose }) {
+export default function ConfirmDialog({ icon = "crown", title, text, cancelLabel, confirmLabel, onConfirm, onClose, children }) {
   useEffect(() => {
     function onKeyDown(e) {
       if (e.key === "Escape") onClose();
@@ -30,6 +30,7 @@ export default function ConfirmDialog({ icon = "crown", title, text, cancelLabel
         <p id="confirm-text" className={styles.text}>
           {text}
         </p>
+        {children}
         <div className={styles.buttons}>
           <button type="button" className={styles.keep} onClick={onClose} autoFocus>
             {cancelLabel}

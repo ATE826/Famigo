@@ -3,6 +3,7 @@ import Avatar from "../../components/Avatar/Avatar";
 import Card from "../../components/Card/Card";
 import Icon from "../../components/Icon/Icon";
 import Page from "../../components/Page/Page";
+import FutureNotice from "../../components/FutureNotice/FutureNotice";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Switch from "../../components/Switch/Switch";
 import useNow from "../../hooks/useNow";
@@ -43,6 +44,7 @@ function MapPlaces() {
   return (
     <Page>
       <PageHeader title={t("places.title")} subtitle={t("places.subtitle")} to="/map" />
+      <FutureNotice />
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>{t("places.watchTitle")}</h2>

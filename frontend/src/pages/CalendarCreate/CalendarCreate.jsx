@@ -7,6 +7,7 @@ import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
+import { errorText } from "../../api/client";
 import { todayString } from "../../utils/dates";
 import { dateError, formatDate, formatTime, timeError } from "../../utils/validation";
 import { t } from "../../i18n";
@@ -15,7 +16,9 @@ import styles from "./CalendarCreate.module.css";
 function CalendarCreate() {
   const navigate = useNavigate();
   const [values, setValues] = useState({ title: "", date: "", time: "", desc: "" });
-  const { members } = useData();
+  const { members, addEvent } = useData();
+  const [place, setPlace] = useState("apartment");
+  const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState(() => members.slice(0, 3).map((m) => m.id));
   const [errors, setErrors] = useState({});
 
@@ -34,7 +37,7 @@ function CalendarCreate() {
     setErrors({ ...errors, members: "" });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const found = {
       title: values.title.trim() ? "" : t("eventCreate.nameRequired"),
@@ -43,8 +46,21 @@ function CalendarCreate() {
       members: selected.length ? "" : t("eventCreate.membersRequired"),
     };
     setErrors(found);
-    if (Object.values(found).every((message) => !message)) {
+    if (!Object.values(found).every((message) => !message) || busy) return;
+    setBusy(true);
+    try {
+      await addEvent({
+        title: values.title.trim(),
+        date: values.date,
+        time: values.time,
+        description: values.desc.trim(),
+        place,
+        memberIds: selected,
+      });
       navigate("/calendar");
+    } catch (error) {
+      setErrors({ title: errorText(error) });
+      setBusy(false);
     }
   }
 
@@ -122,7 +138,7 @@ function CalendarCreate() {
         {errors.members && <span className={styles.error}>{errors.members}</span>}
       </div>
 
-      <Select id="place" label={t("eventCreate.place")}>
+      <Select id="place" label={t("eventCreate.place")} value={place} onChange={(e) => setPlace(e.target.value)}>
         {["apartment", "dacha", "cafe", "restaurant", "other"].map((place) => (
           <option key={place} value={place}>
             {t(`eventCreate.places.${place}`)}

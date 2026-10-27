@@ -1,0 +1,78 @@
+# Famigo целиком одной командой:
+#
+#   docker compose --env-file .env --env-file secrets.env up --build
+#
+# Обычные настройки лежат в .env (в репозитории), пароли и ключи — в secrets.env
+# (в репозиторий не попадает). secrets.env можно хранить вне папки проекта,
+# тогда укажите путь к нему: --env-file C:\secrets\famigo\secrets.env
+# Без secrets.env (`docker compose up --build`) всё запустится с паролями для разработки.
+#
+# Затем откройте http://localhost:8080 — фронтенд, API (/api) и база.
+# Остановить: Ctrl+C или `docker compose down` (данные останутся в томах).
+
+name: famigo
+
+services:
+  # PostgreSQL. Порт наружу не открыт: к базе могут подключиться только
+  # сервисы внутри этой docker-сети, а не любой в локальной сети или интернете.
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: famigo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-famigo}
+      POSTGRES_DB: famigo
+    volumes:
+      - famigo-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U famigo -d famigo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: postgres://famigo:${POSTGRES_PASSWORD:-famigo}@db:5432/famigo?sslmode=disable
+      # Пусто в разработке — сервер сгенерирует временный секрет. Для production обязателен.
+      JWT_SECRET: ${JWT_SECRET:-}
+      # Ключ шифрования сообщений в базе (формат 1:<base64>). В production обязателен.
+      MESSAGE_KEYS: ${MESSAGE_KEYS:-}
+      ALLOWED_ORIGINS: ${PUBLIC_URL:-http://localhost:8080}
+      # Доверяем X-Forwarded-For только от nginx внутри этой сети.
+      TRUSTED_PROXIES: 10.88.0.0/24
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      RATE_LIMIT: ${RATE_LIMIT:-600}
+      DEMO_PAYMENTS: ${DEMO_PAYMENTS:-true}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - famigo-uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/app/api", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  famigo-db:
+  famigo-uploads:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 10.88.0.0/24

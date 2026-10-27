@@ -10,9 +10,13 @@
   padding: 0 16px 12px;
 }
 
+.future {
+  margin-top: 12px;
+}
+
 .stage {
   position: relative;
-  height: calc(100dvh - 190px - env(safe-area-inset-bottom));
+  height: calc(100dvh - 254px - env(safe-area-inset-bottom));
   min-height: 440px;
   overflow: hidden;
   border-top: 1px solid var(--border);
@@ -492,7 +496,7 @@
   }
 
   .stage {
-    height: calc(100dvh - 240px);
+    height: calc(100dvh - 304px);
     min-height: 520px;
     overflow: visible;
     border-top: 0;
@@ -572,4 +576,11 @@
 
 .placesLink span {
   flex: 1;
+}
+
+/* На компьютере SOS уже есть в верхней панели */
+@media (min-width: 1024px) {
+  .sosMobile {
+    display: none;
+  }
 }

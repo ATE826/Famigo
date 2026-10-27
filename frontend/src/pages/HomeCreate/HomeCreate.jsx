@@ -6,6 +6,7 @@ import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
+import { errorText } from "../../api/client";
 import { kinds } from "../../utils/homes";
 import { canManageHomes } from "../../utils/permissions";
 import { countError } from "../../utils/validation";
@@ -57,7 +58,7 @@ function HomeCreate() {
     return Number(values.people) < residents ? t("homeCreate.residentsAlready", { count: residents }) : "";
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const found = {
       name: values.name.trim() ? "" : t("homeCreate.nameRequired"),
@@ -76,16 +77,24 @@ function HomeCreate() {
       people: Number(values.people),
     };
 
-    if (isEdit) {
-      updateHome(home.id, data);
-      if (location.key !== "default") {
-        navigate(-1);
+    try {
+      if (isEdit) {
+        await updateHome(home.id, data);
+        if (location.key !== "default") {
+          navigate(-1);
+        } else {
+          navigate(`/more/home/${home.id}`, { replace: true });
+        }
       } else {
-        navigate(`/more/home/${home.id}`, { replace: true });
+        await addHome(data);
+        navigate("/more/homes");
       }
-    } else {
-      addHome(data);
-      navigate("/more/homes");
+    } catch (error) {
+      if (error.code === "plan_limit") {
+        navigate("/premium", { state: { reason: "homes" } });
+      } else {
+        setErrors({ name: errorText(error) });
+      }
     }
   }
 

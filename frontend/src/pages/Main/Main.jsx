@@ -30,6 +30,9 @@ const MAX_TASKS = 3;
 function Main() {
   const {
     operations,
+    openingBalance,
+    events,
+    unreadNotifications,
     members,
     currentUserId,
     products,
@@ -49,7 +52,7 @@ function Main() {
   const fridgeLink = myHome ? `/more/fridge?home=${myHome.id}` : "/more/fridge";
   const tasks = myHome ? myHome.tasks.filter((task) => !task.done) : [];
   const me = members.find((m) => m.id === currentUserId);
-  const todayEvents = eventsOn(TODAY, birthdayEvents(members, TODAY.getFullYear()));
+  const todayEvents = eventsOn(TODAY, [...events, ...birthdayEvents(members, TODAY.getFullYear())]);
   const chats = chatList(members, currentUserId, chatSettings);
   const freshChat = chats.find((c) => (unread[c.id] ?? 0) > 0);
   const userName = me?.name ?? "";
@@ -89,7 +92,9 @@ function Main() {
             >
               <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0" />
             </svg>
-            <span className={styles.badge}>3</span>
+            {unreadNotifications > 0 && (
+              <span className={styles.badge}>{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>
+            )}
           </Link>
           <Link to="/profile" className={styles.avatarLink} aria-label={t("nav.profile")}>
             <Avatar letter={userLetter} tone={me?.tone} photo={me?.photo} size={44} />
@@ -169,7 +174,7 @@ function Main() {
             <Card>
               <div className={styles.balance}>
                 <span className={styles.label}>{t("main.availableIn", { month: monthInSentence(month) })}</span>
-                <span className={styles.amount}>{formatMoney(balanceUpTo(operations, key))}</span>
+                <span className={styles.amount}>{formatMoney(balanceUpTo(operations, key, openingBalance))}</span>
                 <span className={`${styles.net} ${net < 0 ? styles.netDown : ""}`}>
                   {t("main.monthNet", { amount: `${net < 0 ? "−" : "+"}${formatMoney(Math.abs(net))}` })}
                 </span>

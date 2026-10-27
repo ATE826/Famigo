@@ -319,6 +319,10 @@ const en = {
     pin: "Pin chat",
     pinHint: "Show at the top of the list",
     membersCount: "Members: {count}",
+    read: "read",
+    sending: "sending…",
+    failed: "not sent",
+    deleted: "Message deleted",
   },
   more: {
     familySub: "Members and roles",
@@ -359,6 +363,9 @@ const en = {
     copied: "Copied",
     copyFailed: "Couldn't copy",
     send: "Send invitation",
+    byCode: "Invite code",
+    codeHint: "The new member signs up and enters this code on the “Join a family” screen.",
+    copyCode: "Copy code",
   },
   homes: {
     title: "Homes",
@@ -430,6 +437,10 @@ const en = {
     notFound: "Nothing found",
     add: "Add item",
     product: "Item",
+    noHomesTitle: "The fridge is homeless",
+    noHomesText: "It has nowhere to stand: you need a home first, then groceries. Create a home and the fridge will move right in.",
+    noHomesAction: "Create a home",
+    noHomesAsk: "Homes are created by the owner or admins. Ask them — the fridge is already waiting.",
   },
   fridgeProduct: {
     newTitle: "New item",
@@ -475,6 +486,7 @@ const en = {
       joinedTitle: "Sister joined the family",
       joinedText: "Role: member",
     },
+    earlier: "Earlier",
   },
   notifySettings: {
     intro: "Choose what to be notified about",
@@ -831,6 +843,22 @@ const en = {
     title: "Page not found",
     text: "The link may be outdated or the page was removed. Everything’s still on the home screen.",
     home: "Go to home",
+  },
+  future: {
+    title: "Coming in future versions",
+    text: "This section isn’t part of the MVP. You’re seeing demo data for now.",
+  },
+  errors: {
+    generic: "Something went wrong. Please try again",
+    network: "Can't reach the server. Check your connection",
+    tooMany: "Too many attempts. Please wait a minute",
+    emailTaken: "This email is already registered",
+    invalidInvite: "The code was not found or has expired",
+    alreadyMember: "You're already in this family",
+    planLimit: "Your plan doesn't allow more",
+    wrongPassword: "Wrong password",
+    lastHome: "You can't delete your only home",
+    forbidden: "You don't have permission",
   },
   settings: {
     appearance: "Appearance",

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import ConfirmDialog from "../../components/ConfirmDialog/ConfirmDialog";
 import Icon from "../../components/Icon/Icon";
 import Page from "../../components/Page/Page";
+import FutureNotice from "../../components/FutureNotice/FutureNotice";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Segmented from "../../components/Segmented/Segmented";
 import { getLocale, t } from "../../i18n";
@@ -176,6 +177,8 @@ function Gallery() {
           </div>
         }
       />
+
+      <FutureNotice />
 
       <input
         ref={inputRef}

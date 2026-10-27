@@ -319,6 +319,10 @@ const zh = {
     pin: "置顶聊天",
     pinHint: "显示在列表顶部",
     membersCount: "成员：{count}",
+    read: "已读",
+    sending: "发送中…",
+    failed: "未发送",
+    deleted: "消息已删除",
   },
   more: {
     familySub: "成员与角色",
@@ -356,6 +360,9 @@ const zh = {
     copied: "已复制",
     copyFailed: "复制失败",
     send: "发送邀请",
+    byCode: "邀请码",
+    codeHint: "新成员注册后，在“加入家庭”页面输入此代码。",
+    copyCode: "复制代码",
   },
   homes: {
     title: "住所",
@@ -427,6 +434,10 @@ const zh = {
     notFound: "未找到",
     add: "添加食品",
     product: "食品",
+    noHomesTitle: "冰箱还没有家",
+    noHomesText: "它没地方放：先要有个家，才能有食物。创建一个住所，冰箱就会自己搬进来。",
+    noHomesAction: "创建住所",
+    noHomesAsk: "住所由所有者和管理员创建。请他们帮忙，冰箱已经等不及了。",
   },
   fridgeProduct: {
     newTitle: "新食品",
@@ -472,6 +483,7 @@ const zh = {
       joinedTitle: "妹妹加入了家庭",
       joinedText: "角色：成员",
     },
+    earlier: "更早",
   },
   notifySettings: {
     intro: "选择要接收哪些通知",
@@ -828,6 +840,22 @@ const zh = {
     title: "页面未找到",
     text: "链接可能已失效，或页面已被删除。主页上的一切都还在。",
     home: "返回主页",
+  },
+  future: {
+    title: "将在后续版本中推出",
+    text: "此功能不在 MVP 中，目前显示的是演示数据。",
+  },
+  errors: {
+    generic: "出了点问题，请重试",
+    network: "无法连接服务器，请检查网络",
+    tooMany: "尝试次数过多，请稍等一分钟",
+    emailTaken: "该邮箱已注册",
+    invalidInvite: "邀请码不存在或已过期",
+    alreadyMember: "你已经在这个家庭中",
+    planLimit: "你的套餐已达上限",
+    wrongPassword: "密码错误",
+    lastHome: "不能删除唯一的住所",
+    forbidden: "权限不足",
   },
   settings: {
     appearance: "外观",

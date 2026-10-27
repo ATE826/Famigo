@@ -6,6 +6,7 @@ import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
 import { t } from "../../i18n";
+import { errorText } from "../../api/client";
 import styles from "./PhoneVerify.module.css";
 
 const CODE_LENGTH = 6;
@@ -14,7 +15,8 @@ const RESEND_SECONDS = 30;
 function PhoneVerify() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUserId, updateMember } = useData();
+  const { updateProfile } = useData();
+  const [busy, setBusy] = useState(false);
   const phone = location.state?.phone;
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
@@ -30,14 +32,23 @@ function PhoneVerify() {
     return <Navigate to="/profile/phone" replace />;
   }
 
-  function handleSubmit(e) {
+  // SMS-подтверждения на сервере пока нет: код проверяется только по длине,
+  // номер сохраняется неподтверждённым.
+  async function handleSubmit(e) {
     e.preventDefault();
     if (code.length !== CODE_LENGTH) {
       setError(t("auth.codeDigits", { count: CODE_LENGTH }));
       return;
     }
-    updateMember(currentUserId, { phone, phoneVerified: true });
-    navigate("/profile", { replace: true });
+    if (busy) return;
+    setBusy(true);
+    try {
+      await updateProfile({ phone });
+      navigate("/profile", { replace: true });
+    } catch (error) {
+      setError(errorText(error));
+      setBusy(false);
+    }
   }
 
   return (

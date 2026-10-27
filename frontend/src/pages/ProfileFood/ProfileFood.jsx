@@ -8,6 +8,7 @@ import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
 import { t } from "../../i18n";
+import { errorText } from "../../api/client";
 import { foodGroups, foodLabel } from "./food";
 import Checkbox from "../../components/Checkbox/Checkbox";
 import LinkedText from "../../components/LinkedText/LinkedText";
@@ -19,7 +20,7 @@ const CUSTOM_MAX = 30;
 function ProfileFood() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { members, currentUserId, updateMember } = useData();
+  const { members, currentUserId, saveFood } = useData();
   const me = members.find((m) => m.id === currentUserId);
   const [selected, setSelected] = useState(me?.foodPrefs ?? []);
   const [note, setNote] = useState(me?.foodNote ?? "");
@@ -49,18 +50,19 @@ function ProfileFood() {
     setSelected(selected.includes(option) ? selected.filter((o) => o !== option) : [...selected, option]);
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const hasData = selected.length > 0 || note.trim().length > 0;
     if (hasData && !agreed) {
       setError(t("food.consentRequired"));
       return;
     }
-    updateMember(currentUserId, {
-      foodPrefs: selected,
-      foodNote: note.trim(),
-      consents: { ...me?.consents, food: hasData ? me?.consents?.food ?? new Date().toISOString() : null },
-    });
+    try {
+      await saveFood(selected, note.trim(), agreed);
+    } catch (error) {
+      setError(errorText(error));
+      return;
+    }
     if (location.key !== "default") {
       navigate(-1);
     } else {

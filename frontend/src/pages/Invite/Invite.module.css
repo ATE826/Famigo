@@ -46,3 +46,10 @@
   font-size: 15px;
   cursor: pointer;
 }
+
+.code {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+}

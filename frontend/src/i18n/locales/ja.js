@@ -319,6 +319,10 @@ const ja = {
     pin: "チャットを固定",
     pinHint: "リストの一番上に表示",
     membersCount: "メンバー：{count}",
+    read: "既読",
+    sending: "送信中…",
+    failed: "未送信",
+    deleted: "メッセージは削除されました",
   },
   more: {
     familySub: "メンバーと役割",
@@ -356,6 +360,9 @@ const ja = {
     copied: "コピーしました",
     copyFailed: "コピーできませんでした",
     send: "招待を送信",
+    byCode: "招待コード",
+    codeHint: "新しいメンバーは登録後、「家族に参加」画面でこのコードを入力します。",
+    copyCode: "コードをコピー",
   },
   homes: {
     title: "住まい",
@@ -427,6 +434,10 @@ const ja = {
     notFound: "見つかりませんでした",
     add: "食品を追加",
     product: "食品",
+    noHomesTitle: "冷蔵庫に家がありません",
+    noHomesText: "置く場所がありません。まず家を作ってから食材を入れましょう。家を作れば、冷蔵庫が勝手に引っ越してきます。",
+    noHomesAction: "家を作成",
+    noHomesAsk: "家を作成できるのはオーナーと管理者です。お願いしてみましょう。冷蔵庫はもう待ちきれません。",
   },
   fridgeProduct: {
     newTitle: "新しい食品",
@@ -472,6 +483,7 @@ const ja = {
       joinedTitle: "妹が家族に参加しました",
       joinedText: "役割：メンバー",
     },
+    earlier: "それ以前",
   },
   notifySettings: {
     intro: "通知を受け取る内容を選んでください",
@@ -828,6 +840,22 @@ const ja = {
     title: "ページが見つかりません",
     text: "リンクが古いか、ページが削除された可能性があります。ホームはいつも通りです。",
     home: "ホームへ",
+  },
+  future: {
+    title: "今後のバージョンで提供予定",
+    text: "このセクションはMVPに含まれていません。現在はデモデータを表示しています。",
+  },
+  errors: {
+    generic: "問題が発生しました。もう一度お試しください",
+    network: "サーバーに接続できません。通信環境を確認してください",
+    tooMany: "試行回数が多すぎます。1分ほどお待ちください",
+    emailTaken: "このメールアドレスは登録済みです",
+    invalidInvite: "コードが見つからないか、期限切れです",
+    alreadyMember: "すでにこの家族のメンバーです",
+    planLimit: "ご利用のプランではこれ以上追加できません",
+    wrongPassword: "パスワードが違います",
+    lastHome: "唯一の家は削除できません",
+    forbidden: "権限がありません",
   },
   settings: {
     appearance: "外観",

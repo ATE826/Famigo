@@ -8,6 +8,7 @@ import Icon from "../../components/Icon/Icon";
 import FormScreen from "../../components/FormScreen/FormScreen";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
+import { errorText } from "../../api/client";
 import { todayString } from "../../utils/dates";
 import { amountError, dateError, formatDate } from "../../utils/validation";
 import { t } from "../../i18n";
@@ -50,7 +51,7 @@ function BudgetAdd() {
     setErrors({ ...errors, [name]: "" });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const found = {
       sum: amountError(values.sum),
@@ -62,15 +63,20 @@ function BudgetAdd() {
 
     const [day, month, year] = values.date.split(".");
     const isoDate = `${year}-${month}-${day}`;
-    addOperation({
-      date: isoDate,
-      type,
-      category,
-      amount: Number(values.sum.replace(/[\s₽]/g, "").replace(",", ".")),
-      title: isOther ? values.title.trim() : "",
-      desc: values.desc.trim(),
-      who: currentUserId,
-    });
+    try {
+      await addOperation({
+        date: isoDate,
+        type,
+        category,
+        amount: Number(values.sum.replace(/[\s₽]/g, "").replace(",", ".")),
+        title: isOther ? values.title.trim() : "",
+        desc: values.desc.trim(),
+        who: currentUserId,
+      });
+    } catch (error) {
+      setErrors({ sum: errorText(error) });
+      return;
+    }
     navigate(`/budget?month=${isoDate.slice(0, 7)}`);
   }
 

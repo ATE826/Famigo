@@ -319,6 +319,10 @@ const es = {
     pin: "Fijar chat",
     pinHint: "Mostrar arriba de la lista",
     membersCount: "Miembros: {count}",
+    read: "leído",
+    sending: "enviando…",
+    failed: "no enviado",
+    deleted: "Mensaje eliminado",
   },
   more: {
     familySub: "Miembros y roles",
@@ -359,6 +363,9 @@ const es = {
     copied: "Copiado",
     copyFailed: "No se pudo copiar",
     send: "Enviar invitación",
+    byCode: "Código de invitación",
+    codeHint: "El nuevo miembro se registra e introduce este código en la pantalla «Unirse a una familia».",
+    copyCode: "Copiar código",
   },
   homes: {
     title: "Casas",
@@ -430,6 +437,10 @@ const es = {
     notFound: "No se ha encontrado nada",
     add: "Añadir producto",
     product: "Producto",
+    noHomesTitle: "La nevera no tiene casa",
+    noHomesText: "No tiene dónde ponerse: primero hace falta una casa y luego la compra. Crea una casa y la nevera se mudará sola.",
+    noHomesAction: "Crear una casa",
+    noHomesAsk: "Las casas las crean el propietario y los administradores. Pídeselo: la nevera ya está esperando.",
   },
   fridgeProduct: {
     newTitle: "Nuevo producto",
@@ -475,6 +486,7 @@ const es = {
       joinedTitle: "Tu hermana se ha unido a la familia",
       joinedText: "Rol: miembro",
     },
+    earlier: "Antes",
   },
   notifySettings: {
     intro: "Elige sobre qué quieres recibir notificaciones",
@@ -831,6 +843,22 @@ const es = {
     title: "Página no encontrada",
     text: "Puede que el enlace esté caducado o que la página se haya eliminado. En el inicio está todo.",
     home: "Ir al inicio",
+  },
+  future: {
+    title: "En próximas versiones",
+    text: "Esta sección no forma parte del MVP. Por ahora se muestran datos de demostración.",
+  },
+  errors: {
+    generic: "Algo salió mal. Inténtalo de nuevo",
+    network: "No hay conexión con el servidor. Revisa tu internet",
+    tooMany: "Demasiados intentos. Espera un minuto",
+    emailTaken: "Este correo ya está registrado",
+    invalidInvite: "El código no existe o ha caducado",
+    alreadyMember: "Ya estás en esta familia",
+    planLimit: "Tu plan no permite más",
+    wrongPassword: "Contraseña incorrecta",
+    lastHome: "No puedes eliminar tu única casa",
+    forbidden: "No tienes permiso",
   },
   settings: {
     appearance: "Apariencia",

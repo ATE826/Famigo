@@ -64,9 +64,9 @@ function Calendar() {
   const [selected, setSelected] = useState(TODAY);
   const [direction, setDirection] = useState("fade");
   const View = viewComponents[view];
-  const { members } = useData();
+  const { members, events } = useData();
   const year = selected.getFullYear();
-  const extra = [year - 1, year, year + 1].flatMap((y) => birthdayEvents(members, y));
+  const extra = [...events, ...[year - 1, year, year + 1].flatMap((y) => birthdayEvents(members, y))];
 
   function go(step) {
     setDirection(step > 0 ? "next" : "prev");

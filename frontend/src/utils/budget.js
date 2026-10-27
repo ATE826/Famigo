@@ -1,10 +1,8 @@
 import { getLang, getLocale, t, tValue } from "../i18n";
-import { OPENING_BALANCE } from "../store/operations";
-
-export const CURRENT_MONTH = "2026-10";
-
 
 const pad = (n) => String(n).padStart(2, "0");
+
+export const CURRENT_MONTH = monthKey(new Date());
 
 export function monthInSentence(date) {
   if (getLang() === "ru") return t("months.prepositional")[date.getMonth()];
@@ -30,11 +28,12 @@ export function totalOf(operations, type) {
   return operations.filter((o) => o.type === type).reduce((sum, o) => sum + o.amount, 0);
 }
 
-export function balanceUpTo(operations, key) {
+// opening — остаток до первой загруженной операции (приходит с сервера).
+export function balanceUpTo(operations, key, opening = 0) {
   const net = operations
     .filter((o) => o.date.slice(0, 7) <= key)
     .reduce((sum, o) => sum + (o.type === "income" ? o.amount : -o.amount), 0);
-  return OPENING_BALANCE + net;
+  return opening + net;
 }
 
 export function earliestMonthKey(operations) {

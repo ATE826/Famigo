@@ -7,11 +7,12 @@ import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
 import { birthdayError, formatDate } from "../../utils/validation";
 import { t } from "../../i18n";
+import { errorText } from "../../api/client";
 
 function ProfilePersonal() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { members, currentUserId, updateMember } = useData();
+  const { members, currentUserId, updateProfile } = useData();
   const me = members.find((m) => m.id === currentUserId);
   const [values, setValues] = useState({ name: me?.name ?? "", birthday: me?.birthday ?? "" });
   const [errors, setErrors] = useState({});
@@ -22,7 +23,7 @@ function ProfilePersonal() {
     setErrors({ ...errors, [name]: "" });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const name = values.name.trim();
     const found = {
@@ -32,11 +33,12 @@ function ProfilePersonal() {
     setErrors(found);
     if (found.name || found.birthday) return;
 
-    updateMember(currentUserId, {
-      name,
-      letter: name[0].toUpperCase(),
-      birthday: values.birthday.trim(),
-    });
+    try {
+      await updateProfile({ name, birthday: values.birthday.trim() });
+    } catch (error) {
+      setErrors(Object.keys(error.fields ?? {}).length ? error.fields : { name: errorText(error) });
+      return;
+    }
     if (location.key !== "default") {
       navigate(-1);
     } else {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ConfirmDialog from "../components/ConfirmDialog/ConfirmDialog";
+import FutureNotice from "../components/FutureNotice/FutureNotice";
 import { useData } from "../store/DataContext";
 import { t } from "../i18n";
 
@@ -23,7 +24,9 @@ export default function useSos() {
         setOpen(false);
       }}
       onClose={() => setOpen(false)}
-    />
+    >
+      <FutureNotice />
+    </ConfirmDialog>
   ) : null;
 
   return { request, dialog };

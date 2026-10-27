@@ -2,3 +2,7 @@ node_modules/
 dist/
 .DS_Store
 *.log
+# Секреты. Обычные настройки (.env) в репозитории, пароли и ключи — нет.
+secrets.env
+*.secrets.env
+!secrets.env.example

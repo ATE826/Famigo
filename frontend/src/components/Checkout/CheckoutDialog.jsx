@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import Checkbox from "../Checkbox/Checkbox";
+import FutureNotice from "../FutureNotice/FutureNotice";
 import Icon from "../Icon/Icon";
 import LegalLink from "../LegalModal/LegalLink";
 import LinkedText from "../LinkedText/LinkedText";
 import { t } from "../../i18n";
 import { PLANS } from "../../utils/plans";
 import { formatMoney } from "../../utils/budget";
+import { errorText } from "../../api/client";
 import styles from "./CheckoutDialog.module.css";
 
 export default function CheckoutDialog({ planId, period, onConfirm, onClose }) {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
   const price = PLANS[planId].price[period];
   const planName = t(`premium.plans.${planId}.name`);
 
@@ -23,13 +26,21 @@ export default function CheckoutDialog({ planId, period, onConfirm, onClose }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  function pay() {
+  async function pay() {
     if (!agreed) {
       setError(t("auth.agreeRequired"));
       return;
     }
-    onConfirm();
-    setDone(true);
+    if (busy) return;
+    setBusy(true);
+    try {
+      await onConfirm();
+      setDone(true);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -80,6 +91,8 @@ export default function CheckoutDialog({ planId, period, onConfirm, onClose }) {
                 <dd>{formatMoney(price)}</dd>
               </div>
             </dl>
+
+            <FutureNotice />
 
             <p className={styles.note}>{t("premium.checkout.autoRenew")}</p>
             <p className={styles.demo}>{t("premium.checkout.demo")}</p>

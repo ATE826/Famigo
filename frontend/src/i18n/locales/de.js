@@ -319,6 +319,10 @@ const de = {
     pin: "Chat anheften",
     pinHint: "Oben in der Liste anzeigen",
     membersCount: "Mitglieder: {count}",
+    read: "gelesen",
+    sending: "wird gesendet…",
+    failed: "nicht gesendet",
+    deleted: "Nachricht gelöscht",
   },
   more: {
     familySub: "Mitglieder und Rollen",
@@ -359,6 +363,9 @@ const de = {
     copied: "Kopiert",
     copyFailed: "Kopieren fehlgeschlagen",
     send: "Einladung senden",
+    byCode: "Einladungscode",
+    codeHint: "Das neue Mitglied registriert sich und gibt diesen Code im Bereich „Familie beitreten“ ein.",
+    copyCode: "Code kopieren",
   },
   homes: {
     title: "Zuhause",
@@ -430,6 +437,10 @@ const de = {
     notFound: "Nichts gefunden",
     add: "Artikel hinzufügen",
     product: "Artikel",
+    noHomesTitle: "Der Kühlschrank ist obdachlos",
+    noHomesText: "Er hat keinen Platz: erst braucht es ein Zuhause, dann Lebensmittel. Lege ein Zuhause an, und der Kühlschrank zieht von selbst ein.",
+    noHomesAction: "Zuhause anlegen",
+    noHomesAsk: "Zuhause legen Inhaber und Admins an. Frag sie – der Kühlschrank wartet schon.",
   },
   fridgeProduct: {
     newTitle: "Neuer Artikel",
@@ -475,6 +486,7 @@ const de = {
       joinedTitle: "Schwester ist der Familie beigetreten",
       joinedText: "Rolle: Mitglied",
     },
+    earlier: "Früher",
   },
   notifySettings: {
     intro: "Wähle, worüber du benachrichtigt werden möchtest",
@@ -831,6 +843,22 @@ const de = {
     title: "Seite nicht gefunden",
     text: "Der Link ist vielleicht veraltet oder die Seite wurde gelöscht. Auf der Startseite ist alles da.",
     home: "Zur Startseite",
+  },
+  future: {
+    title: "In zukünftigen Versionen",
+    text: "Dieser Bereich gehört nicht zum MVP. Derzeit werden Demodaten angezeigt.",
+  },
+  errors: {
+    generic: "Etwas ist schiefgelaufen. Bitte versuche es erneut",
+    network: "Keine Verbindung zum Server. Prüfe deine Internetverbindung",
+    tooMany: "Zu viele Versuche. Bitte warte eine Minute",
+    emailTaken: "Diese E-Mail ist bereits registriert",
+    invalidInvite: "Der Code wurde nicht gefunden oder ist abgelaufen",
+    alreadyMember: "Du bist bereits in dieser Familie",
+    planLimit: "Dein Tarif erlaubt nicht mehr",
+    wrongPassword: "Falsches Passwort",
+    lastHome: "Das einzige Zuhause kann nicht gelöscht werden",
+    forbidden: "Dafür fehlen dir die Rechte",
   },
   settings: {
     appearance: "Darstellung",

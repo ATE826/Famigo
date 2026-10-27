@@ -9,4 +9,14 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  server: {
+    // В разработке запросы /api (и WebSocket чата) уходят на Go-сервер.
+    // Для браузера фронтенд и API на одном адресе — как в Docker за nginx.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        ws: true,
+      },
+    },
+  },
 })

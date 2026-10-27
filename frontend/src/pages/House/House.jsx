@@ -22,6 +22,7 @@ function House() {
     addResident,
     removeResident,
     removeHome,
+    showError,
     toggleTask,
     removeTask,
   } = useData();
@@ -52,9 +53,13 @@ function House() {
     }, 350);
   }
 
-  function handleRemove() {
-    removeHome(home.id);
-    navigate("/more/homes", { replace: true });
+  async function handleRemove() {
+    try {
+      await removeHome(home.id);
+      navigate("/more/homes", { replace: true });
+    } catch (error) {
+      showError(error);
+    }
   }
 
   return (

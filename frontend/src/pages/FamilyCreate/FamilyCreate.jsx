@@ -1,42 +1,67 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
 import { useData } from "../../store/DataContext";
 import { t } from "../../i18n";
+import { errorText } from "../../api/client";
+import Splash from "../../components/Splash/Splash";
 import styles from "./FamilyCreate.module.css";
 
-const CODE_LENGTH = 6;
+// Код приглашения: 5 символов без похожих букв и цифр (как выдаёт сервер).
+const CODE_LENGTH = 5;
 
 function FamilyCreate() {
-  const navigate = useNavigate();
-  const { renameFamily } = useData();
+  const { status, createFamily, joinFamily } = useData();
+  const [busy, setBusy] = useState(false);
   const [familyName, setFamilyName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [familyError, setFamilyError] = useState("");
   const [inviteError, setInviteError] = useState("");
 
-  function handleCreate(event) {
+  async function handleCreate(event) {
     event.preventDefault();
     if (!familyName.trim()) {
       setFamilyError(t("familyCreate.nameRequired"));
       return;
     }
-    renameFamily(familyName.trim());
-    navigate("/main");
+    if (busy) return;
+    setBusy(true);
+    try {
+      await createFamily(familyName.trim());
+    } catch (error) {
+      setFamilyError(errorText(error));
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function handleJoin(event) {
+  async function handleJoin(event) {
     event.preventDefault();
     const code = inviteCode.trim();
     if (!code) {
       setInviteError(t("familyCreate.codeRequired"));
-    } else if (code.length !== CODE_LENGTH) {
+      return;
+    }
+    if (code.length !== CODE_LENGTH) {
       setInviteError(t("familyCreate.codeLength", { count: CODE_LENGTH }));
-    } else {
-      navigate("/main");
+      return;
+    }
+    if (busy) return;
+    setBusy(true);
+    try {
+      await joinFamily(code);
+    } catch (error) {
+      setInviteError(errorText(error));
+    } finally {
+      setBusy(false);
     }
   }
+
+  // Экран нужен только тем, кто вошёл, но ещё не состоит в семье.
+  if (status === "loading") return <Splash />;
+  if (status === "guest") return <Navigate to="/" replace />;
+  if (status === "ready") return <Navigate to="/main" replace />;
 
   return (
     <main className={styles.page}>
@@ -64,7 +89,7 @@ function FamilyCreate() {
           }}
           hint={familyError}
         />
-        <Button type="submit">{t("common.create")}</Button>
+        <Button type="submit" disabled={busy}>{t("common.create")}</Button>
       </form>
 
       <form className={styles.card} onSubmit={handleJoin} noValidate>
@@ -82,7 +107,7 @@ function FamilyCreate() {
           }}
           hint={inviteError}
         />
-        <Button type="submit">{t("familyCreate.join")}</Button>
+        <Button type="submit" disabled={busy}>{t("familyCreate.join")}</Button>
       </form>
     </main>
   );

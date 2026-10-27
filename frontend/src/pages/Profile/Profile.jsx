@@ -12,6 +12,8 @@ import { roleLabels } from "../../utils/roles";
 import { t } from "../../i18n";
 import { joinedLabel } from "../Calendar/data";
 import { foodLabel } from "../ProfileFood/food";
+import { prepareMedia } from "../../utils/media";
+import { errorText } from "../../api/client";
 import styles from "./Profile.module.css";
 
 const tones = [
@@ -26,8 +28,9 @@ const legacyTones = { sage: "mint", gray: "cream" };
 const MAX_PHOTO_MB = 5;
 
 function Profile() {
-  const { members, homes, currentUserId, updateMember, familyName } = useData();
+  const { members, homes, currentUserId, familyName, uploadAvatar, removeAvatar, updateProfile, showError } = useData();
   const [photoError, setPhotoError] = useState("");
+  const [uploading, setUploading] = useState(false);
   const me = members.find((m) => m.id === currentUserId);
 
   if (!me) {
@@ -39,24 +42,30 @@ function Profile() {
   const toneInfo = tones.find((tone) => tone.value === currentTone);
   const ringColor = toneInfo?.outlined ? "var(--field-border)" : toneInfo?.color;
 
-  function handlePhoto(e) {
+  // Фото отправляется на сервер, там его проверят и перекодируют. Снимки iPhone (HEIC)
+  // сначала переводим в JPEG прямо в браузере: сервер принимает JPEG, PNG, GIF и WebP.
+  async function handlePhoto(e) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setPhotoError(t("profile.chooseImage"));
-      return;
-    }
     if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
       setPhotoError(t("profile.fileTooBig", { count: MAX_PHOTO_MB }));
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateMember(me.id, { photo: reader.result });
+    setUploading(true);
+    try {
+      const prepared = await prepareMedia(file);
+      if (!prepared || prepared.type !== "image") {
+        setPhotoError(t("profile.chooseImage"));
+        return;
+      }
+      await uploadAvatar(prepared.file);
       setPhotoError("");
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      setPhotoError(errorText(error));
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
@@ -78,13 +87,13 @@ function Profile() {
         <div className={styles.photoActions}>
           <label className={styles.photoButton}>
             {me.photo ? t("profile.changePhoto") : t("profile.uploadPhoto")}
-            <input type="file" accept="image/*" className={styles.fileInput} onChange={handlePhoto} />
+            <input type="file" accept="image/*,.heic,.heif" className={styles.fileInput} disabled={uploading} onChange={handlePhoto} />
           </label>
           {me.photo && (
             <button
               type="button"
               className={styles.photoRemove}
-              onClick={() => updateMember(me.id, { photo: "" })}
+              onClick={() => removeAvatar().catch(showError)}
             >
               {t("profile.removePhoto")}
             </button>
@@ -150,7 +159,7 @@ function Profile() {
                 style={{ background: tone.color }}
                 aria-label={t(`profile.tones.${tone.value}`)}
                 aria-pressed={currentTone === tone.value}
-                onClick={() => updateMember(me.id, { tone: tone.value })}
+                onClick={() => updateProfile({ tone: tone.value }).catch(showError)}
               />
             ))}
           </div>
