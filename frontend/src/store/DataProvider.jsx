@@ -477,6 +477,14 @@ export default function DataProvider({ children }) {
 
   // ---------- Бюджет и календарь ----------
 
+  // Блюда от нейросети из продуктов дома. Локальная модель может думать пару минут.
+  function suggestRecipes(homeId, { servings, memberIds, allMembers = true, category = "any" }) {
+    return api(base(`/homes/${homeId}/recipes/suggest`), {
+      method: "POST",
+      body: { servings, memberIds, allMembers, category, language: getLang() },
+    });
+  }
+
   async function addOperation(operation) {
     const created = await api(base("/transactions"), { method: "POST", body: operationToApi(operation) });
     setOperations((current) => [...current, mapOperation(created)]);
@@ -832,6 +840,7 @@ export default function DataProvider({ children }) {
         addProduct,
         updateProduct,
         changeQty,
+        suggestRecipes,
       }}
     >
       {children}

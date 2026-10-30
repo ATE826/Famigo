@@ -13,6 +13,44 @@
 name: famigo
 
 services:
+  # Ollama доступна только внутри сети Compose. Модели сохраняются между запусками.
+  ollama:
+    image: ollama/ollama:latest
+    gpus: all
+    environment:
+      OLLAMA_KEEP_ALIVE: 30m
+      # Место для пяти рецептов, списка продуктов и ограничений в одном запросе.
+      OLLAMA_CONTEXT_LENGTH: 16384
+    volumes:
+      - famigo-ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+  # При первом старте скачивает модель; установленную модель повторно не скачивает.
+  # Работает параллельно с сайтом: загрузка модели не задерживает бэкенд и фронтенд.
+  ollama-init:
+    image: ollama/ollama:latest
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${AI_MODEL:-gemma4:e4b}
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        if ollama show "$$OLLAMA_MODEL" >/dev/null 2>&1; then
+          echo "Model $$OLLAMA_MODEL is already installed"
+        else
+          exec ollama pull "$$OLLAMA_MODEL"
+        fi
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
   # PostgreSQL. Порт наружу не открыт: к базе могут подключиться только
   # сервисы внутри этой docker-сети, а не любой в локальной сети или интернете.
   db:
@@ -46,6 +84,17 @@ services:
       RATE_LIMIT: ${RATE_LIMIT:-600}
       DEMO_PAYMENTS: ${DEMO_PAYMENTS:-true}
       UPLOAD_DIR: /app/uploads
+      # Нейросеть для подбора блюд (см. .env). Ключ облачного провайдера — в secrets.env.
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_REASONING: ${AI_REASONING:-}
+      AI_JSON_MODE: ${AI_JSON_MODE:-schema}
+      AI_TIMEOUT: ${AI_TIMEOUT:-5m}
+      AI_MAX_CONCURRENT: ${AI_MAX_CONCURRENT:-1}
+    # host.docker.internal — адрес компьютера из контейнера (на Linux его нужно объявить явно).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - famigo-uploads:/app/uploads
     depends_on:
@@ -70,6 +119,7 @@ services:
 volumes:
   famigo-db:
   famigo-uploads:
+  famigo-ollama:
 
 networks:
   default:

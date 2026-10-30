@@ -28,7 +28,8 @@ func TestRoundTrip(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.HasPrefix(stored, Prefix) || strings.Contains(stored, text) {
+		// Однобуквенный текст случайно встречается и в base64 шифртекста — его не проверяем.
+		if !strings.HasPrefix(stored, Prefix) || (len(text) > 1 && strings.Contains(stored, text)) {
 			t.Fatalf("запись должна быть зашифрована: %.40q", stored)
 		}
 		got, err := c.Decrypt(stored, "aad")
@@ -63,9 +64,10 @@ func TestAADBindsCiphertextToItsPlace(t *testing.T) {
 func TestTamperedDataIsRejected(t *testing.T) {
 	c := mustNew(t, key(1, 'a'))
 	stored, _ := c.Encrypt("секрет", "aad")
-	// Меняем один символ шифртекста.
-	last := stored[len(stored)-1]
-	flipped := stored[:len(stored)-1] + string(map[bool]byte{true: 'B', false: 'A'}[last == 'A'])
+	// Меняем один символ шифртекста. Не последний: в нём могут быть лишние биты base64,
+	// которые при декодировании отбрасываются, и подмена ничего бы не изменила.
+	i := len(stored) - 10
+	flipped := stored[:i] + string(map[bool]byte{true: 'B', false: 'A'}[stored[i] == 'A']) + stored[i+1:]
 	if _, err := c.Decrypt(flipped, "aad"); !errors.Is(err, ErrDecrypt) {
 		t.Fatalf("изменённые данные должны отклоняться, err = %v", err)
 	}

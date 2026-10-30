@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/ATE826/Famigo/backend/internal/ai"
 	"github.com/ATE826/Famigo/backend/internal/auth"
 	"github.com/ATE826/Famigo/backend/internal/budget"
 	"github.com/ATE826/Famigo/backend/internal/calendar"
@@ -19,6 +20,7 @@ import (
 	"github.com/ATE826/Famigo/backend/internal/httpx"
 	"github.com/ATE826/Famigo/backend/internal/notifications"
 	"github.com/ATE826/Famigo/backend/internal/products"
+	"github.com/ATE826/Famigo/backend/internal/recipes"
 	"github.com/ATE826/Famigo/backend/internal/subscriptions"
 	"github.com/ATE826/Famigo/backend/internal/users"
 )
@@ -83,6 +85,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, db *gorm.DB, log *slog.Log
 	subscriptions.NewHandler(subsService).RegisterRoutes(family)
 	homes.NewHandler(homes.NewService(db, subsService)).RegisterRoutes(family)
 	products.NewHandler(products.NewService(db)).RegisterRoutes(family)
+	recipes.NewHandler(recipes.NewService(db, subsService, ai.New(cfg.AI, log))).RegisterRoutes(family)
 	budget.NewHandler(budget.NewService(db, notifyService)).RegisterRoutes(family)
 	calendar.NewHandler(calendar.NewService(db, notifyService)).RegisterRoutes(family)
 	hub := chats.NewHub(log)

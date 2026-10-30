@@ -159,3 +159,37 @@ func TestInvalidMessageKeysAreRejected(t *testing.T) {
 		t.Fatal("неверный MESSAGE_KEYS должен быть ошибкой, а не тихо отключать шифрование")
 	}
 }
+
+func TestAIConfig(t *testing.T) {
+	t.Chdir(t.TempDir())
+	t.Setenv("DATABASE_URL", "postgres://x")
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	t.Setenv("AI_BASE_URL", "")
+	if cfg, err := Load(log); err != nil || cfg.AI.BaseURL != "" {
+		t.Fatalf("без AI_BASE_URL подбор блюд выключен: %v", err)
+	}
+
+	t.Setenv("AI_BASE_URL", "http://localhost:11434/v1")
+	t.Setenv("AI_MODEL", "")
+	if _, err := Load(log); err == nil {
+		t.Fatal("без AI_MODEL должна быть ошибка")
+	}
+
+	t.Setenv("AI_MODEL", "gemma4:26b")
+	cfg, err := Load(log)
+	if err != nil || cfg.AI.MaxConcurrent != 1 || cfg.AI.JSONMode != "schema" || cfg.AI.Timeout <= 0 {
+		t.Fatalf("локальная модель: %v %+v", err, cfg.AI)
+	}
+
+	// Ключ облачного провайдера по http ушёл бы открытым текстом.
+	t.Setenv("AI_BASE_URL", "http://api.example.com/v1")
+	t.Setenv("AI_API_KEY", "secret")
+	if _, err := Load(log); err == nil {
+		t.Fatal("ключ по http к чужому серверу должен быть ошибкой")
+	}
+	t.Setenv("AI_BASE_URL", "https://api.example.com/v1")
+	if _, err := Load(log); err != nil {
+		t.Fatalf("https с ключом: %v", err)
+	}
+}

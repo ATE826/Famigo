@@ -9,11 +9,13 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/ATE826/Famigo/backend/internal/ai"
 	"github.com/ATE826/Famigo/backend/internal/fieldcrypt"
 )
 
@@ -42,6 +44,9 @@ type Config struct {
 	// MessageKeys — ключи шифрования сообщений в базе. Первый активный, остальные нужны
 	// для чтения старых сообщений (смена ключа). Пусто — шифрование выключено (только в разработке).
 	MessageKeys []fieldcrypt.Key
+
+	// AI — нейросеть для подбора блюд. Пустой AI.BaseURL — подбор выключен.
+	AI ai.Config
 
 	UploadDir string
 	// DemoPayments разрешает оформить подписку без оплаты. Только для разработки и защиты проекта.
@@ -130,10 +135,56 @@ func Load(log *slog.Logger) (Config, error) {
 		log.Warn("MESSAGE_KEYS не задан: сообщения в базе НЕ шифруются (допустимо только в разработке)")
 	}
 
+	if cfg.AI, err = loadAI(); err != nil {
+		return Config{}, err
+	}
+
 	if cfg.CookieSameSite == http.SameSiteNoneMode && !cfg.CookieSecure {
 		return Config{}, errors.New("COOKIE_SAMESITE=none работает только с COOKIE_SECURE=true")
 	}
 	return cfg, nil
+}
+
+// loadAI — настройки нейросети. Подходит любой OpenAI-совместимый API:
+// локальный Ollama (http://localhost:11434/v1) или облачный (Gemini, OpenRouter, Groq…).
+func loadAI() (ai.Config, error) {
+	cfg := ai.Config{
+		BaseURL:   strings.TrimSpace(os.Getenv("AI_BASE_URL")),
+		Model:     strings.TrimSpace(os.Getenv("AI_MODEL")),
+		APIKey:    strings.TrimSpace(os.Getenv("AI_API_KEY")),
+		JSONMode:  getEnv("AI_JSON_MODE", "schema"),
+		Reasoning: strings.TrimSpace(os.Getenv("AI_REASONING")),
+	}
+	var err error
+	if cfg.Timeout, err = getDuration("AI_TIMEOUT", 5*time.Minute); err != nil {
+		return ai.Config{}, err
+	}
+	if cfg.MaxConcurrent, err = getInt("AI_MAX_CONCURRENT", 1); err != nil {
+		return ai.Config{}, err
+	}
+	if cfg.BaseURL == "" {
+		return cfg, nil
+	}
+	u, err := url.Parse(cfg.BaseURL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return ai.Config{}, errors.New("AI_BASE_URL: ожидается адрес вида http://localhost:11434/v1")
+	}
+	if cfg.Model == "" {
+		return ai.Config{}, errors.New("AI_MODEL: укажите модель, например gemma4:26b")
+	}
+	if cfg.JSONMode != "schema" && cfg.JSONMode != "object" {
+		return ai.Config{}, errors.New("AI_JSON_MODE: ожидается schema или object")
+	}
+	// Ключ по обычному http ушёл бы открытым текстом. Без шифрования можно только к своей
+	// машине или соседнему контейнеру.
+	if cfg.APIKey != "" && u.Scheme == "http" && !localHost(u.Hostname()) {
+		return ai.Config{}, errors.New("AI_BASE_URL: с ключом AI_API_KEY нужен https://")
+	}
+	return cfg, nil
+}
+
+func localHost(host string) bool {
+	return host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "host.docker.internal"
 }
 
 func randomSecret() []byte {

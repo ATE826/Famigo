@@ -25,12 +25,14 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
+	"github.com/ATE826/Famigo/backend/internal/ai"
 	"github.com/ATE826/Famigo/backend/internal/chats"
 	"github.com/ATE826/Famigo/backend/internal/config"
 	"github.com/ATE826/Famigo/backend/internal/database"
@@ -170,7 +172,19 @@ func TestAPIIntegration(t *testing.T) {
 	key1 := fieldcrypt.Key{ID: 1, Secret: bytes.Repeat([]byte{1}, fieldcrypt.KeySize)}
 	key2 := fieldcrypt.Key{ID: 2, Secret: bytes.Repeat([]byte{2}, fieldcrypt.KeySize)}
 
+	// Нейросеть в тесте поддельная: отвечает заготовкой и запоминает, что ей прислали.
+	var aiRequest atomic.Value
+	fakeAI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		aiRequest.Store(string(body))
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"choices": []any{map[string]any{"message": map[string]any{"content": fakeDishes}}},
+		})
+	}))
+	defer fakeAI.Close()
+
 	cfg := config.Config{
+		AI:              ai.Config{BaseURL: fakeAI.URL, Model: "fake-model", Timeout: 10 * time.Second, MaxConcurrent: 1},
 		MessageKeys:     []fieldcrypt.Key{key1},
 		JWTSecret:       []byte("integration-secret-integration-secret"),
 		AccessTokenTTL:  15 * time.Minute,
@@ -794,6 +808,69 @@ func TestAPIIntegration(t *testing.T) {
 		}
 	})
 
+	step("блюда от нейросети: тариф, ограничения, личные данные", func(t *testing.T) {
+		base := "/api/families/" + familyID + "/homes/" + homeA
+		suggest := base + "/recipes/suggest"
+		anton.expect(201, "POST", base+"/products",
+			map[string]any{"name": "Яйца", "category": "other", "quantity": 10, "unit": "pcs", "expiresOn": "2099-01-01"})
+		anton.expect(201, "POST", base+"/products",
+			map[string]any{"name": "Старый кефир", "category": "dairy", "quantity": 1, "unit": "l", "expiresOn": "2020-01-01"})
+
+		r := anton.expect(403, "POST", suggest, map[string]any{"servings": 2})
+		if !strings.Contains(r.Raw, "plan_limit") {
+			t.Fatalf("на Premium подбор блюд недоступен: %s", r.Raw)
+		}
+		anton.expect(200, "POST", "/api/families/"+familyID+"/subscription", map[string]any{"plan": "premium_plus", "period": "month"})
+
+		anton.expect(422, "POST", suggest, map[string]any{"servings": 0})
+		anton.expect(422, "POST", suggest, map[string]any{"servings": 2, "language": "xx"})
+		anton.expect(422, "POST", suggest, map[string]any{"servings": 2, "category": "unknown"})
+		anton.expect(422, "POST", suggest, map[string]any{"servings": 2, "memberIds": []string{uuid.NewString()}})
+		eve.expect(404, "POST", suggest, map[string]any{"servings": 2})
+
+		r = bob.expect(200, "POST", suggest, map[string]any{"servings": 3})
+		items := r.Body["items"].([]any)
+		// Пять разных блюд: салат с орехами и блюдо без шагов не проходят проверку.
+		if len(items) != 5 || r.Body["dropped"].(float64) != 2 || r.Body["model"] != "fake-model" {
+			t.Fatalf("ответ: %s", r.Raw)
+		}
+		dish := items[0].(map[string]any)
+		ingredients := dish["ingredients"].([]any)
+		if dish["servings"].(float64) != 3 || len(ingredients) != 3 || dish["missingCount"].(float64) != 1 || ingredients[2].(map[string]any)["staple"] != true {
+			t.Fatalf("блюдо: %s", r.Raw)
+		}
+		if ingredients[0].(map[string]any)["inFridge"] != true || ingredients[1].(map[string]any)["inFridge"] != false {
+			t.Fatalf("есть/докупить: %s", r.Raw)
+		}
+
+		sent, _ := aiRequest.Load().(string)
+		for _, want := range []string{"Яйца", "Аллергия на орехи", `\"servings\":3`} {
+			if !strings.Contains(sent, want) {
+				t.Errorf("нейросеть не получила %q: %s", want, sent)
+			}
+		}
+		// Модели уходят только продукты и ограничения: без имён, почты и испорченных продуктов.
+		for _, leak := range []string{"Антон", "Боб", email("anton"), email("bob"), "Старый кефир"} {
+			if strings.Contains(sent, leak) {
+				t.Errorf("нейросеть получила лишнее %q", leak)
+			}
+		}
+
+		// Только Боб: его ограничений нет, и салат с орехами проходит.
+		r = bob.expect(200, "POST", suggest, map[string]any{"servings": 1, "memberIds": []string{bobID}, "category": "snack"})
+		if len(r.Body["items"].([]any)) != 5 || r.Body["category"] != "snack" {
+			t.Fatalf("для Боба должна получиться подборка из пяти закусок: %s", r.Raw)
+		}
+		r = bob.expect(200, "POST", suggest, map[string]any{"servings": 1, "allMembers": false, "memberIds": []string{}})
+		if r.Body["dropped"].(float64) != 1 {
+			t.Fatalf("empty selection must apply no restrictions: %s", r.Raw)
+		}
+		r = bob.expect(200, "POST", suggest, map[string]any{"servings": 1, "allMembers": true, "memberIds": []string{bobID}})
+		if r.Body["dropped"].(float64) != 2 {
+			t.Fatalf("all members must include family restrictions: %s", r.Raw)
+		}
+	})
+
 	step("слишком большой запрос", func(t *testing.T) {
 		huge := `{"name":"` + strings.Repeat("a", 2<<20) + `"}`
 		anton.expect(413, "PATCH", "/api/me", huge)
@@ -829,3 +906,22 @@ func TestAPIIntegration(t *testing.T) {
 }
 
 func ptr[T any](v T) *T { return &v }
+
+// fakeDishes — пять разных подходящих блюд, салат с орехами (нарушает
+// аллергию Антона) и сломанное блюдо без шагов.
+const fakeDishes = `{"dishes":[
+ {"title":"Омлет с сыром","minutes":10,"ingredients":[
+   {"name":"Яйца","name_ru":"Яйца","amount":"4 шт.","product":"Яйца"},
+   {"name":"Сыр","name_ru":"Сыр","amount":"50 г","product":""},
+   {"name":"Соль","name_ru":"Соль","amount":"по вкусу","product":""}],
+  "steps":["Взбейте яйца.","Жарьте под крышкой 5 минут."]},
+ {"title":"Салат с яйцом и грецкими орехами","minutes":15,"ingredients":[
+   {"name":"Яйца","name_ru":"Яйца","amount":"2 шт.","product":"Яйца"},
+   {"name":"Грецкие орехи","name_ru":"Грецкие орехи","amount":"30 г","product":""}],
+  "steps":["Отварите яйца.","Смешайте с орехами."]},
+ {"title":"Загадочное блюдо","minutes":5,"ingredients":[{"name":"Яйца","name_ru":"Яйца","amount":"1","product":"Яйца"}],"steps":[]},
+ {"title":"Яичная запеканка","minutes":25,"ingredients":[{"name":"Яйца","name_ru":"Яйца","amount":"2 шт.","product":"Яйца"},{"name":"Картофель","name_ru":"Картофель","amount":"200 г","product":""}],"steps":["Взбейте яйца для запеканки.","Запеките в форме."]},
+ {"title":"Рулет с зеленью","minutes":20,"ingredients":[{"name":"Яйца","name_ru":"Яйца","amount":"2 шт.","product":"Яйца"},{"name":"Укроп","name_ru":"Укроп","amount":"20 г","product":""}],"steps":["Приготовьте яичный блин.","Сверните в рулет с зеленью."]},
+ {"title":"Яичные маффины","minutes":30,"ingredients":[{"name":"Яйца","name_ru":"Яйца","amount":"2 шт.","product":"Яйца"},{"name":"Мука","name_ru":"Мука","amount":"100 г","product":""}],"steps":["Разлейте смесь по формам для маффинов.","Испеките маффины."]},
+ {"title":"Воздушное суфле","minutes":25,"ingredients":[{"name":"Яйца","name_ru":"Яйца","amount":"2 шт.","product":"Яйца"},{"name":"Творог","name_ru":"Творог","amount":"100 г","product":""}],"steps":["Взбейте белки для суфле.","Осторожно соедините и запеките суфле."]}
+]}`
