@@ -17,9 +17,11 @@ import (
 
 	"github.com/ATE826/Famigo/backend/internal/ai"
 	"github.com/ATE826/Famigo/backend/internal/fieldcrypt"
+	"github.com/ATE826/Famigo/backend/internal/mail"
 )
 
 type Config struct {
+	Mail mail.Config
 	// Production включает строгий режим: обязательный JWT_SECRET, Secure-куки, HSTS.
 	Production bool
 	Port       string
@@ -76,6 +78,7 @@ func Load(log *slog.Logger) (Config, error) {
 	}
 
 	cfg := Config{
+		Mail:           mail.Config{APIKey: strings.TrimSpace(os.Getenv("RESEND_API_KEY")), From: getEnv("EMAIL_FROM", "onboarding@resend.dev")},
 		Production:     getEnv("APP_ENV", "development") == "production",
 		Port:           getEnv("PORT", "8080"),
 		DatabaseURL:    os.Getenv("DATABASE_URL"),

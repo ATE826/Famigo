@@ -60,6 +60,7 @@ function FamilyCreate() {
 
   // Экран нужен только тем, кто вошёл, но ещё не состоит в семье.
   if (status === "loading") return <Splash />;
+  if (status === "verification") return <Navigate to="/verify" replace />;
   if (status === "guest") return <Navigate to="/" replace />;
   if (status === "ready") return <Navigate to="/main" replace />;
 

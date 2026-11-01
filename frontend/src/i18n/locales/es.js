@@ -881,6 +881,8 @@ const es = {
     text: "Esta sección no forma parte del MVP. Por ahora se muestran datos de demostración.",
   },
   errors: {
+    invalidCode: "Código incorrecto o caducado. Revísalo o solicita uno nuevo",
+    emailUnavailable: "No se pudo enviar el correo. Inténtalo más tarde. Si la cuenta ya se creó, intenta iniciar sesión",
     generic: "Algo salió mal. Inténtalo de nuevo",
     network: "No hay conexión con el servidor. Revisa tu internet",
     tooMany: "Demasiados intentos. Espera un minuto",

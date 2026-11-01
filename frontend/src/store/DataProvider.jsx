@@ -50,6 +50,10 @@ function newClientId() {
 }
 
 export default function DataProvider({ children }) {
+	const [pendingVerification, setPendingVerification] = useState(() => {
+		try { return JSON.parse(sessionStorage.getItem("famigo-email-verification")) ?? null; } catch { return null; }
+	});
+	const verifiedSession = useRef(false);
   const [status, setStatus] = useState("loading");
   const [me, setMe] = useState(null);
   const [family, setFamily] = useState(null);
@@ -265,7 +269,7 @@ export default function DataProvider({ children }) {
         .then(loadAll)
         .catch((error) => {
           if (cancelled) return;
-          if (error.status === 401) setStatus("guest");
+          if (error.status === 401) setStatus(pendingVerification ? "verification" : "guest");
           else timer = setTimeout(start, 3000);
         });
     }
@@ -280,18 +284,47 @@ export default function DataProvider({ children }) {
   // ---------- Вход и аккаунт ----------
 
   async function login(email, password) {
-    const session = await api("/auth/login", { method: "POST", body: { email, password } });
-    setAccessToken(session.accessToken);
-    await loadAll();
+    const challenge = await api("/auth/login", { method: "POST", body: { email, password } });
+    rememberVerification({ ...challenge, flow: "login" });
   }
 
   async function register({ name, email, password, birthday }) {
-    const session = await api("/auth/register", {
+    const challenge = await api("/auth/register", {
       method: "POST",
       body: { name, email, password, birthday: ruDateToIso(birthday), acceptTerms: true, acceptData: true },
     });
-    setAccessToken(session.accessToken);
+    rememberVerification({ ...challenge, flow: "register" });
+  }
+
+  function rememberVerification(value) {
+    sessionStorage.setItem("famigo-email-verification", JSON.stringify(value));
+    setPendingVerification(value);
+    verifiedSession.current = false;
+    setStatus("verification");
+  }
+
+  async function verifyEmail(code) {
+    if (!verifiedSession.current) {
+      const session = await api("/auth/email/verify", { method: "POST", body: { challengeId: pendingVerification.challengeId, code } });
+      setAccessToken(session.accessToken);
+      verifiedSession.current = true;
+    }
     await loadAll();
+    sessionStorage.removeItem("famigo-email-verification");
+    setPendingVerification(null);
+    verifiedSession.current = false;
+  }
+
+  async function resendEmail() {
+    const challenge = await api("/auth/email/resend", { method: "POST", body: { challengeId: pendingVerification.challengeId } });
+    rememberVerification({ ...challenge, flow: pendingVerification.flow });
+  }
+
+  function cancelVerification() {
+    sessionStorage.removeItem("famigo-email-verification");
+    setPendingVerification(null);
+    verifiedSession.current = false;
+    setStatus("guest");
   }
 
   async function logout() {
@@ -763,6 +796,10 @@ export default function DataProvider({ children }) {
     <DataContext.Provider
       value={{
         status,
+		pendingVerification,
+		verifyEmail,
+		resendEmail,
+		cancelVerification,
         login,
         register,
         logout,

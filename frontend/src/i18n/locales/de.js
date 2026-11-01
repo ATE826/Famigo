@@ -881,6 +881,8 @@ const de = {
     text: "Dieser Bereich gehört nicht zum MVP. Derzeit werden Demodaten angezeigt.",
   },
   errors: {
+    invalidCode: "Ungültiger oder abgelaufener Code. Prüfe den Code oder fordere einen neuen an",
+    emailUnavailable: "E-Mail konnte nicht gesendet werden. Versuche es später. Falls das Konto bereits erstellt wurde, melde dich an",
     generic: "Etwas ist schiefgelaufen. Bitte versuche es erneut",
     network: "Keine Verbindung zum Server. Prüfe deine Internetverbindung",
     tooMany: "Zu viele Versuche. Bitte warte eine Minute",

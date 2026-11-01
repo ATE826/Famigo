@@ -18,6 +18,7 @@ import (
 	"github.com/ATE826/Famigo/backend/internal/health"
 	"github.com/ATE826/Famigo/backend/internal/homes"
 	"github.com/ATE826/Famigo/backend/internal/httpx"
+	"github.com/ATE826/Famigo/backend/internal/mail"
 	"github.com/ATE826/Famigo/backend/internal/notifications"
 	"github.com/ATE826/Famigo/backend/internal/products"
 	"github.com/ATE826/Famigo/backend/internal/recipes"
@@ -47,6 +48,9 @@ func registerRoutes(r *gin.Engine, cfg config.Config, db *gorm.DB, log *slog.Log
 	tokens := auth.NewTokenManager(cfg.JWTSecret, cfg.AccessTokenTTL)
 	notifyService := notifications.NewService(db)
 	authService := auth.NewService(db, tokens, cfg.RefreshTokenTTL, cfg.LegalVersion)
+	if sender := mail.New(cfg.Mail); sender != nil {
+		authService.SetEmailSender(sender, cfg.JWTSecret)
+	}
 	subsService := subscriptions.NewService(db, cfg.DemoPayments)
 	usersService, err := users.NewService(db, authService, cfg.UploadDir, cfg.LegalVersion)
 	if err != nil {

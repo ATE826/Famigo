@@ -20,6 +20,8 @@ import (
 const reuseGrace = 30 * time.Second
 
 type Service struct {
+	email        emailSender
+	codeSecret   []byte
 	db           *gorm.DB
 	tokens       *TokenManager
 	refreshTTL   time.Duration
@@ -81,6 +83,10 @@ func (s *Service) Register(ctx context.Context, in RegisterInput, userAgent stri
 		if err := insertConsents(tx, user.ID, s.legalVersion, "terms", "privacy", "data"); err != nil {
 			return err
 		}
+		if s.email != nil {
+			session = Session{UserID: user.ID}
+			return nil
+		}
 		session, err = s.startSession(tx, user.ID, uuid.New(), userAgent)
 		return err
 	})
@@ -99,6 +105,9 @@ func (s *Service) Login(ctx context.Context, email, password, userAgent string) 
 	}
 	if !CheckPassword(user.PasswordHash, password) {
 		return Session{}, errBadCredentials
+	}
+	if s.email != nil {
+		return Session{UserID: user.ID}, nil
 	}
 	return s.startSession(db, user.ID, uuid.New(), userAgent)
 }

@@ -13,8 +13,9 @@ export default function AuthLayout() {
 
   // Уже вошли — сразу в приложение.
   if (status === "loading") return <Splash />;
+  if (status === "verification") return <Navigate to="/verify" replace />;
   if (status === "ready") return <Navigate to="/main" replace />;
-  if (status === "noFamily") return <Navigate to="/family-create" replace />;
+  if (status === "noFamily") return <Navigate to="/main" replace />;
 
   return (
     <main className={styles.shell} data-mode={mode}>

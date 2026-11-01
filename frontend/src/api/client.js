@@ -97,6 +97,8 @@ export async function api(path, options) {
 // Текст ошибки для человека: по известным кодам — на языке интерфейса,
 // иначе — сообщение сервера.
 const KNOWN = {
+  invalid_code: "errors.invalidCode",
+  email_unavailable: "errors.emailUnavailable",
   network: "errors.network",
   too_many_requests: "errors.tooMany",
   email_taken: "errors.emailTaken",

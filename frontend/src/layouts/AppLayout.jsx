@@ -31,10 +31,11 @@ export default function AppLayout() {
   const { status } = useData();
   const withNav = NAV_PATHS.some((path) => matchPath(path, pathname));
 
-  // Без входа — на экран входа, без семьи — на создание семьи.
+  // Без семьи доступна главная; остальные разделы требуют создания или присоединения.
   if (status === "loading") return <Splash />;
+  if (status === "verification") return <Navigate to="/verify" replace />;
   if (status === "guest") return <Navigate to="/" replace />;
-  if (status === "noFamily") return <Navigate to="/family-create" replace />;
+  if (status === "noFamily" && pathname !== "/main") return <Navigate to="/family-create" replace />;
 
   return (
     <div className={`${styles.layout} ${withNav ? styles.withNav : ""}`}>

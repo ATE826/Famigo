@@ -40,6 +40,8 @@ func NewHandler(service *Service, cookies CookieOptions, registerByIP *httpx.Rat
 func (h *Handler) RegisterRoutes(public, cookie, authed *gin.RouterGroup) {
 	public.POST("/auth/register", h.registerByIP.ByIP("register:"), h.register)
 	public.POST("/auth/login", h.login)
+	public.POST("/auth/email/verify", h.verifyEmail)
+	public.POST("/auth/email/resend", h.resendEmail)
 	cookie.POST("/auth/refresh", h.refresh)
 	cookie.POST("/auth/logout", h.logout)
 	authed.POST("/auth/logout-all", h.logoutAll)
@@ -104,12 +106,16 @@ func (h *Handler) register(c *gin.Context) {
 		return
 	}
 
+	if h.service.email == nil {
+		httpx.Respond(c, errEmailUnavailable)
+		return
+	}
 	session, err := h.service.Register(c.Request.Context(), in, c.Request.UserAgent())
 	if err != nil {
 		httpx.Respond(c, err)
 		return
 	}
-	h.respondSession(c, http.StatusCreated, session)
+	h.respondChallenge(c, http.StatusCreated, session.UserID)
 }
 
 type loginRequest struct {
@@ -135,12 +141,16 @@ func (h *Handler) login(c *gin.Context) {
 		return
 	}
 
+	if h.service.email == nil {
+		httpx.Respond(c, errEmailUnavailable)
+		return
+	}
 	session, err := h.service.Login(c.Request.Context(), email, req.Password, c.Request.UserAgent())
 	if err != nil {
 		httpx.Respond(c, err)
 		return
 	}
-	h.respondSession(c, http.StatusOK, session)
+	h.respondChallenge(c, http.StatusOK, session.UserID)
 }
 
 func (h *Handler) refresh(c *gin.Context) {

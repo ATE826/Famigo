@@ -877,6 +877,8 @@ const zh = {
     text: "此功能不在 MVP 中，目前显示的是演示数据。",
   },
   errors: {
+    invalidCode: "验证码错误或已过期。请检查或重新获取验证码",
+    emailUnavailable: "邮件发送失败，请稍后重试。如果账号已创建，请尝试登录",
     generic: "出了点问题，请重试",
     network: "无法连接服务器，请检查网络",
     tooMany: "尝试次数过多，请稍等一分钟",

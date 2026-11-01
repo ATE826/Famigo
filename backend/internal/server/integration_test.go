@@ -24,7 +24,9 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"os"
+	"regexp"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -37,10 +39,13 @@ import (
 	"github.com/ATE826/Famigo/backend/internal/config"
 	"github.com/ATE826/Famigo/backend/internal/database"
 	"github.com/ATE826/Famigo/backend/internal/fieldcrypt"
+	"github.com/ATE826/Famigo/backend/internal/mail"
 	"github.com/ATE826/Famigo/backend/internal/models"
 )
 
 const origin = "http://localhost:5173"
+
+var testEmails sync.Map
 
 type client struct {
 	t     *testing.T
@@ -102,6 +107,16 @@ func (c *client) expect(want int, method, path string, body any, headers ...stri
 	r := c.do(method, path, body, headers...)
 	if r.Status != want {
 		c.t.Fatalf("%s %s: status %d, want %d; body: %s", method, path, r.Status, want, r.Raw)
+	}
+	if (path == "/api/auth/register" || path == "/api/auth/login") && r.Status < 300 && r.Body["challengeId"] != nil {
+		if r.Body["accessToken"] != nil || r.Header.Get("Set-Cookie") != "" {
+			c.t.Fatal("session issued before code verification")
+		}
+		value, ok := testEmails.Load(str(r.Body["email"]))
+		if !ok {
+			c.t.Fatal("no email delivered")
+		}
+		r = c.expect(200, "POST", "/api/auth/email/verify", map[string]any{"challengeId": r.Body["challengeId"], "code": value})
 	}
 	return r
 }
@@ -182,8 +197,30 @@ func TestAPIIntegration(t *testing.T) {
 		})
 	}))
 	defer fakeAI.Close()
+	fakeMail := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			To   []string `json:"to"`
+			Text string   `json:"text"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Error(err)
+			w.WriteHeader(400)
+			return
+		}
+		code := regexp.MustCompile(`\b[0-9]{6}\b`).FindString(body.Text)
+		if len(body.To) != 1 || code == "" {
+			t.Error("invalid email payload")
+			w.WriteHeader(400)
+			return
+		}
+		testEmails.Store(body.To[0], code)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"fake-email"}`))
+	}))
+	defer fakeMail.Close()
 
 	cfg := config.Config{
+		Mail:            mail.Config{APIKey: "test-only", From: "test@example.com", BaseURL: fakeMail.URL},
 		AI:              ai.Config{BaseURL: fakeAI.URL, Model: "fake-model", Timeout: 10 * time.Second, MaxConcurrent: 1},
 		MessageKeys:     []fieldcrypt.Key{key1},
 		JWTSecret:       []byte("integration-secret-integration-secret"),
@@ -242,6 +279,56 @@ func TestAPIIntegration(t *testing.T) {
 	})
 
 	anton.register("Антон", email("anton"))
+	step("email: no session before code, wrong code, cooldown, verification and replay", func(t *testing.T) {
+		c := newClient(t, srv.URL)
+		r := c.do("POST", "/api/auth/register", map[string]any{"name": "Email test", "email": email("verify"), "password": "correct horse", "birthday": "1990-05-01", "acceptTerms": true, "acceptData": true})
+		if r.Status != 201 || r.Body["accessToken"] != nil || r.Header.Get("Set-Cookie") != "" {
+			t.Fatalf("pending response: %s", r.Raw)
+		}
+		c.expect(401, "GET", "/api/me", nil)
+		id := r.Body["challengeId"]
+		code, _ := testEmails.Load(email("verify"))
+		wrong := "000000"
+		if code == wrong {
+			wrong = "111111"
+		}
+		c.expect(422, "POST", "/api/auth/email/verify", map[string]any{"challengeId": id, "code": wrong})
+		c.expect(429, "POST", "/api/auth/email/resend", map[string]any{"challengeId": id})
+		if err := db.Exec("UPDATE verification_codes SET created_at = now() - interval '61 seconds' WHERE id = ?", id).Error; err != nil {
+			t.Fatal(err)
+		}
+		c.expect(200, "POST", "/api/auth/email/resend", map[string]any{"challengeId": id})
+		code, _ = testEmails.Load(email("verify"))
+		session := c.expect(200, "POST", "/api/auth/email/verify", map[string]any{"challengeId": id, "code": code})
+		c.token = str(session.Body["accessToken"])
+		profile := c.expect(200, "GET", "/api/me", nil)
+		if profile.Body["emailVerified"] != true {
+			t.Fatal("email not marked verified")
+		}
+		c.expect(422, "POST", "/api/auth/email/verify", map[string]any{"challengeId": id, "code": code})
+	})
+	step("email: attempt limit and expiration", func(t *testing.T) {
+		c := newClient(t, srv.URL)
+		pending := c.do("POST", "/api/auth/login", map[string]any{"email": email("verify"), "password": "correct horse"})
+		if pending.Status != 200 || pending.Body["accessToken"] != nil {
+			t.Fatalf("login bypass: %s", pending.Raw)
+		}
+		id := pending.Body["challengeId"]
+		code, _ := testEmails.Load(email("verify"))
+		wrong := "000000"
+		if code == wrong {
+			wrong = "111111"
+		}
+		for range 5 {
+			c.expect(422, "POST", "/api/auth/email/verify", map[string]any{"challengeId": id, "code": wrong})
+		}
+		c.expect(422, "POST", "/api/auth/email/verify", map[string]any{"challengeId": id, "code": code})
+		if err := db.Exec("UPDATE verification_codes SET attempts = 0, expires_at = now() - interval '1 second' WHERE id = ?", id).Error; err != nil {
+			t.Fatal(err)
+		}
+		c.expect(422, "POST", "/api/auth/email/verify", map[string]any{"challengeId": id, "code": code})
+		c.expect(422, "POST", "/api/auth/email/resend", map[string]any{"challengeId": id})
+	})
 	bob.register("Боб", email("bob"))
 	eve.register("Ева", email("eve"))
 
@@ -384,10 +471,13 @@ func TestAPIIntegration(t *testing.T) {
 			if i == 3 {
 				want = http.StatusTooManyRequests
 			}
-			c.expect(want, "POST", "/api/auth/register", map[string]any{
+			r := c.do("POST", "/api/auth/register", map[string]any{
 				"name": "Лимит", "email": fmt.Sprintf("limit%d-%s@example.com", i, run), "password": "correct horse",
 				"birthday": "1990-05-01", "acceptTerms": true, "acceptData": true,
 			})
+			if r.Status != want {
+				t.Fatalf("registration status=%d want=%d: %s", r.Status, want, r.Raw)
+			}
 		}
 	})
 
@@ -919,7 +1009,7 @@ const fakeDishes = `{"dishes":[
    {"name":"Яйца","name_ru":"Яйца","amount":"2 шт.","product":"Яйца"},
    {"name":"Грецкие орехи","name_ru":"Грецкие орехи","amount":"30 г","product":""}],
   "steps":["Отварите яйца.","Смешайте с орехами."]},
- {"title":"Загадочное блюдо","minutes":5,"ingredients":[{"name":"Яйца","name_ru":"Яйца","amount":"1","product":"Яйца"}],"steps":[]},
+ {"title":"Загадочное блюдо","minutes":5,"ingredients":[],"steps":[]},
  {"title":"Яичная запеканка","minutes":25,"ingredients":[{"name":"Яйца","name_ru":"Яйца","amount":"2 шт.","product":"Яйца"},{"name":"Картофель","name_ru":"Картофель","amount":"200 г","product":""}],"steps":["Взбейте яйца для запеканки.","Запеките в форме."]},
  {"title":"Рулет с зеленью","minutes":20,"ingredients":[{"name":"Яйца","name_ru":"Яйца","amount":"2 шт.","product":"Яйца"},{"name":"Укроп","name_ru":"Укроп","amount":"20 г","product":""}],"steps":["Приготовьте яичный блин.","Сверните в рулет с зеленью."]},
  {"title":"Яичные маффины","minutes":30,"ingredients":[{"name":"Яйца","name_ru":"Яйца","amount":"2 шт.","product":"Яйца"},{"name":"Мука","name_ru":"Мука","amount":"100 г","product":""}],"steps":["Разлейте смесь по формам для маффинов.","Испеките маффины."]},

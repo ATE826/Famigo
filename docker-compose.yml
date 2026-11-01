@@ -70,6 +70,9 @@ services:
 
   backend:
     build: ./backend
+    env_file:
+      - path: ./secrets.env
+        required: false
     environment:
       APP_ENV: ${APP_ENV:-development}
       DATABASE_URL: postgres://famigo:${POSTGRES_PASSWORD:-famigo}@db:5432/famigo?sslmode=disable

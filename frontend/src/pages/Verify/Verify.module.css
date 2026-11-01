@@ -67,6 +67,12 @@
   text-align: center;
 }
 
+.email { overflow-wrap: anywhere; }
+.error { margin: 0; color: var(--danger-text); font-size: 14px; }
+.resend { border: 0; background: transparent; color: var(--link); font: inherit; min-height: 44px; cursor: pointer; }
+.resend:disabled { color: var(--muted); cursor: default; }
+.resend:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
 .link {
   color: var(--link);
   font-size: 15px;

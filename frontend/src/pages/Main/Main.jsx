@@ -29,6 +29,7 @@ const MAX_TASKS = 3;
 
 function Main() {
   const {
+    me: profile,
     operations,
     openingBalance,
     events,
@@ -55,8 +56,8 @@ function Main() {
   const todayEvents = eventsOn(TODAY, [...events, ...birthdayEvents(members, TODAY.getFullYear())]);
   const chats = chatList(members, currentUserId, chatSettings);
   const freshChat = chats.find((c) => (unread[c.id] ?? 0) > 0);
-  const userName = me?.name ?? "";
-  const userLetter = me?.letter ?? "";
+  const userName = me?.name ?? profile?.name ?? "";
+  const userLetter = me?.letter ?? profile?.name?.[0]?.toUpperCase() ?? "";
   const key = CURRENT_MONTH;
   const month = parseMonth(key);
   const months = monthlyTotals(operations, key, CHART_MONTHS);

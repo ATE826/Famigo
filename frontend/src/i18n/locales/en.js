@@ -881,6 +881,8 @@ const en = {
     text: "This section isn’t part of the MVP. You’re seeing demo data for now.",
   },
   errors: {
+    invalidCode: "Invalid or expired code. Check the code or request a new one",
+    emailUnavailable: "Could not send the email. Try later. If your account was created, try signing in",
     generic: "Something went wrong. Please try again",
     network: "Can't reach the server. Check your connection",
     tooMany: "Too many attempts. Please wait a minute",
