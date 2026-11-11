@@ -1,7 +1,7 @@
 .history {
   height: 40px;
   padding: 0 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--card);
   border: 1px solid var(--field-border);
   color: inherit;
@@ -24,7 +24,8 @@
 
 .summaryLabel {
   font-size: 14px;
-  color: var(--primary-soft);
+  font-weight: 500;
+  color: #fff;
 }
 
 .summaryAmount {
@@ -48,7 +49,7 @@
   gap: 2px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-card);
 }
 
 .statLabel {
@@ -64,13 +65,13 @@
 }
 
 .card {
-  padding: 18px;
+  padding: 20px;
   gap: 12px;
   box-shadow: none;
 }
 
 .cardTitle {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -127,7 +128,7 @@
 
 @keyframes fadeIn {
   from {
-    opacity: 0;
+    opacity: 0.4;
     transform: translateY(8px);
   }
   to {
@@ -138,7 +139,7 @@
 
 @keyframes slideNext {
   from {
-    opacity: 0;
+    opacity: 0.4;
     transform: translateX(32px);
   }
   to {
@@ -149,7 +150,7 @@
 
 @keyframes slidePrev {
   from {
-    opacity: 0;
+    opacity: 0.4;
     transform: translateX(-32px);
   }
   to {

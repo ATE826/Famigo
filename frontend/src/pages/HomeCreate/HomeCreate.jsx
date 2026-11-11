@@ -6,17 +6,20 @@ import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
+import { errorText } from "../../api/client";
 import { kinds } from "../../utils/homes";
 import { canManageHomes } from "../../utils/permissions";
 import { countError } from "../../utils/validation";
 import { t } from "../../i18n";
 import styles from "./HomeCreate.module.css";
 
+const NAME_MAX = 20;
+
 function HomeCreate() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
-  const { homes, members, currentUserId, addHome, updateHome } = useData();
+  const { homes, members, currentUserId, addHome, updateHome, plan } = useData();
   const home = id ? homes.find((h) => h.id === id) : null;
 
   const [values, setValues] = useState({
@@ -36,6 +39,10 @@ function HomeCreate() {
     return <Navigate to="/more/homes" replace />;
   }
 
+  if (!id && homes.length >= plan.homes) {
+    return <Navigate to="/premium" replace state={{ reason: "homes" }} />;
+  }
+
   const isEdit = Boolean(home);
 
   function handleChange(e) {
@@ -51,7 +58,7 @@ function HomeCreate() {
     return Number(values.people) < residents ? t("homeCreate.residentsAlready", { count: residents }) : "";
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const found = {
       name: values.name.trim() ? "" : t("homeCreate.nameRequired"),
@@ -70,16 +77,24 @@ function HomeCreate() {
       people: Number(values.people),
     };
 
-    if (isEdit) {
-      updateHome(home.id, data);
-      if (location.key !== "default") {
-        navigate(-1);
+    try {
+      if (isEdit) {
+        await updateHome(home.id, data);
+        if (location.key !== "default") {
+          navigate(-1);
+        } else {
+          navigate(`/more/home/${home.id}`, { replace: true });
+        }
       } else {
-        navigate(`/more/home/${home.id}`, { replace: true });
+        await addHome(data);
+        navigate("/more/homes");
       }
-    } else {
-      addHome(data);
-      navigate("/more/homes");
+    } catch (error) {
+      if (error.code === "plan_limit") {
+        navigate("/premium", { state: { reason: "homes" } });
+      } else {
+        setErrors({ name: errorText(error) });
+      }
     }
   }
 
@@ -100,10 +115,10 @@ function HomeCreate() {
         label={t("homeCreate.name")}
         type="text"
         placeholder={t("homeCreate.namePlaceholder")}
-        maxLength={40}
+        maxLength={NAME_MAX}
         value={values.name}
         onChange={handleChange}
-        hint={errors.name}
+        hint={errors.name || `${values.name.length}/${NAME_MAX}`}
       />
 
       <Select id="kind" name="kind" label={t("homeCreate.kind")} value={values.kind} onChange={handleChange}>
@@ -134,6 +149,7 @@ function HomeCreate() {
             label={t("homeCreate.rooms")}
             type="text"
             inputMode="numeric"
+            numeric
             placeholder="0"
             maxLength={2}
             value={values.rooms}
@@ -148,6 +164,7 @@ function HomeCreate() {
             label={t("homeCreate.people")}
             type="text"
             inputMode="numeric"
+            numeric
             placeholder="0"
             maxLength={2}
             value={values.people}

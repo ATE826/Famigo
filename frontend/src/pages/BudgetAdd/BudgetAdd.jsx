@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Select from "../../components/Select/Select";
 import Button from "../../components/Button/Button";
 import Segmented from "../../components/Segmented/Segmented";
+import Icon from "../../components/Icon/Icon";
 import FormScreen from "../../components/FormScreen/FormScreen";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
+import { errorText } from "../../api/client";
 import { todayString } from "../../utils/dates";
 import { amountError, dateError, formatDate } from "../../utils/validation";
 import { t } from "../../i18n";
@@ -28,10 +30,17 @@ const categories = {
 
 function BudgetAdd() {
   const navigate = useNavigate();
-  const { currentUserId, addOperation } = useData();
+  const location = useLocation();
+  const prefill = location.state?.prefill;
+  const { currentUserId, addOperation, plan } = useData();
   const [type, setType] = useState("expense");
   const [category, setCategory] = useState(categories.expense[0]);
-  const [values, setValues] = useState({ sum: "", title: "", desc: "", date: "" });
+  const [values, setValues] = useState({
+    sum: prefill ? String(Math.round(prefill.amount)) : "",
+    title: "",
+    desc: "",
+    date: prefill?.date ?? "",
+  });
   const [errors, setErrors] = useState({});
 
   const isOther = category === OTHER_CATEGORY;
@@ -42,7 +51,7 @@ function BudgetAdd() {
     setErrors({ ...errors, [name]: "" });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const found = {
       sum: amountError(values.sum),
@@ -54,15 +63,20 @@ function BudgetAdd() {
 
     const [day, month, year] = values.date.split(".");
     const isoDate = `${year}-${month}-${day}`;
-    addOperation({
-      date: isoDate,
-      type,
-      category,
-      amount: Number(values.sum.replace(/[\s₽]/g, "").replace(",", ".")),
-      title: isOther ? values.title.trim() : "",
-      desc: values.desc.trim(),
-      who: currentUserId,
-    });
+    try {
+      await addOperation({
+        date: isoDate,
+        type,
+        category,
+        amount: Number(values.sum.replace(/[\s₽]/g, "").replace(",", ".")),
+        title: isOther ? values.title.trim() : "",
+        desc: values.desc.trim(),
+        who: currentUserId,
+      });
+    } catch (error) {
+      setErrors({ sum: errorText(error) });
+      return;
+    }
     navigate(`/budget?month=${isoDate.slice(0, 7)}`);
   }
 
@@ -81,6 +95,23 @@ function BudgetAdd() {
     >
       <PageHeader title={t("budgetAdd.title")} to="/budget" icon="close" />
 
+      {prefill ? (
+        <p className={styles.scanned} role="status">
+          <Icon name="receipt" size={18} strokeWidth={1.8} />
+          {t("receipt.filled")}
+        </p>
+      ) : (
+        <Link
+          to={plan.receipts ? "/budget/scan" : "/premium"}
+          state={plan.receipts ? undefined : { reason: "receipts" }}
+          className={styles.scan}
+        >
+          <Icon name="camera" size={18} strokeWidth={1.8} />
+          {t("receipt.fromQr")}
+          {!plan.receipts && <Icon name="crown" size={16} strokeWidth={1.8} />}
+        </Link>
+      )}
+
       <Segmented options={types.map((o) => ({ value: o.value, label: t(`budgetAdd.${o.label}`) }))} value={type} onChange={handleTypeChange} label={t("budgetAdd.typeLabel")} />
 
       <Input
@@ -88,8 +119,10 @@ function BudgetAdd() {
         name="sum"
         label={t("budgetAdd.amount")}
         type="text"
-        inputMode="decimal"
+        inputMode="numeric"
+        numeric
         placeholder="0 ₽"
+        maxLength={12}
         inputClassName={styles.sum}
         value={values.sum}
         onChange={handleChange}
@@ -134,6 +167,7 @@ function BudgetAdd() {
         label={t("budgetAdd.date")}
         type="text"
         inputMode="numeric"
+        numeric
         placeholder={todayString()}
         maxLength={10}
         value={values.date}

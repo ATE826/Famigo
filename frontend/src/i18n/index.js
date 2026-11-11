@@ -15,15 +15,27 @@ export const LANGUAGES = [
 ];
 
 const dictionaries = { ru, en, es, zh, ja, de };
-const STORAGE_KEY = "famigo-lang";
+const STORAGE_KEY = "famigo-lang-v2";
+
+const FALLBACK_LANG = "en";
+
+function detectDeviceLang() {
+  const preferred = navigator.languages?.length ? navigator.languages : [navigator.language];
+  for (const tag of preferred) {
+    const code = String(tag).toLowerCase().split("-")[0];
+    if (dictionaries[code]) return code;
+  }
+  return FALLBACK_LANG;
+}
 
 function readLang() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return dictionaries[saved] ? saved : "ru";
+    if (dictionaries[saved]) return saved;
   } catch {
-    return "ru";
+    // хранилище недоступно: берём язык устройства
   }
+  return detectDeviceLang();
 }
 
 let current = readLang();
@@ -36,9 +48,10 @@ export function getLocale() {
   return LANGUAGES.find((l) => l.value === current).locale;
 }
 
-export function applyLang(lang) {
-  current = dictionaries[lang] ? lang : "ru";
+export function applyLang(lang, persist = false) {
+  current = dictionaries[lang] ? lang : FALLBACK_LANG;
   document.documentElement.lang = current;
+  if (!persist) return;
   try {
     localStorage.setItem(STORAGE_KEY, current);
   } catch {

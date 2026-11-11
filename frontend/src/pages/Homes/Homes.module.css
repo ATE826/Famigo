@@ -2,7 +2,7 @@
   width: 44px;
   height: 44px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--primary);
   color: #fff;
   display: flex;
@@ -84,4 +84,31 @@
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
   }
+}
+
+.limit {
+  margin: 0;
+  padding: 10px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.limitReached {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.limitLink {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

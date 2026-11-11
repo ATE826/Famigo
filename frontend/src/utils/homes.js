@@ -14,7 +14,7 @@ export function homeOf(homes, memberId) {
 const looks = {
   apartment: { icon: "apartment", gradient: "linear-gradient(160deg, #B9C7AC, #7E946D)" },
   house: { icon: "home", gradient: "linear-gradient(160deg, #E6B597, #C9764D)" },
-  dacha: { icon: "cottage", gradient: "linear-gradient(160deg, #D9C29A, #A8844F)" },
+  dacha: { icon: "cottage", gradient: "linear-gradient(160deg, #E5EBE0, #C9D4BE)", ink: "#4C5E3E" },
   other: { icon: "pin", gradient: "linear-gradient(160deg, #929292, #4A4D47)" },
 };
 
@@ -26,6 +26,7 @@ export function homeIcon(kind) {
   return lookOf(kind).icon;
 }
 
-export function homeGradient(kind) {
-  return lookOf(kind).gradient;
+export function homeStyle(kind) {
+  const look = lookOf(kind);
+  return { background: look.gradient, color: look.ink ?? "#FFFFFF" };
 }

@@ -39,7 +39,7 @@ function CategoryList({ items }) {
 }
 
 function Budget() {
-  const { operations } = useData();
+  const { operations, openingBalance } = useData();
   const [params, setParams] = useSearchParams();
   const [direction, setDirection] = useState("fade");
 
@@ -50,7 +50,7 @@ function Budget() {
   const monthOps = opsInMonth(operations, key);
   const income = totalOf(monthOps, "income");
   const expenses = totalOf(monthOps, "expense");
-  const balance = balanceUpTo(operations, key);
+  const balance = balanceUpTo(operations, key, openingBalance);
   const expenseCategories = byCategory(monthOps, "expense");
   const incomeCategories = byCategory(monthOps, "income");
 

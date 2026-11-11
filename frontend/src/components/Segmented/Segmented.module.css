@@ -37,22 +37,22 @@
 }
 
 .md {
-  border-radius: 14px;
+  border-radius: var(--radius-md);
 }
 
 .md .indicator {
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 
 .md .item {
   height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 15px;
 }
 
 .sm {
   --gap: 2px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
 }
 
 .sm .indicator {

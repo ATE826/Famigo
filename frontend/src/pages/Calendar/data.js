@@ -95,29 +95,17 @@ export function monthCells(date) {
   });
 }
 
-const eventAt = (offset) => dateKey(addDays(TODAY, offset));
-
-export const events = [
-  { id: 1, date: eventAt(-21), time: "11:00", title: "Техосмотр" },
-  { id: 2, date: eventAt(-12), time: "10:30", title: "Визит к врачу" },
-  { id: 3, date: eventAt(-5), time: "15:00", title: "Встреча с друзьями" },
-  { id: 4, date: eventAt(0), time: "19:00", title: "Семейный ужин" },
-  { id: 5, date: eventAt(0), time: "21:00", title: "Фильм" },
-  { id: 6, date: eventAt(3), time: "12:00", title: "Поездка на дачу" },
-  { id: 7, date: eventAt(7), time: "09:00", title: "Оплата квартплаты" },
-  { id: 8, date: eventAt(12), time: "18:30", title: "Родительское собрание" },
-  { id: 9, date: eventAt(20), time: "09:00", title: "Визит к стоматологу" },
-  { id: 10, date: eventAt(30), time: "10:00", title: "Поездка на дачу" },
-];
-
 export function eventsOn(date, extra = []) {
   const key = dateKey(date);
-  return [...extra, ...events].filter((event) => event.date === key);
+  // Сначала события на весь день (дни рождения), затем по времени.
+  return extra
+    .filter((event) => event.date === key)
+    .sort((x, y) => Number(Boolean(y.allDay)) - Number(Boolean(x.allDay)) || x.time.localeCompare(y.time));
 }
 
 export function eventsInMonth(date, extra = []) {
   const prefix = dateKey(date).slice(0, 7);
-  return [...extra, ...events].filter((event) => event.date.startsWith(prefix));
+  return extra.filter((event) => event.date.startsWith(prefix));
 }
 
 export function birthdayEvents(members, year) {

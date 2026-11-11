@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import Avatar from "../../components/Avatar/Avatar";
 import Icon from "../../components/Icon/Icon";
@@ -6,13 +6,22 @@ import { useData } from "../../store/DataContext";
 import { GROUP_CHAT_ID } from "../../utils/chats";
 import { roleLabels } from "../../utils/roles";
 import { t } from "../../i18n";
+import { TODAY, addDays, dateKey, dayTitle } from "../Calendar/data";
 import styles from "./Chat.module.css";
+
+// «Сегодня», «Вчера» или дата — над первым сообщением каждого дня.
+function dayName(key) {
+  if (key === dateKey(TODAY)) return t("calendar.today");
+  if (key === dateKey(addDays(TODAY, -1))) return t("notifications.yesterday");
+  const [year, month, day] = key.split("-").map(Number);
+  return dayTitle(new Date(year, month - 1, day));
+}
 
 function Chat() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { members, currentUserId, messages, sendMessage, markChatRead } = useData();
+  const { members, currentUserId, messages, sendMessage, openChat, closeChat } = useData();
   const [text, setText] = useState("");
   const endRef = useRef(null);
 
@@ -20,9 +29,11 @@ function Chat() {
   const partner = isGroup ? null : members.find((m) => m.id === id);
   const list = messages[id] ?? [];
 
+  // Пока экран открыт, новые сообщения сразу отмечаются прочитанными.
   useEffect(() => {
-    markChatRead(id);
-  }, [id, markChatRead]);
+    openChat(id);
+    return () => closeChat(id);
+  }, [id, openChat, closeChat]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -73,45 +84,44 @@ function Chat() {
       </header>
 
       <div className={styles.messages}>
-        <div className={styles.day}>{t("calendar.today")}</div>
-
         {list.length === 0 && <p className={styles.empty}>{t("chats.empty")}</p>}
 
-        {list.map((m) => {
+        {list.map((m, i) => {
+          const dayLabel =
+            i === 0 || list[i - 1].day !== m.day ? <div className={styles.day}>{dayName(m.day)}</div> : null;
+          const text = m.deleted ? <i>{t("chats.deleted")}</i> : m.text;
           if (m.from === currentUserId) {
             return (
-              <div key={m.id} className={styles.mine}>
-                <div className={styles.bubbleMine}>{m.text}</div>
-                <span className={styles.meta}>
-                  {m.time}
-                  {m.status && `, ${m.status}`}
-                </span>
-              </div>
+              <Fragment key={m.id}>
+                {dayLabel}
+                <div className={styles.mine}>
+                  <div className={styles.bubbleMine}>{text}</div>
+                  <span className={styles.meta}>
+                    {m.time}
+                    {m.status && `, ${m.status}`}
+                  </span>
+                </div>
+              </Fragment>
             );
           }
           const author = members.find((member) => member.id === m.from);
           return (
-            <div key={m.id} className={styles.other}>
-              <Avatar letter={author?.letter ?? "?"} tone={author?.tone ?? "cream"} photo={author?.photo} size={28} />
-              <div className={styles.otherBody}>
-                <div className={styles.bubbleOther}>
-                  {isGroup && <b className={styles.author}>{author?.name ?? t("common.formerMember")}</b>}
-                  {m.text}
+            <Fragment key={m.id}>
+              {dayLabel}
+              <div className={styles.other}>
+                <Avatar letter={author?.letter ?? "?"} tone={author?.tone ?? "cream"} photo={author?.photo} size={28} />
+                <div className={styles.otherBody}>
+                  <div className={styles.bubbleOther}>
+                    {isGroup && <b className={styles.author}>{author?.name ?? t("common.formerMember")}</b>}
+                    {text}
+                  </div>
+                  <span className={styles.meta}>{m.time}</span>
                 </div>
-                <span className={styles.meta}>{m.time}</span>
               </div>
-            </div>
+            </Fragment>
           );
         })}
 
-        {isGroup && (
-          <div className={styles.notice}>
-            {t("chats.milkNotice")}{" "}
-            <Link to="/more/fridge" className={styles.noticeLink}>
-              {t("chats.checkFridge")}
-            </Link>
-          </div>
-        )}
         <div ref={endRef} />
       </div>
 

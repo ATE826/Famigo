@@ -12,10 +12,14 @@
     <script>
       (function () {
         try {
-          var saved = localStorage.getItem("famigo-theme");
+          var saved = null;
+          try {
+            saved = localStorage.getItem("famigo-theme-v2");
+          } catch (e) {}
+          var mode = saved === "light" || saved === "dark" ? saved : "system";
           var dark =
-            saved === "dark" ||
-            (saved === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+            mode === "dark" ||
+            (mode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
           document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
           var meta = document.querySelector('meta[name="theme-color"]');
           if (meta) meta.setAttribute("content", dark ? "#151713" : "#F5F3EE");

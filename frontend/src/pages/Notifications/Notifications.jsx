@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Chip, { ChipRow } from "../../components/Chip/Chip";
 import Icon from "../../components/Icon/Icon";
@@ -6,7 +6,9 @@ import Page from "../../components/Page/Page";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
 import { daysUntilBirthday } from "../../utils/dates";
-import { t } from "../../i18n";
+import { overdueMembers } from "../../utils/checkin";
+import { getLocale, t } from "../../i18n";
+import { TODAY, addDays, dateKey } from "../Calendar/data";
 import styles from "./Notifications.module.css";
 
 const filters = ["all", "budget", "calendar", "fridge", "chat"];
@@ -46,73 +48,92 @@ function birthdayItems(members, currentUserId) {
     }));
 }
 
-const buildItems = (userName) => [
-  {
-    id: 1,
-    day: "today",
-    type: "fridge",
-    tone: "terra",
-    title: t("notifications.demo.milkTitle"),
-    text: t("notifications.demo.milkText"),
-    time: t("notifications.demo.minutesAgo", { count: 12 }),
-    to: "/more/fridge",
-    read: false,
-  },
-  {
-    id: 2,
-    day: "today",
-    type: "calendar",
-    tone: "green",
-    title: t("notifications.demo.dinnerTitle"),
-    text: t("notifications.demo.dinnerText"),
-    time: "18:30",
-    to: "/calendar",
-    read: false,
-  },
-  {
-    id: 3,
-    day: "today",
-    type: "chat",
-    tone: "gray",
-    title: t("notifications.demo.messageTitle"),
-    text: t("notifications.demo.messageText"),
-    time: "17:42",
-    to: "/chats/family",
-    read: false,
-  },
-  {
-    id: 4,
-    day: "yesterday",
-    type: "budget",
-    tone: "green",
-    title: t("notifications.demo.expenseTitle", { name: userName }),
-    text: t("notifications.demo.expenseText"),
-    time: "15:20",
-    to: "/budget/history",
-    read: true,
-  },
-  {
-    id: 5,
-    day: "yesterday",
-    type: "family",
-    tone: "gray",
-    title: t("notifications.demo.joinedTitle"),
-    text: t("notifications.demo.joinedText"),
-    time: "11:05",
-    to: "/more/family",
-    read: true,
-  },
-];
+function safetyItems(alerts, members, checkIns, currentUserId) {
+  const nameOf = (id) => members.find((m) => m.id === id)?.name ?? "";
+  const sos = alerts
+    .filter((a) => a.from !== currentUserId)
+    .map((a) => ({
+      id: `sos-${a.id}`,
+      day: "today",
+      type: "family",
+      tone: "terra",
+      title: t("safety.banner.from", { name: nameOf(a.from) }),
+      text: a.place ? t(`map.places.${a.place}`) : t("safety.sos.unknownPlace"),
+      time: new Date(a.at).toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" }),
+      to: "/map",
+      read: false,
+    }));
+  const overdue = overdueMembers(members, checkIns)
+    .filter((m) => m.id !== currentUserId)
+    .map((m) => ({
+      id: `checkin-${m.id}`,
+      day: "today",
+      type: "family",
+      tone: "terra",
+      title: t("safety.checkin.overdue", { name: m.name }),
+      text: t("safety.checkin.overdueTime", { time: m.checkin.time }),
+      time: m.checkin.time,
+      to: `/chats/${m.id}`,
+      read: false,
+    }));
+  return [...sos, ...overdue];
+}
 
-const days = ["today", "yesterday"];
+const tones = { budget: "green", calendar: "terra", fridge: "terra", chat: "gray", family: "gray" };
+
+// Уведомление с сервера → карточка ленты.
+function fromApi(item) {
+  const created = new Date(item.createdAt);
+  const key = dateKey(created);
+  const day = key === dateKey(TODAY) ? "today" : key === dateKey(addDays(TODAY, -1)) ? "yesterday" : "earlier";
+  const time =
+    day === "earlier"
+      ? created.toLocaleDateString(getLocale(), { day: "numeric", month: "short" })
+      : created.toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
+  return {
+    id: item.id,
+    fromServer: true,
+    day,
+    type: item.type,
+    tone: tones[item.type] ?? "gray",
+    title: item.title,
+    text: item.body ?? "",
+    time,
+    to: item.link?.startsWith("/") ? item.link : "/notifications",
+    read: Boolean(item.readAt),
+  };
+}
+
+const days = ["today", "yesterday", "earlier"];
 
 function Notifications() {
-  const { members, currentUserId, notificationSettings } = useData();
-  const userName = members.find((m) => m.id === currentUserId)?.name ?? "";
+  const {
+    members,
+    currentUserId,
+    notificationSettings,
+    alerts,
+    checkIns,
+    loadNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+    showError,
+  } = useData();
   const [items, setItems] = useState(() => [
+    ...safetyItems(alerts, members, checkIns, currentUserId),
     ...birthdayItems(members, currentUserId),
-    ...buildItems(userName),
   ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadNotifications()
+      .then((list) => {
+        if (!cancelled) setItems((current) => [...current.filter((item) => !item.fromServer), ...list.map(fromApi)]);
+      })
+      .catch(showError);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadNotifications, showError]);
   const [filter, setFilter] = useState("all");
 
   const enabled = items.filter((item) => notificationSettings[item.type] !== false);
@@ -120,10 +141,13 @@ function Notifications() {
   const visible = enabled.filter((item) => filter === "all" || item.type === filter);
 
   function markRead(id) {
-    setItems(items.map((item) => (item.id === id ? { ...item, read: true } : item)));
+    const item = items.find((x) => x.id === id);
+    if (item?.fromServer && !item.read) markNotificationRead(id);
+    setItems(items.map((x) => (x.id === id ? { ...x, read: true } : x)));
   }
 
   function markAllRead() {
+    markAllNotificationsRead();
     setItems(items.map((item) => ({ ...item, read: true })));
   }
 

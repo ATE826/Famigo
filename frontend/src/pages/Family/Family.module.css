@@ -6,7 +6,7 @@
 
 .invite {
   height: 52px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--primary);
   color: #fff;
   display: flex;
@@ -80,7 +80,7 @@
 
 .info {
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   background: var(--primary-soft);
   color: var(--on-soft);
   font-size: 13px;

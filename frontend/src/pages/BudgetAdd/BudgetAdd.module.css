@@ -8,3 +8,28 @@
   font-weight: 800;
   font-size: 28px;
 }
+
+.scan,
+.scanned {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.scan {
+  border: 1px dashed var(--soft-border-strong);
+  background: var(--primary-soft);
+  color: var(--on-soft);
+}
+
+.scanned {
+  margin: 0;
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  font-weight: 500;
+}

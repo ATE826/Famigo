@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Card from "../../components/Card/Card";
 import Avatar from "../../components/Avatar/Avatar";
 import Icon from "../../components/Icon/Icon";
@@ -9,15 +9,17 @@ import { t } from "../../i18n";
 import styles from "./More.module.css";
 
 function More() {
-  const { homes, members, currentUserId } = useData();
+  const { homes, members, currentUserId, plan, logout } = useData();
   const me = members.find((m) => m.id === currentUserId);
-  const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
 
   const items = [
     { label: t("nav.family"), sub: t("more.familySub"), to: "/more/family", icon: "users" },
     { label: t("nav.homes"), sub: homes.map((h) => h.name).join(", "), to: "/more/homes", icon: "home" },
+    { label: t("nav.gallery"), sub: t("more.gallerySub"), to: "/gallery", icon: "image" },
+    { label: t("nav.map"), sub: t("more.mapSub"), to: "/map", icon: "pin" },
     { label: t("nav.fridge"), sub: t("more.fridgeSub"), to: "/more/fridge", icon: "fridge" },
+    { label: t("nav.premium"), sub: t("premium.currentPlan", { plan: t(`premium.plans.${plan.id}.name`) }), to: "/premium", icon: "crown" },
     { label: t("nav.settings"), sub: t("more.settingsSub"), to: "/settings", icon: "settings" },
   ];
 
@@ -61,7 +63,7 @@ function More() {
             <button
               type="button"
               className={styles.confirmAction}
-              onClick={() => navigate("/", { replace: true })}
+              onClick={logout}
             >
               {t("more.logout")}
             </button>

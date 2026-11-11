@@ -6,11 +6,14 @@ import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import Select from "../../components/Select/Select";
 import { useData } from "../../store/DataContext";
+import { errorText } from "../../api/client";
 import { categories, categoryLabel, unitLabel, units } from "../Fridge/products";
 import { fullToShort, shortToFull, todayShort } from "../../utils/dates";
 import { formatShortDate, quantityError, shortDateError } from "../../utils/validation";
 import { t } from "../../i18n";
 import styles from "./FridgeProduct.module.css";
+
+const NAME_MAX = 20;
 
 function FridgeProduct() {
   const navigate = useNavigate();
@@ -18,8 +21,8 @@ function FridgeProduct() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const { homes, products, addProduct, updateProduct } = useData();
-  const product = id ? products.find((p) => p.id === Number(id)) : null;
-  const homeId = product?.homeId ?? homes.find((h) => h.id === params.get("home"))?.id ?? homes[0].id;
+  const product = id ? products.find((p) => p.id === id) : null;
+  const homeId = product?.homeId ?? homes.find((h) => h.id === params.get("home"))?.id ?? homes[0]?.id;
   const home = homes.find((h) => h.id === homeId);
 
   const [values, setValues] = useState({
@@ -28,11 +31,10 @@ function FridgeProduct() {
     qty: product ? String(product.qty) : "",
     unit: product?.unit ?? units[0],
     expires: product ? fullToShort(product.expires) : "",
-    spoiled: product?.spoiled ?? false,
   });
   const [errors, setErrors] = useState({});
 
-  if (id && !product) {
+  if ((id && !product) || !home) {
     return <Navigate to="/more/fridge" replace />;
   }
 
@@ -44,7 +46,7 @@ function FridgeProduct() {
     setErrors({ ...errors, [name]: "" });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const found = {
       name: values.name.trim() ? "" : t("fridgeProduct.nameRequired"),
@@ -61,12 +63,16 @@ function FridgeProduct() {
       qty: Number(values.qty.replace(/\s/g, "").replace(",", ".")),
       unit: values.unit,
       expires: shortToFull(values.expires),
-      spoiled: values.spoiled,
     };
-    if (isEdit) {
-      updateProduct(product.id, data);
-    } else {
-      addProduct(data);
+    try {
+      if (isEdit) {
+        await updateProduct(product.id, data);
+      } else {
+        await addProduct(data);
+      }
+    } catch (error) {
+      setErrors({ name: errorText(error) });
+      return;
     }
     if (location.key !== "default") {
       navigate(-1);
@@ -93,10 +99,10 @@ function FridgeProduct() {
         label={t("fridgeProduct.name")}
         type="text"
         placeholder={t("fridgeProduct.namePlaceholder")}
-        maxLength={60}
+        maxLength={NAME_MAX}
         value={values.name}
         onChange={handleChange}
-        hint={errors.name}
+        hint={errors.name || `${values.name.length}/${NAME_MAX}`}
       />
 
       <Select id="cat" name="cat" label={t("fridgeProduct.category")} value={values.cat} onChange={handleChange}>
@@ -114,7 +120,8 @@ function FridgeProduct() {
             name="qty"
             label={t("fridgeProduct.quantity")}
             type="text"
-            inputMode="decimal"
+            inputMode="numeric"
+            numeric
             placeholder="0"
             maxLength={8}
             value={values.qty}
@@ -139,28 +146,13 @@ function FridgeProduct() {
         label={t("fridgeProduct.expires")}
         type="text"
         inputMode="numeric"
+        numeric
         placeholder={todayShort()}
         maxLength={8}
         value={values.expires}
         onChange={handleChange}
         hint={errors.expires}
       />
-
-      {isEdit && (
-        <label className={styles.spoiled}>
-          <input
-            type="checkbox"
-            checked={values.spoiled}
-            onChange={(e) => setValues({ ...values, spoiled: e.target.checked })}
-          />
-          <span className={styles.spoiledText}>
-            <span className={styles.spoiledTitle}>{t("fridgeProduct.spoiled")}</span>
-            <span className={styles.spoiledHint}>
-              {t("fridgeProduct.spoiledHint")}
-            </span>
-          </span>
-        </label>
-      )}
     </FormScreen>
   );
 }

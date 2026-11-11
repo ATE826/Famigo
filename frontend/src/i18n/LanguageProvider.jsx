@@ -10,7 +10,7 @@ export default function LanguageProvider({ children }) {
   }, [lang]);
 
   function setLang(value) {
-    applyLang(value);
+    applyLang(value, true);
     setLangState(value);
   }
 

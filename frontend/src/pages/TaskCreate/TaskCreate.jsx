@@ -5,6 +5,7 @@ import FormScreen from "../../components/FormScreen/FormScreen";
 import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { useData } from "../../store/DataContext";
+import { errorText } from "../../api/client";
 import { t } from "../../i18n";
 
 const TITLE_MIN = 3;
@@ -24,7 +25,7 @@ function TaskCreate() {
     return <Navigate to="/more/homes" replace />;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const title = text.trim();
     if (!title) {
@@ -39,7 +40,12 @@ function TaskCreate() {
       setError(t("taskCreate.duplicate"));
       return;
     }
-    addTask(home.id, title, description.trim());
+    try {
+      await addTask(home.id, title, description.trim());
+    } catch (error) {
+      setError(errorText(error));
+      return;
+    }
     if (location.key !== "default") {
       navigate(-1);
     } else {

@@ -10,3 +10,49 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+.search {
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-field);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.groupTitle {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.addCustom {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px dashed var(--soft-border-strong);
+  border-radius: var(--radius-field);
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}

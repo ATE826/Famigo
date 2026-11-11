@@ -41,6 +41,7 @@ function PhoneForm() {
         label={hasPhone ? t("phone.newLabel") : t("phone.label")}
         type="tel"
         inputMode="tel"
+        numeric
         autoComplete="tel"
         placeholder="+7(000)000-00-00"
         value={phone}

@@ -1,0 +1,25 @@
+.toast {
+  position: fixed;
+  z-index: 75;
+  right: 16px;
+  bottom: calc(112px + env(safe-area-inset-bottom));
+  width: min(400px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px 12px 16px;
+  border-radius: var(--radius-card);
+  background: var(--critical);
+  color: var(--on-critical);
+  animation: appear 200ms ease-out both;
+}
+.icon { flex: none; display: grid; place-items: center; }
+.body { flex: 1; min-width: 0; }
+.text { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 700; overflow-wrap: anywhere; }
+.link { display: inline-flex; align-items: center; min-height: 36px; color: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.close { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: var(--radius-sm); background: transparent; color: inherit; cursor: pointer; }
+.close:hover { background: rgb(32 34 31 / 12%); }
+.close:focus-visible, .link:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+@keyframes appear { from { opacity: 0; transform: translateY(8px); } }
+@media (min-width: 1024px) { .toast { right: 32px; bottom: 128px; } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }

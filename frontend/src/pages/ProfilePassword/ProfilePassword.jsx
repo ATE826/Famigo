@@ -5,11 +5,15 @@ import FormScreen from "../../components/FormScreen/FormScreen";
 import Input from "../../components/Input/Input";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { t } from "../../i18n";
+import { useData } from "../../store/DataContext";
+import { errorText } from "../../api/client";
 
 function ProfilePassword() {
   const navigate = useNavigate();
   const [values, setValues] = useState({ current: "", next: "", repeat: "" });
   const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState(false);
+  const { changePassword } = useData();
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -17,7 +21,7 @@ function ProfilePassword() {
     setErrors({ ...errors, [name]: "" });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const found = {};
     if (!values.current) found.current = t("password.currentRequired");
@@ -27,13 +31,21 @@ function ProfilePassword() {
     if (!values.repeat) found.repeat = t("auth.repeatPassword");
     else if (values.repeat !== values.next) found.repeat = t("auth.passwordsMismatch");
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0 || busy) return;
 
-    navigate("/settings", { replace: true, state: { notice: t("password.changed") } });
+    setBusy(true);
+    try {
+      await changePassword(values.current, values.next);
+      navigate("/settings", { replace: true, state: { notice: t("password.changed") } });
+    } catch (error) {
+      if (error.code === "wrong_password") setErrors({ current: errorText(error) });
+      else setErrors({ next: errorText(error) });
+      setBusy(false);
+    }
   }
 
   return (
-    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit">{t("settings.changePassword")}</Button>}>
+    <FormScreen onSubmit={handleSubmit} footer={<Button type="submit" disabled={busy}>{t("settings.changePassword")}</Button>}>
       <PageHeader title={t("password.title")} to="/settings" icon="close" />
 
       <Input

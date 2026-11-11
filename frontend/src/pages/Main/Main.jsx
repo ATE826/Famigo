@@ -2,12 +2,15 @@ import { Link } from "react-router-dom";
 import Avatar from "../../components/Avatar/Avatar";
 import Card from "../../components/Card/Card";
 import Icon from "../../components/Icon/Icon";
+import SosButton from "../../components/SosButton/SosButton";
 import { isSpoiled, needsAttention } from "../Fridge/products";
 import { useData } from "../../store/DataContext";
 import { chatList, lastMessageOf, lastMessageText } from "../../utils/chats";
 import { homeOf } from "../../utils/homes";
 import { productsLabel } from "../../utils/plural";
 import { greeting } from "../../utils/greeting";
+import { checkedToday, overdueMembers } from "../../utils/checkin";
+import useNow from "../../hooks/useNow";
 import {
   CURRENT_MONTH,
   balanceUpTo,
@@ -16,16 +19,34 @@ import {
   parseMonth,
   monthlyTotals,
 } from "../../utils/budget";
-import { t } from "../../i18n";
+import { getLocale, t } from "../../i18n";
 import { TODAY, birthdayEvents, eventsOn } from "../Calendar/data";
 import styles from "./Main.module.css";
+import { useEasterEggs } from "../../components/EasterEggs/EasterEggContext";
 
 const CHART_MONTHS = 5;
 const MAX_ALERTS = 2;
 const MAX_TASKS = 3;
 
 function Main() {
-  const { operations, members, currentUserId, products, homes, messages, unread, chatSettings } = useData();
+  const { tapLogo } = useEasterEggs();
+  const {
+    me: profile,
+    operations,
+    openingBalance,
+    events,
+    unreadNotifications,
+    members,
+    currentUserId,
+    products,
+    homes,
+    messages,
+    unread,
+    chatSettings,
+    plan,
+    checkIns,
+    checkIn,
+  } = useData();
   const myHome = homeOf(homes, currentUserId);
   const myProducts = myHome ? products.filter((p) => p.homeId === myHome.id) : [];
   const alerts = myProducts
@@ -34,25 +55,32 @@ function Main() {
   const fridgeLink = myHome ? `/more/fridge?home=${myHome.id}` : "/more/fridge";
   const tasks = myHome ? myHome.tasks.filter((task) => !task.done) : [];
   const me = members.find((m) => m.id === currentUserId);
-  const todayEvents = eventsOn(TODAY, birthdayEvents(members, TODAY.getFullYear()));
+  const todayEvents = eventsOn(TODAY, [...events, ...birthdayEvents(members, TODAY.getFullYear())]);
   const chats = chatList(members, currentUserId, chatSettings);
   const freshChat = chats.find((c) => (unread[c.id] ?? 0) > 0);
-  const userName = me?.name ?? "";
-  const userLetter = me?.letter ?? "";
+  const userName = me?.name ?? profile?.name ?? "";
+  const userLetter = me?.letter ?? profile?.name?.[0]?.toUpperCase() ?? "";
   const key = CURRENT_MONTH;
   const month = parseMonth(key);
   const months = monthlyTotals(operations, key, CHART_MONTHS);
   const maxAmount = Math.max(1, ...months.flatMap((m) => [m.income, m.expense]));
+  const current = months[months.length - 1];
+  const net = current.income - current.expense;
+  const hasSpoiled = alerts.some(isSpoiled);
+  const now = useNow();
+  const showCheckin = plan.checkin && Boolean(me?.checkin?.enabled);
+  const overdue = plan.checkin ? overdueMembers(members, checkIns, now).filter((m) => m.id !== currentUserId) : [];
   const barHeight = (amount) => `${Math.max((amount / maxAmount) * 100, amount > 0 ? 6 : 2)}%`;
 
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <div className={styles.brand}>
+        <button type="button" className={styles.brand} onClick={tapLogo} aria-label="Famigo">
           <span className={styles.logo}>F</span>
           <span className={styles.brandName}>Famigo</span>
-        </div>
+        </button>
         <div className={styles.actions}>
+          <SosButton />
           <Link to="/notifications" className={styles.bell} aria-label={t("nav.notifications")}>
             <svg
               width="20"
@@ -67,7 +95,9 @@ function Main() {
             >
               <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0" />
             </svg>
-            <span className={styles.badge}>3</span>
+            {unreadNotifications > 0 && (
+              <span className={styles.badge}>{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>
+            )}
           </Link>
           <Link to="/profile" className={styles.avatarLink} aria-label={t("nav.profile")}>
             <Avatar letter={userLetter} tone={me?.tone} photo={me?.photo} size={44} />
@@ -93,19 +123,70 @@ function Main() {
         </Link>
       </div>
 
+      {(showCheckin || overdue.length > 0) && (
+        <div className={styles.notices}>
+          {overdue.map((member) => (
+            <div key={member.id} className={`${styles.notice} ${styles.noticeWarn}`}>
+              <Avatar letter={member.letter} tone={member.tone} photo={member.photo} size={44} />
+              <span className={styles.noticeText}>
+                <span className={styles.noticeTitle}>{member.name}</span>
+                <span className={styles.noticeSub}>{t("safety.checkin.overdueShort", { time: member.checkin.time })}</span>
+              </span>
+              <Link to={`/chats/${member.id}`} className={styles.noticeAction}>
+                {t("safety.checkin.write")}
+              </Link>
+            </div>
+          ))}
+
+          {showCheckin &&
+            (checkedToday(checkIns, me.id) ? (
+              <div className={styles.notice}>
+                <span className={`${styles.noticeIcon} ${styles.noticeIconOk}`}>
+                  <Icon name="check" size={22} strokeWidth={2.2} />
+                </span>
+                <span className={styles.noticeText}>
+                  <span className={styles.noticeTitle}>
+                    {t("safety.checkin.done", {
+                      time: new Date(checkIns[me.id]).toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" }),
+                    })}
+                  </span>
+                  <span className={styles.noticeSub}>{t("safety.checkin.doneSub")}</span>
+                </span>
+              </div>
+            ) : (
+              <div className={styles.notice}>
+                <span className={styles.noticeIcon}>
+                  <Icon name="shield" size={22} strokeWidth={1.8} />
+                </span>
+                <span className={styles.noticeText}>
+                  <span className={styles.noticeTitle}>{t("safety.checkin.title")}</span>
+                  <span className={styles.noticeSub}>{t("safety.checkin.prompt", { time: me.checkin.time })}</span>
+                </span>
+                <button type="button" className={styles.noticeAction} onClick={checkIn}>
+                  {t("safety.checkin.action")}
+                </button>
+              </div>
+            ))}
+
+        </div>
+      )}
+
       <div className={styles.grid}>
         <div className={styles.colMain}>
           <Link to="/budget" className={styles.link}>
             <Card>
               <div className={styles.balance}>
                 <span className={styles.label}>{t("main.availableIn", { month: monthInSentence(month) })}</span>
-                <span className={styles.amount}>{formatMoney(balanceUpTo(operations, key))}</span>
+                <span className={styles.amount}>{formatMoney(balanceUpTo(operations, key, openingBalance))}</span>
+                <span className={`${styles.net} ${net < 0 ? styles.netDown : ""}`}>
+                  {t("main.monthNet", { amount: `${net < 0 ? "−" : "+"}${formatMoney(Math.abs(net))}` })}
+                </span>
               </div>
               <div className={styles.chart} role="img" aria-label={t("main.chartLabel")}>
                 {months.map((m) => (
                   <div
                     key={m.key}
-                    className={styles.monthCol}
+                    className={`${styles.monthCol} ${m.key === key ? styles.monthCurrent : ""}`}
                     title={t("main.chartTooltip", {
                       month: m.label,
                       income: formatMoney(m.income),
@@ -136,7 +217,7 @@ function Main() {
           {myHome && myProducts.length === 0 && (
             <Link
               to={`/more/fridge/add?home=${myHome.id}`}
-              className={`${styles.link} ${styles.fridgeOk} ${styles.fridgeEmpty}`}
+              className={`${styles.link} ${styles.fridgeOk} ${styles.fridgeEmpty} ${styles.later}`}
             >
               <span className={styles.fridgeIcon}>
                 <Icon name="fridge" size={20} strokeWidth={1.8} />
@@ -150,7 +231,7 @@ function Main() {
           )}
 
           {myHome && myProducts.length > 0 && alerts.length === 0 && (
-            <Link to={fridgeLink} className={`${styles.link} ${styles.fridgeOk}`}>
+            <Link to={fridgeLink} className={`${styles.link} ${styles.fridgeOk} ${styles.later}`}>
               <span className={`${styles.fridgeIcon} ${styles.fridgeIconOk}`}>
                 <Icon name="fridge" size={20} strokeWidth={1.8} />
               </span>
@@ -164,8 +245,21 @@ function Main() {
             </Link>
           )}
 
-          {alerts.length > 0 && (
-            <section className={styles.fridge}>
+          {alerts.length > 0 && !hasSpoiled && (
+            <Link to={fridgeLink} className={`${styles.link} ${styles.fridgeOk} ${styles.fridgeEmpty} ${styles.later}`}>
+              <span className={styles.fridgeIcon}>
+                <Icon name="fridge" size={20} strokeWidth={1.8} />
+              </span>
+              <div className={styles.fridgeText}>
+                <span className={styles.fridgeTitle}>{t("main.fridgeTitle", { home: myHome.name })}</span>
+                <span className={styles.fridgeSub}>{t("main.needAttention", { count: alerts.length })}</span>
+              </div>
+              <Icon name="chevron" size={18} className={styles.emptyPlus} />
+            </Link>
+          )}
+
+          {hasSpoiled && (
+            <section className={`${styles.fridge} ${styles.later}`}>
               <div className={styles.fridgeHead}>
                 <span className={styles.fridgeIcon}>
                   <Icon name="fridge" size={20} strokeWidth={1.8} />
@@ -214,7 +308,7 @@ function Main() {
             </Card>
           </Link>
 
-          <Card>
+          <Card className={styles.later}>
             <div className={styles.cardHead}>
               <div className={styles.cardHeadText}>
                 <h2 className={styles.cardTitle}>{t("main.tasks")}</h2>
@@ -243,7 +337,7 @@ function Main() {
             )}
           </Card>
 
-          <Card className={styles.desktopOnly}>
+          <Card className={`${styles.desktopOnly} ${styles.later}`}>
             <div className={styles.cardHead}>
               <h2 className={styles.cardTitle}>{t("nav.chats")}</h2>
               <Link to="/chats" className={styles.open}>

@@ -23,7 +23,7 @@ import styles from "./Member.module.css";
 function Member() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { members, homes, currentUserId, removeMember, updateMemberRole } = useData();
+  const { members, homes, currentUserId, removeMember, updateMemberRole, showError } = useData();
   const [confirming, setConfirming] = useState(false);
 
   const member = members.find((m) => m.id === id);
@@ -40,9 +40,13 @@ function Member() {
   const roleOptions = assignableRoles(actor).map((role) => ({ value: role, label: roleLabels[role] }));
   const blockedReason = removeBlockedReason(actor, member);
 
-  function handleRemove() {
-    removeMember(member.id);
-    navigate("/more/family", { replace: true });
+  async function handleRemove() {
+    try {
+      await removeMember(member.id);
+      navigate("/more/family", { replace: true });
+    } catch (error) {
+      showError(error);
+    }
   }
 
   return (

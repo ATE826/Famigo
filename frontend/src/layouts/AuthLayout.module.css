@@ -1,0 +1,229 @@
+.shell {
+  --duration: 0.8s;
+  --ease: cubic-bezier(0.77, 0, 0.18, 1);
+  --panel-tall: 230px;
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+  animation: shellIn 0.45s ease backwards;
+}
+
+@keyframes shellIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Формы лежат друг под другом и скрываются, когда неактивны */
+.pane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--bg);
+  visibility: hidden;
+  transition: visibility 0s linear var(--duration);
+}
+
+.shell[data-mode="login"] .loginPane,
+.shell[data-mode="register"] .registerPane {
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.loginPane {
+  top: var(--panel-tall);
+  bottom: 0;
+}
+
+/* Форма регистрации открывается «из-под» зелёной панели: видна только над её краем */
+.registerPane {
+  top: 0;
+  bottom: 0;
+  clip-path: inset(0 0 100% 0);
+  transition:
+    clip-path var(--duration) var(--ease),
+    visibility 0s linear var(--duration);
+}
+
+.shell[data-mode="register"] .registerPane {
+  clip-path: inset(0 0 0 0);
+  transition-delay: 0s;
+}
+
+.panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: var(--panel-tall);
+  z-index: 2;
+  padding: 24px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  transition:
+    top var(--duration) var(--ease),
+    height var(--duration) var(--ease);
+}
+
+.shell[data-mode="register"] .panel {
+  top: 100%;
+}
+
+/* Два слоя фона: зелёный (вход) и терракотовый (регистрация), плавно перетекают друг в друга */
+.panel::before,
+.panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.panel::before {
+  background: linear-gradient(145deg, #778B66 0%, #667A55 45%, #52663F 100%);
+}
+
+.panel::after {
+  background: #D38A62;
+  opacity: 0;
+  transition: opacity var(--duration) var(--ease);
+}
+
+
+.bigLetter {
+  z-index: 1;
+  position: absolute;
+  right: -20px;
+  top: -40px;
+  font-family: "Pacifico", cursive;
+  font-size: 300px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.12);
+}
+
+.brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  padding-right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background-color: #F5F3EE;
+  color: #667A55;
+  font-family: "Pacifico", cursive;
+  font-size: 24px;
+  line-height: 1;
+  transition: color var(--duration) var(--ease);
+}
+
+
+.brandName {
+  font-family: "Golos Text", sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  color: #F5F3EE;
+  transition: color var(--duration) var(--ease);
+}
+
+.slogan {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-family: "Golos Text", sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: #F5F3EE;
+  transition:
+    opacity calc(var(--duration) / 2) ease,
+    color var(--duration) var(--ease);
+}
+
+@media (min-width: 1024px) {
+  .shell[data-mode="register"] .panel::after {
+    opacity: 1;
+  }
+
+  .shell[data-mode="register"] .logo {
+    color: #D38A62;
+  }
+
+  .pane {
+    top: 0;
+    bottom: 0;
+    left: auto;
+    right: auto;
+    width: 50%;
+  }
+
+  .loginPane {
+    left: 0;
+  }
+
+  .registerPane {
+    left: 50%;
+    padding-bottom: 0;
+    clip-path: none;
+  }
+
+  .shell[data-mode="register"] .registerPane {
+    clip-path: none;
+  }
+
+  .panel {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    right: auto;
+    width: 50%;
+    height: auto;
+    padding: 48px 64px 64px;
+    transition: left var(--duration) var(--ease);
+  }
+
+  .shell[data-mode="register"] .panel {
+    top: 0;
+    left: 0;
+    height: auto;
+  }
+
+  .bigLetter {
+    right: -60px;
+    top: -170px;
+    font-size: 1000px;
+  }
+
+  .slogan,
+  .shell[data-mode="register"] .slogan {
+    max-width: 460px;
+    font-size: 44px;
+    line-height: 1.1;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell {
+    --duration: 0.01s;
+    animation: none;
+  }
+}

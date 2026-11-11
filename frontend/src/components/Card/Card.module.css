@@ -13,3 +13,13 @@
   padding: 0 16px;
   gap: 0;
 }
+
+@media (min-width: 1024px) {
+  .card {
+    padding: 24px;
+  }
+
+  .flush {
+    padding: 0 24px;
+  }
+}

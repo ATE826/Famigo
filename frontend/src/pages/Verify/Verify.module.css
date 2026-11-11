@@ -16,9 +16,9 @@
 .logo {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--primary);
-  color: var(--bg);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,6 +66,12 @@
   margin: 0;
   text-align: center;
 }
+
+.email { overflow-wrap: anywhere; }
+.error { margin: 0; color: var(--danger-text); font-size: 14px; }
+.resend { border: 0; background: transparent; color: var(--link); font: inherit; min-height: 44px; cursor: pointer; }
+.resend:disabled { color: var(--muted); cursor: default; }
+.resend:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .link {
   color: var(--link);

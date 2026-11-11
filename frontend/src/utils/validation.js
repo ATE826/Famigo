@@ -1,4 +1,5 @@
 import { t } from "../i18n";
+import { todayStart } from "./dates";
 
 export function isEmail(value) {
   return /^\S+@\S+\.\S+$/.test(value);
@@ -8,6 +9,10 @@ export function emailError(value) {
   if (!value.trim()) return t("validation.emailRequired");
   if (!isEmail(value)) return t("validation.emailInvalid");
   return "";
+}
+
+export function digitsOnly(value) {
+  return value.replace(/\D/g, "");
 }
 
 export function amountError(value) {
@@ -105,4 +110,12 @@ export function phoneError(value) {
   const digits = value.replace(/\D/g, "");
   if (digits.length !== 11 || !["7", "8"].includes(digits[0])) return t("validation.phoneInvalid");
   return "";
+}
+
+export function birthdayError(value) {
+  if (!value.trim()) return "";
+  const error = dateError(value);
+  if (error) return error;
+  const [day, month, year] = value.split(".").map(Number);
+  return new Date(year, month - 1, day) > todayStart() ? t("validation.dateFuture") : "";
 }

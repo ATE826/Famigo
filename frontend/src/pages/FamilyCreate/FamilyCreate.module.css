@@ -23,7 +23,7 @@ p{
   width: 40px;
   height: 40px;
   padding-right: 4px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--primary);
   color: #fff;
   display: flex;
@@ -76,7 +76,7 @@ p{
 }
 
 .cardTitle {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
 }
 @media (min-width: 1024px) {
@@ -96,4 +96,14 @@ p{
     margin-bottom: 24px;
     padding: 0;
   }
+}
+
+.formError {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger-text);
+  font-size: 14px;
+  line-height: 1.4;
 }
