@@ -1,4 +1,9 @@
 const en = {
+  easterEggs: {
+    council: { title: "Family council assembled", text: "On the agenda: who ate the last treat? Unanimous verdict: someone else." },
+    level: { title: "Secret level unlocked", text: "+30 lives for family patience. The final boss is the bag of bags. Wash the dishes to save your progress." },
+    cat: { title: "The fridge cat", text: "Just checking that someone remembered to feed the developers.", pet: "Pet the cat", count: "Pets: {count}", reward: "Purr. Your code is cat-reviewed. One suggestion: more tea breaks." },
+  },
   common: {
     add: "Add",
     back: "Back",
@@ -760,6 +765,7 @@ const en = {
       textFree: "Your whole family will instantly get an alert. Your spot on the map is added with Premium.",
     },
     banner: {
+      openChat: "Open family chat",
       cancelSos: "Cancel",
       from: "{name} needs help",
       openMap: "On the map",

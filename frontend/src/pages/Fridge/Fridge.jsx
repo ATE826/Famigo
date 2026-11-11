@@ -13,11 +13,13 @@ import { productsLabel } from "../../utils/plural";
 import { categories, categoryLabel, expiryDate, productBadge, unitLabel } from "./products";
 import { t } from "../../i18n";
 import styles from "./Fridge.module.css";
+import { useEasterEggs } from "../../components/EasterEggs/EasterEggContext";
 
 const ALL = "all";
 const filters = [ALL, ...categories];
 
 function Fridge() {
+  const { searchCat } = useEasterEggs();
   const { homes, products, fridgeHomeId, setFridgeHomeId, changeQty, currentUserId, plan } = useData();
   const [params] = useSearchParams();
   const [category, setCategory] = useState(ALL);
@@ -87,7 +89,7 @@ function Fridge() {
           placeholder={t("fridge.searchPlaceholder")}
           className={styles.search}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => setQuery(searchCat(e.target.value) ? "" : e.target.value)}
         />
       </div>
 

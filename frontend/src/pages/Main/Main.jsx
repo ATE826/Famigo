@@ -22,12 +22,14 @@ import {
 import { getLocale, t } from "../../i18n";
 import { TODAY, birthdayEvents, eventsOn } from "../Calendar/data";
 import styles from "./Main.module.css";
+import { useEasterEggs } from "../../components/EasterEggs/EasterEggContext";
 
 const CHART_MONTHS = 5;
 const MAX_ALERTS = 2;
 const MAX_TASKS = 3;
 
 function Main() {
+  const { tapLogo } = useEasterEggs();
   const {
     me: profile,
     operations,
@@ -73,10 +75,10 @@ function Main() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <div className={styles.brand}>
+        <button type="button" className={styles.brand} onClick={tapLogo} aria-label="Famigo">
           <span className={styles.logo}>F</span>
           <span className={styles.brandName}>Famigo</span>
-        </div>
+        </button>
         <div className={styles.actions}>
           <SosButton />
           <Link to="/notifications" className={styles.bell} aria-label={t("nav.notifications")}>

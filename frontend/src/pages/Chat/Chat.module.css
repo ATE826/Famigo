@@ -1,5 +1,6 @@
 .screen {
-  height: 100dvh;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--chat-bg);
@@ -193,7 +194,6 @@
 
 @media (min-width: 1024px) {
   .screen {
-    height: calc(100dvh - 72px);
     margin: 0 40px 24px;
     border: 1px solid var(--border);
     border-radius: var(--radius-card);

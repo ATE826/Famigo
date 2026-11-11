@@ -30,19 +30,20 @@ export default function AppLayout() {
   const { pathname } = useLocation();
   const { status } = useData();
   const withNav = NAV_PATHS.some((path) => matchPath(path, pathname));
+  const onMain = Boolean(matchPath("/main", pathname));
+  const conversation = Boolean(matchPath({ path: "/chats/:id", end: true }, pathname));
 
   // Без семьи доступна главная; остальные разделы требуют создания или присоединения.
   if (status === "loading") return <Splash />;
   if (status === "verification") return <Navigate to="/verify" replace />;
   if (status === "guest") return <Navigate to="/" replace />;
-  if (status === "noFamily" && pathname !== "/main") return <Navigate to="/family-create" replace />;
+  if (status === "noFamily" && !onMain) return <Navigate to="/family-create" replace />;
 
   return (
-    <div className={`${styles.layout} ${withNav ? styles.withNav : ""}`}>
+    <div className={`${styles.layout} ${withNav ? styles.withNav : ""} ${conversation ? styles.conversation : ""}`}>
       <Sidebar />
       <div className={styles.main}>
         <TopBar />
-        <AlertBanner />
         <div className={styles.content}>
           <PageTransition>
             <Outlet />
@@ -51,6 +52,7 @@ export default function AppLayout() {
       </div>
       {withNav && <BottomNav />}
       <Toast />
+      <AlertBanner />
     </div>
   );
 }

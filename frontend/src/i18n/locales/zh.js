@@ -1,4 +1,9 @@
 const zh = {
+  easterEggs: {
+    council: { title: "家庭会议开始", text: "今日议题：谁吃掉了最后一份零食？一致认定：反正是别人。" },
+    level: { title: "隐藏关卡已解锁", text: "家庭耐心增加30条命。最终首领：装满袋子的袋子。洗完碗即可存档。" },
+    cat: { title: "冰箱小猫", text: "来检查一下，有没有人记得给开发者准备吃的。", pet: "摸摸小猫", count: "摸摸次数：{count}", reward: "呼噜呼噜。代码已通过猫咪审核。只有一条建议：多休息，多喝茶。" },
+  },
   common: {
     add: "添加",
     back: "返回",
@@ -757,6 +762,7 @@ const zh = {
       textFree: "全家人会立即收到警报。Premium 套餐还会附上你在地图上的位置。",
     },
     banner: {
+      openChat: "打开家庭群聊",
       cancelSos: "解除",
       from: "{name} 需要帮助",
       openMap: "查看地图",

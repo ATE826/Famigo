@@ -1,4 +1,9 @@
 const de = {
+  easterEggs: {
+    council: { title: "Der Familienrat tagt", text: "Tagesordnung: Wer hat die letzte Leckerei gegessen? Einstimmiges Urteil: jemand anderes." },
+    level: { title: "Geheimlevel freigeschaltet", text: "+30 Leben für die Geduld der Familie. Endgegner: die Tüte voller Tüten. Zum Speichern bitte abwaschen." },
+    cat: { title: "Die Kühlschrankkatze", text: "Sie prüft nur, ob jemand die Entwickler gefüttert hat.", pet: "Katze streicheln", count: "Streicheleinheiten: {count}", reward: "Schnurr. Dein Code ist katzengeprüft. Ein Vorschlag: mehr Teepausen." },
+  },
   common: {
     add: "Hinzufügen",
     back: "Zurück",
@@ -760,6 +765,7 @@ const de = {
       textFree: "Deine ganze Familie erhält sofort einen Alarm. Deinen Standort auf der Karte gibt es mit Premium.",
     },
     banner: {
+      openChat: "Zum Familienchat",
       cancelSos: "Entwarnung",
       from: "{name} braucht Hilfe",
       openMap: "Auf der Karte",

@@ -50,6 +50,7 @@ import MapPlaces from "./pages/MapPlaces/MapPlaces.jsx";
 import ProfileCheckin from "./pages/ProfileCheckin/ProfileCheckin.jsx";
 import Recipes from "./pages/Recipes/Recipes.jsx";
 import ReceiptScan from "./pages/ReceiptScan/ReceiptScan.jsx";
+import EasterEggs from "./components/EasterEggs/EasterEggs";
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
         <LanguageProvider>
           <LegalProvider>
             <BrowserRouter basename="/Famigo">
+              <EasterEggs>
               <Routes>
                 <Route element={<AuthLayout />}>
                   <Route path="/" element={null} />
@@ -111,6 +113,7 @@ function App() {
                   <Route path="/notifications" element={<Notifications />} />
                 </Route>
               </Routes>
+              </EasterEggs>
             </BrowserRouter>
           </LegalProvider>
         </LanguageProvider>

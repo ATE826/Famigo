@@ -1,4 +1,9 @@
 const es = {
+  easterEggs: {
+    council: { title: "Consejo familiar reunido", text: "Orden del día: ¿quién se comió el último dulce? Veredicto unánime: fue otra persona." },
+    level: { title: "Nivel secreto desbloqueado", text: "+30 vidas para la paciencia familiar. El jefe final es la bolsa de bolsas. Lava los platos para guardar la partida." },
+    cat: { title: "El gato de la nevera", text: "Solo viene a comprobar que alguien haya alimentado a los desarrolladores.", pet: "Acariciar al gato", count: "Caricias: {count}", reward: "Ronroneo. Tu código tiene el visto bueno del gato. Una sugerencia: más pausas para el té." },
+  },
   common: {
     add: "Añadir",
     back: "Atrás",
@@ -760,6 +765,7 @@ const es = {
       textFree: "Toda tu familia recibirá al instante una alerta. Tu punto en el mapa se añade con Premium.",
     },
     banner: {
+      openChat: "Ir al chat familiar",
       cancelSos: "Cancelar",
       from: "{name} necesita ayuda",
       openMap: "En el mapa",

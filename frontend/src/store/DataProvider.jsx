@@ -770,9 +770,9 @@ export default function DataProvider({ children }) {
     setAlerts((current) => current.map((a) => (a.id === id ? { ...a, resolved: true } : a)));
   }
 
-  function seeSos(id) {
+  const seeSos = useCallback((id) => {
     setAlerts((current) => current.map((a) => (a.id === id ? { ...a, seenBy: [...a.seenBy, currentUserId] } : a)));
-  }
+  }, [currentUserId]);
 
   function checkIn() {
     setCheckIns((current) => ({ ...current, [currentUserId]: new Date().toISOString() }));

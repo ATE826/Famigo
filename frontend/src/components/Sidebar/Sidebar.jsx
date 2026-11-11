@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useData } from "../../store/DataContext";
 import styles from "./Sidebar.module.css";
 import { t } from "../../i18n";
+import { useEasterEggs } from "../EasterEggs/EasterEggContext";
 
 const items = [
   { to: "/main", label: "main", match: ["/main"], d: "M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10" },
@@ -51,13 +52,14 @@ function isActive(pathname, prefixes) {
 }
 
 export default function Sidebar() {
+  const { tapLogo } = useEasterEggs();
   const { pathname } = useLocation();
   const { familyName, members } = useData();
   const activeItem = items.find((item) => isActive(pathname, item.match));
 
   return (
     <nav className={styles.sidebar} aria-label={t("nav.mainMenu")}>
-      <Link to="/main" className={styles.brand}>
+      <Link to="/main" className={styles.brand} onClick={tapLogo} aria-label="Famigo">
         <span className={styles.logo}>F</span>
         <span className={styles.brandName}>Famigo</span>
       </Link>
