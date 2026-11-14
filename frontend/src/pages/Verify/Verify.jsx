@@ -77,7 +77,7 @@ function Verify() {
           inputMode="numeric"
           numeric
           autoComplete="one-time-code"
-          placeholder="000000"
+          placeholder="XXXXXX"
           value={code}
           disabled={busy}
           onChange={handleChange}

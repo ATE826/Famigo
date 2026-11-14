@@ -384,8 +384,8 @@ export default function DataProvider({ children }) {
     await loadDetails(familyRef.current);
   }
 
-  async function saveFood(prefs, note, consent) {
-    setMe(await api("/me/food", { method: "PUT", body: { prefs, note: note || null, consent } }));
+  async function saveFood(prefs, note) {
+    setMe(await api("/me/food", { method: "PUT", body: { prefs, note: note || null } }));
     await loadDetails(familyRef.current);
   }
 

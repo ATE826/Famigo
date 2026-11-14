@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
-import Checkbox from "../Checkbox/Checkbox";
 import FutureNotice from "../FutureNotice/FutureNotice";
 import Icon from "../Icon/Icon";
-import LegalLink from "../LegalModal/LegalLink";
-import LinkedText from "../LinkedText/LinkedText";
 import { t } from "../../i18n";
 import { PLANS } from "../../utils/plans";
 import { formatMoney } from "../../utils/budget";
@@ -11,7 +8,6 @@ import { errorText } from "../../api/client";
 import styles from "./CheckoutDialog.module.css";
 
 export default function CheckoutDialog({ planId, period, onConfirm, onClose }) {
-  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -27,10 +23,6 @@ export default function CheckoutDialog({ planId, period, onConfirm, onClose }) {
   }, [onClose]);
 
   async function pay() {
-    if (!agreed) {
-      setError(t("auth.agreeRequired"));
-      return;
-    }
     if (busy) return;
     setBusy(true);
     try {
@@ -94,28 +86,16 @@ export default function CheckoutDialog({ planId, period, onConfirm, onClose }) {
 
             <FutureNotice />
 
-            <p className={styles.note}>{t("premium.checkout.autoRenew")}</p>
+            <p className={styles.note}>{t("premium.checkout.demoRenewal")}</p>
             <p className={styles.demo}>{t("premium.checkout.demo")}</p>
 
-            <Checkbox
-              checked={agreed}
-              error={error}
-              onChange={(e) => {
-                setAgreed(e.target.checked);
-                setError("");
-              }}
-            >
-              <LinkedText
-                template={t("premium.checkout.agree")}
-                links={{ terms: <LegalLink doc="terms">{t("legal.linkTerms")}</LegalLink> }}
-              />
-            </Checkbox>
+            {error && <p className={styles.demo} role="alert">{error}</p>}
 
             <div className={styles.buttons}>
               <button type="button" className={styles.cancel} onClick={onClose}>
                 {t("common.cancel")}
               </button>
-              <button type="button" className={styles.primary} onClick={pay}>
+              <button type="button" className={styles.primary} disabled={busy} onClick={pay}>
                 {t("premium.checkout.pay", { price: formatMoney(price) })}
               </button>
             </div>

@@ -890,8 +890,8 @@ func TestAPIIntegration(t *testing.T) {
 		anton.expect(404, "GET", "/api/uploads/avatars/..%2F..%2Fgo.mod", nil)
 	})
 
-	step("предпочтения в еде требуют согласия", func(t *testing.T) {
-		anton.expect(422, "PUT", "/api/me/food", map[string]any{"prefs": []string{"Аллергия на орехи"}})
+	step("предпочтения в еде сохраняются без повторного чекбокса", func(t *testing.T) {
+		anton.expect(200, "PUT", "/api/me/food", map[string]any{"prefs": []string{"Аллергия на орехи"}})
 		r := anton.expect(200, "PUT", "/api/me/food", map[string]any{"prefs": []string{"Аллергия на орехи", "Своё блюдо"}, "consent": true})
 		if len(r.Body["foodPrefs"].([]any)) != 2 {
 			t.Fatal(r.Raw)

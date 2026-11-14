@@ -4,8 +4,10 @@ export const OPERATOR = {
   inn: "[ИНН]",
   address: "[АДРЕС ОПЕРАТОРА]",
   email: "[EMAIL ДЛЯ ОБРАЩЕНИЙ]",
-  site: "https://ate826.github.io/Famigo/",
+  site: "[АДРЕС СЕРВИСА ПЕРЕД ПУБЛИЧНЫМ ЗАПУСКОМ]",
   service: "Famigo",
 };
 
-export const DOCUMENT_DATE = "22.10.2026";
+export const DOCUMENT_DATE = "14.11.2026";
+export const DOCUMENT_VERSION = "2026-11-14.2";
+export const DOCUMENT_DRAFT = true;

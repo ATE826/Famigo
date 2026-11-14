@@ -1,4 +1,5 @@
 import { tValue } from "../../i18n";
+import { additionalFoodRestrictions } from "./restrictions";
 
 // Значения хранятся по-русски (так они лежат в профиле), подписи берутся из словаря foodPrefs
 export const foodGroups = [
@@ -31,6 +32,7 @@ export const foodGroups = [
       "Аллергия на специи",
       "Аллергия на шоколад",
       "Аллергия на мясо",
+      ...Object.keys(additionalFoodRestrictions).filter((value) => value.startsWith("Аллергия")),
     ],
   },
   {
@@ -41,6 +43,7 @@ export const foodGroups = [
       "Непереносимость фруктозы",
       "Непереносимость гистамина",
       "Диета FODMAP",
+      ...Object.keys(additionalFoodRestrictions).filter((value) => value.startsWith("Непереносимость")),
     ],
   },
   {

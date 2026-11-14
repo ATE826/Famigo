@@ -17,6 +17,7 @@ import (
 
 	"github.com/ATE826/Famigo/backend/internal/config"
 	"github.com/ATE826/Famigo/backend/internal/database"
+	"github.com/ATE826/Famigo/backend/internal/mail"
 	"github.com/ATE826/Famigo/backend/internal/server"
 )
 
@@ -25,6 +26,24 @@ func main() {
 
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
 		os.Exit(healthcheck())
+	}
+	if len(os.Args) > 1 && os.Args[1] == "mailcheck" {
+		cfg, err := config.Load(log)
+		if err != nil {
+			log.Error("настройки почты", "err", err)
+			os.Exit(1)
+		}
+		sender := mail.New(cfg.Mail)
+		if sender == nil {
+			log.Error("отправка почты не настроена")
+			os.Exit(1)
+		}
+		if err := sender.CheckSMTP(context.Background()); err != nil {
+			log.Error("проверка SMTP", "err", err)
+			os.Exit(1)
+		}
+		log.Info("SMTP: TLS и авторизация работают, письмо не отправлялось")
+		return
 	}
 
 	if err := run(log); err != nil {

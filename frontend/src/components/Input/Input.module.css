@@ -4,6 +4,50 @@
   gap: 6px;
 }
 
+.control {
+  position: relative;
+  width: 100%;
+}
+
+.passwordInput {
+  padding-right: 56px;
+}
+
+.passwordInput::-ms-reveal {
+  display: none;
+}
+
+.visibility {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--radius-field) - 2px);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.visibility:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--primary-soft);
+}
+
+.visibility:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.visibility:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .head {
   display: flex;
   justify-content: space-between;

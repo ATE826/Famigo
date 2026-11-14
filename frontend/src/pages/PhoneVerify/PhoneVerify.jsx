@@ -66,7 +66,7 @@ function PhoneVerify() {
         inputMode="numeric"
         numeric
         autoComplete="one-time-code"
-        placeholder="000000"
+        placeholder="XXXXXX"
         value={code}
         onChange={(e) => {
           setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH));

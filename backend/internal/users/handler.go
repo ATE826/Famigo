@@ -104,7 +104,7 @@ func (h *Handler) update(c *gin.Context) {
 type foodRequest struct {
 	Prefs   []string `json:"prefs"`
 	Note    *string  `json:"note"`
-	Consent bool     `json:"consent"`
+	Consent bool     `json:"consent"` // Legacy request field; never grants consent.
 }
 
 func (h *Handler) updateFood(c *gin.Context) {
@@ -130,7 +130,7 @@ func (h *Handler) updateFood(c *gin.Context) {
 		httpx.Respond(c, err)
 		return
 	}
-	p, err := h.service.UpdateFood(c.Request.Context(), auth.UserID(c), prefs, note, req.Consent)
+	p, err := h.service.UpdateFood(c.Request.Context(), auth.UserID(c), prefs, note)
 	if err != nil {
 		httpx.Respond(c, err)
 		return

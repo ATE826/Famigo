@@ -51,10 +51,12 @@ services:
         condition: service_healthy
     restart: "no"
 
-  # PostgreSQL. Порт наружу не открыт: к базе могут подключиться только
-  # сервисы внутри этой docker-сети, а не любой в локальной сети или интернете.
+  # PostgreSQL доступен контейнерам и локальному pgAdmin на этом компьютере.
+  # Привязка к 127.0.0.1 исключает публикацию порта на сетевых интерфейсах.
   db:
     image: postgres:17-alpine
+    ports:
+      - "127.0.0.1:15432:5432"
     environment:
       POSTGRES_USER: famigo
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-famigo}
@@ -75,7 +77,15 @@ services:
         required: false
     environment:
       APP_ENV: ${APP_ENV:-development}
-      DATABASE_URL: postgres://famigo:${POSTGRES_PASSWORD:-famigo}@db:5432/famigo?sslmode=disable
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-resend}
+      EMAIL_FROM: ${EMAIL_FROM:-onboarding@resend.dev}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      # SMTP_PASSWORD читается из env_file выше. Не перекрываем его пустым
+      # значением при обычном `docker compose up` без --env-file secrets.env.
+      # При спецсимволах в пароле используйте DOCKER_DATABASE_URL с URL-кодированием.
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgres://famigo:${POSTGRES_PASSWORD:-famigo}@db:5432/famigo?sslmode=disable}
       # Пусто в разработке — сервер сгенерирует временный секрет. Для production обязателен.
       JWT_SECRET: ${JWT_SECRET:-}
       # Ключ шифрования сообщений в базе (формат 1:<base64>). В production обязателен.

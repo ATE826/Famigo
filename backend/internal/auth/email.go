@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"math/big"
 	"net/http"
 	"time"
@@ -38,6 +39,7 @@ type emailCode struct {
 	Attempts                  int
 	CreatedAt, ExpiresAt      time.Time
 	UsedAt                    *time.Time
+	VerifiedAt                *time.Time
 }
 
 func (emailCode) TableName() string { return "verification_codes" }
@@ -68,6 +70,7 @@ func (s *Service) deliver(ctx context.Context, tx *gorm.DB, c *emailCode) error 
 	c.CreatedAt = time.Now()
 	c.ExpiresAt = c.CreatedAt.Add(10 * time.Minute)
 	if err := s.email.SendCode(ctx, c.Target, code); err != nil {
+		slog.Warn("ошибка доставки кода подтверждения", "err", err)
 		return errEmailUnavailable
 	}
 	return tx.Save(c).Error
@@ -130,6 +133,9 @@ func (h *Handler) verifyEmail(c *gin.Context) {
 		httpx.Respond(c, errCode)
 		return
 	}
+	if h.verifyRegistration(c, req, id) {
+		return
+	}
 	var session Session
 	valid := false
 	err = h.service.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
@@ -180,6 +186,9 @@ func (h *Handler) resendEmail(c *gin.Context) {
 	_, id, err := readCodeRequest(c)
 	if err != nil {
 		httpx.Respond(c, err)
+		return
+	}
+	if h.resendRegistration(c, id) {
 		return
 	}
 	var row emailCode
