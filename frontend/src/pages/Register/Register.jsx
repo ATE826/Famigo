@@ -114,7 +114,7 @@ const Register = () => {
         placeholder={t("auth.newPasswordPlaceholder")}
         value={values.password}
         onChange={handleChange}
-        hint={errors.password}
+        hint={errors.password || t("reset.passwordHint")}
       />
       <Input
         id="password2"

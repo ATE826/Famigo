@@ -50,27 +50,15 @@ func (s *Service) Update(ctx context.Context, userID uuid.UUID, patch profilePat
 	return s.Get(ctx, userID)
 }
 
-// UpdateFood сохраняет предпочтения в еде. Это данные, которые могут говорить о здоровье
-// и убеждениях, поэтому по 152-ФЗ нужно отдельное согласие: без него не сохраняем.
-// Если человек всё стёр — согласие отзывается.
-func (s *Service) UpdateFood(ctx context.Context, userID uuid.UUID, prefs []string, note *string, consent bool) (Profile, error) {
-	hasData := len(prefs) > 0 || note != nil
+// UpdateFood saves preferences explicitly submitted by the user. It does not
+// fabricate a separate consent record or mark old registration consents as expanded.
+// Special-category processing still requires its own lawful basis before production.
+func (s *Service) UpdateFood(ctx context.Context, userID uuid.UUID, prefs []string, note *string) (Profile, error) {
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if hasData {
-			active, err := hasActiveConsent(tx, userID, "food")
-			if err != nil {
+		if len(prefs) == 0 && note == nil {
+			if err := revokeConsent(tx, userID, "food"); err != nil {
 				return err
 			}
-			if !active && !consent {
-				return httpx.Validation(map[string]string{"consent": "Подтвердите согласие, чтобы сохранить"})
-			}
-			if !active {
-				if err := giveConsent(tx, userID, "food", s.legalVersion); err != nil {
-					return err
-				}
-			}
-		} else if err := revokeConsent(tx, userID, "food"); err != nil {
-			return err
 		}
 		return replaceFoodPrefs(tx, userID, prefs, note)
 	})

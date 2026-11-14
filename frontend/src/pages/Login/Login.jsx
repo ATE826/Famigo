@@ -63,7 +63,7 @@ function Login() {
         onChange={handleChange}
         hint={errors.password}
         action={
-        <a href="#" className={styles.link}>{t("auth.forgot")}</a>
+        <Link to="/password-reset" className={styles.link}>{t("auth.forgot")}</Link>
       }/>
       {formError && (
         <p className={styles.formError} role="alert">

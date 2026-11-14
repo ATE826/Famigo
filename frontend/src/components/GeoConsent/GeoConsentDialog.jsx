@@ -38,7 +38,7 @@ export default function GeoConsentDialog({ onConfirm, onCancel }) {
           <LinkedText
             template={t("geo.agree")}
             links={{
-              consent: <LegalLink doc="geo">{t("legal.linkGeo")}</LegalLink>,
+              consent: <LegalLink doc="consent">{t("legal.linkConsent")}</LegalLink>,
             }}
           />
         </Checkbox>

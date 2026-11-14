@@ -29,10 +29,11 @@ type Handler struct {
 	// registerByIP — регистрации с одного адреса. Ответ «почта уже занята» нужен человеку,
 	// но им можно пользоваться для перебора чужих почт; строгий лимит делает перебор долгим.
 	registerByIP *httpx.RateLimiter
+	resetByEmail *httpx.RateLimiter
 }
 
 func NewHandler(service *Service, cookies CookieOptions, registerByIP *httpx.RateLimiter) *Handler {
-	return &Handler{service: service, cookies: cookies, loginByEmail: httpx.NewRateLimiter(10, 5), registerByIP: registerByIP}
+	return &Handler{service: service, cookies: cookies, loginByEmail: httpx.NewRateLimiter(10, 5), registerByIP: registerByIP, resetByEmail: httpx.NewRateLimiter(1, 1)}
 }
 
 // RegisterRoutes подключает маршруты. public — без входа, cookie — авторизуются кукой
@@ -42,6 +43,9 @@ func (h *Handler) RegisterRoutes(public, cookie, authed *gin.RouterGroup) {
 	public.POST("/auth/login", h.login)
 	public.POST("/auth/email/verify", h.verifyEmail)
 	public.POST("/auth/email/resend", h.resendEmail)
+	public.POST("/auth/password/request", h.requestPasswordReset)
+	public.POST("/auth/password/verify", h.verifyPasswordReset)
+	public.POST("/auth/password/reset", h.resetPassword)
 	cookie.POST("/auth/refresh", h.refresh)
 	cookie.POST("/auth/logout", h.logout)
 	authed.POST("/auth/logout-all", h.logoutAll)
@@ -110,12 +114,12 @@ func (h *Handler) register(c *gin.Context) {
 		httpx.Respond(c, errEmailUnavailable)
 		return
 	}
-	session, err := h.service.Register(c.Request.Context(), in, c.Request.UserAgent())
+	challenge, err := h.service.beginRegistration(c.Request.Context(), in)
 	if err != nil {
 		httpx.Respond(c, err)
 		return
 	}
-	h.respondChallenge(c, http.StatusCreated, session.UserID)
+	c.JSON(http.StatusCreated, challenge)
 }
 
 type loginRequest struct {

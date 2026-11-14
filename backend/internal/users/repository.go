@@ -20,7 +20,9 @@ func getProfile(db *gorm.DB, userID uuid.UUID) (Profile, error) {
 	if err != nil {
 		return Profile{}, err
 	}
-	return toProfile(u), nil
+	profile := toProfile(u)
+	profile.FoodConsent, err = hasActiveConsent(db, userID, "food")
+	return profile, err
 }
 
 func toProfile(u models.User) Profile {

@@ -79,13 +79,12 @@ export function mapMember(m) {
 // Свои данные (почта, телефон, согласия) приходят из /me и видны только самому человеку.
 export function mergeMe(member, me) {
   if (!me) return member;
-  const hasFood = me.foodPrefs.length > 0 || Boolean(me.foodNote);
   return {
     ...member,
     email: me.email,
     phone: me.phone ?? "",
     phoneVerified: me.phoneVerified,
-    consents: { ...member.consents, food: hasFood ? "given" : null },
+    consents: { ...member.consents, food: me.foodConsent ? "given" : null },
   };
 }
 

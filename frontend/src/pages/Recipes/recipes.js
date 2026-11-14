@@ -1,5 +1,6 @@
 import { isSpoiled } from "../Fridge/products";
 import { foodOptions } from "../ProfileFood/food";
+import { additionalFoodRestrictions } from "../ProfileFood/restrictions";
 
 // Ограничения, которые нарушает ингредиент (значения совпадают с пунктами из профиля)
 const DAIRY = ["Аллергия на молоко", "Без лактозы", "Веганство"];
@@ -52,6 +53,11 @@ const matches = (stems, text) => stems.some((stem) => text.includes(stem));
 
 // Нарушает ли пункт профиля ингредиент. Свои пункты сверяем по тексту, стандартные по списку конфликтов.
 function violates(pref, ingredient) {
+  const additional = additionalFoodRestrictions[pref];
+  if (additional) {
+    const words = ingredient.name.toLowerCase().replaceAll("ё", "е").split(/[^\p{L}]+/u);
+    return additional.some((stem) => words.some((word) => word.startsWith(stem)));
+  }
   if (foodOptions.includes(pref)) return ingredient.conflicts.includes(pref);
   return matches(ingredient.stems, pref.toLowerCase());
 }

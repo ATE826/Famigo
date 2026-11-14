@@ -10,6 +10,7 @@ import AppLayout from "./layouts/AppLayout.jsx";
 import AuthLayout from "./layouts/AuthLayout.jsx";
 import StandaloneLayout from "./layouts/StandaloneLayout.jsx";
 import Verify from "./pages/Verify/Verify.jsx";
+import PasswordReset from "./pages/PasswordReset/PasswordReset.jsx";
 import FamilyCreate from "./pages/FamilyCreate/FamilyCreate.jsx";
 
 import Main from "./pages/Main/Main.jsx";
@@ -67,6 +68,7 @@ function App() {
                 </Route>
                 <Route element={<StandaloneLayout />}>
                   <Route path="/verify" element={<Verify />} />
+                  <Route path="/password-reset" element={<PasswordReset />} />
                   <Route path="/family-create" element={<FamilyCreate />} />
                   <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
                   <Route path="/legal/:doc" element={<Legal />} />

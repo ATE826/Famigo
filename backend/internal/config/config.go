@@ -78,17 +78,31 @@ func Load(log *slog.Logger) (Config, error) {
 	}
 
 	cfg := Config{
-		Mail:           mail.Config{APIKey: strings.TrimSpace(os.Getenv("RESEND_API_KEY")), From: getEnv("EMAIL_FROM", "onboarding@resend.dev")},
+		Mail: mail.Config{
+			Provider:     getEnv("EMAIL_PROVIDER", "resend"),
+			APIKey:       strings.TrimSpace(os.Getenv("RESEND_API_KEY")),
+			From:         getEnv("EMAIL_FROM", "onboarding@resend.dev"),
+			SMTPHost:     strings.TrimSpace(os.Getenv("SMTP_HOST")),
+			SMTPPort:     getEnv("SMTP_PORT", "587"),
+			SMTPUsername: strings.TrimSpace(os.Getenv("SMTP_USERNAME")),
+			SMTPPassword: strings.ReplaceAll(strings.TrimSpace(os.Getenv("SMTP_PASSWORD")), " ", ""),
+		},
 		Production:     getEnv("APP_ENV", "development") == "production",
 		Port:           getEnv("PORT", "8080"),
 		DatabaseURL:    os.Getenv("DATABASE_URL"),
 		AllowedOrigins: splitList(getEnv("ALLOWED_ORIGINS", "http://localhost:5173")),
 		TrustedProxies: splitList(os.Getenv("TRUSTED_PROXIES")),
 		UploadDir:      getEnv("UPLOAD_DIR", "uploads"),
-		LegalVersion:   getEnv("LEGAL_VERSION", "2026-10"),
+		LegalVersion:   getEnv("LEGAL_VERSION", "2026-11-14.2"),
 	}
 
 	var err error
+	if err := cfg.Mail.Validate(); err != nil {
+		return Config{}, err
+	}
+	if cfg.Mail.Provider == "smtp" && cfg.Mail.SMTPPassword == "" {
+		log.Warn("SMTP_PASSWORD не задан: отправка кодов отключена, добавьте пароль приложения Gmail в secrets.env")
+	}
 	if cfg.AccessTokenTTL, err = getDuration("ACCESS_TOKEN_TTL", 15*time.Minute); err != nil {
 		return Config{}, err
 	}

@@ -1,5 +1,5 @@
 import { documents } from "../../legal/documents";
-import { DOCUMENT_DATE, OPERATOR } from "../../legal/operator";
+import { DOCUMENT_DATE, DOCUMENT_DRAFT, OPERATOR } from "../../legal/operator";
 import { getLang, t } from "../../i18n";
 import styles from "./LegalDocument.module.css";
 
@@ -15,6 +15,7 @@ export default function LegalDocument({ id, showTitle = true }) {
     <article>
       {showTitle && <h1 className={styles.title}>{document.title}</h1>}
       <p className={styles.meta}>{t("legal.updated", { date: DOCUMENT_DATE })}</p>
+      {DOCUMENT_DRAFT && <p className={styles.note} role="note">{t("legal.draft")}</p>}
       {getLang() !== "ru" && <p className={styles.note}>{t("legal.russianOnly")}</p>}
 
       {document.sections.map((section, index) => (

@@ -137,7 +137,6 @@ function Settings() {
           <MenuRow to="/legal/terms" icon="edit" label={t("legal.docs.terms")} />
           <MenuRow to="/legal/privacy" icon="lock" label={t("legal.docs.privacy")} />
           <MenuRow to="/legal/consent" icon="user" label={t("legal.docs.consent")} />
-          <MenuRow to="/legal/geo" icon="pin" label={t("legal.docs.geo")} />
         </Card>
       </section>
 

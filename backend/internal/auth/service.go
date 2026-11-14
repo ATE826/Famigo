@@ -59,40 +59,6 @@ type RegisterInput struct {
 	Birthday time.Time
 }
 
-// Register создаёт аккаунт, настройки и согласия одной транзакцией и сразу выполняет вход.
-func (s *Service) Register(ctx context.Context, in RegisterInput, userAgent string) (Session, error) {
-	hash, err := HashPassword(in.Password)
-	if err != nil {
-		return Session{}, err
-	}
-
-	user := models.User{Email: in.Email, PasswordHash: hash, Name: in.Name, Birthday: &in.Birthday, AvatarTone: "green"}
-	var session Session
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		err := insertUser(tx, &user)
-		if database.IsUniqueViolation(err) {
-			return httpx.Conflict("email_taken", "Эта почта уже зарегистрирована")
-		}
-		if err != nil {
-			return err
-		}
-		if err := insertSettings(tx, user.ID); err != nil {
-			return err
-		}
-		// Галочки на экране регистрации: условия и политика — одна, согласие на данные — вторая.
-		if err := insertConsents(tx, user.ID, s.legalVersion, "terms", "privacy", "data"); err != nil {
-			return err
-		}
-		if s.email != nil {
-			session = Session{UserID: user.ID}
-			return nil
-		}
-		session, err = s.startSession(tx, user.ID, uuid.New(), userAgent)
-		return err
-	})
-	return session, err
-}
-
 func (s *Service) Login(ctx context.Context, email, password, userAgent string) (Session, error) {
 	db := s.db.WithContext(ctx)
 	user, err := findByEmail(db, email)

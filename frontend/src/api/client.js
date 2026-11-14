@@ -97,6 +97,7 @@ export async function api(path, options) {
 // Текст ошибки для человека: по известным кодам — на языке интерфейса,
 // иначе — сообщение сервера.
 const KNOWN = {
+	account_not_found: "reset.accountMissing",
   invalid_code: "errors.invalidCode",
   email_unavailable: "errors.emailUnavailable",
   network: "errors.network",

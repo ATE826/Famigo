@@ -10,9 +10,6 @@ import { useData } from "../../store/DataContext";
 import { t } from "../../i18n";
 import { errorText } from "../../api/client";
 import { foodGroups, foodLabel } from "./food";
-import Checkbox from "../../components/Checkbox/Checkbox";
-import LinkedText from "../../components/LinkedText/LinkedText";
-import LegalLink from "../../components/LegalModal/LegalLink";
 import styles from "./ProfileFood.module.css";
 
 const CUSTOM_MAX = 30;
@@ -24,7 +21,6 @@ function ProfileFood() {
   const me = members.find((m) => m.id === currentUserId);
   const [selected, setSelected] = useState(me?.foodPrefs ?? []);
   const [note, setNote] = useState(me?.foodNote ?? "");
-  const [agreed, setAgreed] = useState(Boolean(me?.consents?.food));
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
 
@@ -52,13 +48,9 @@ function ProfileFood() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const hasData = selected.length > 0 || note.trim().length > 0;
-    if (hasData && !agreed) {
-      setError(t("food.consentRequired"));
-      return;
-    }
+
     try {
-      await saveFood(selected, note.trim(), agreed);
+      await saveFood(selected, note.trim());
     } catch (error) {
       setError(errorText(error));
       return;
@@ -139,21 +131,7 @@ function ProfileFood() {
         onChange={(e) => setNote(e.target.value)}
         hint={`${note.length}/60`}
       />
-      <Checkbox
-        checked={agreed}
-        error={error}
-        onChange={(e) => {
-          setAgreed(e.target.checked);
-          setError("");
-        }}
-      >
-        <LinkedText
-          template={t("food.consent")}
-          links={{
-            consent: <LegalLink doc="consent">{t("legal.linkConsent")}</LegalLink>,
-          }}
-        />
-      </Checkbox>
+      {error && <p role="alert">{error}</p>}
     </FormScreen>
   );
 }
