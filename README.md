@@ -1,4 +1,4 @@
-# Famigo
+# <img src="_docs/assets/famigo-logo.png" alt="Логотип Famigo" width="40" height="40" align="absmiddle"> Famigo
 
 **Всё важное для семьи в одном месте.**
 
@@ -180,7 +180,7 @@ SMTP_PASSWORD='<пароль приложения Gmail без пробелов>
 Из корня репозитория:
 
 ```bash
-docker compose --env-file .env --env-file secrets.env up -d --build
+docker compose up -d --build
 ```
 
 Откройте [http://localhost:8080/Famigo/](http://localhost:8080/Famigo/). Проверка API: [http://localhost:8080/api/health](http://localhost:8080/api/health).
