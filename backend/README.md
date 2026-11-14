@@ -37,10 +37,11 @@ docker compose --env-file .env --env-file secrets.env up --build
 
 ### Только бэкенд (без Docker)
 
-Нужны Go 1.27+ и PostgreSQL 15+.
+Нужны Go по `go.mod` (`go 1.27.1`, toolchain `go1.27.3`) и PostgreSQL. В Compose используется PostgreSQL 17.
 
 ```bash
-cp ../secrets.env.example ../secrets.env    # и впишите JWT_SECRET и DATABASE_URL
+cd backend
+# Создайте ../secrets.env по примеру в корневом README; задайте DATABASE_URL, JWT_SECRET и SMTP_PASSWORD.
 go run ./cmd/api
 ```
 
@@ -54,31 +55,21 @@ go run ./cmd/api
 | Файл | Что внутри | В git |
 |---|---|---|
 | `.env` (в корне — для Docker, в `backend/` — без Docker) | обычные настройки: режим, адреса, лимиты | да |
-| `secrets.env` (в корне) | `JWT_SECRET`, `MESSAGE_KEYS`, `POSTGRES_PASSWORD`, `DATABASE_URL`, `AI_API_KEY` (для облачной нейросети) | **нет** (`.gitignore`) |
-| `secrets.env.example` | образец без настоящих значений | да |
+| `secrets.env` (в корне) | `JWT_SECRET`, `MESSAGE_KEYS`, `POSTGRES_PASSWORD`, `DATABASE_URL`, `DOCKER_DATABASE_URL`, `SMTP_PASSWORD`, `AI_API_KEY` | **нет** (`.gitignore`) |
 
 Что важнее, если одна настройка задана в нескольких местах: переменная окружения → `.env` → `secrets.env`.
 
-**Вынести `secrets.env` из проекта** (например, в `C:\secrets\famigo\secrets.env`) можно, ничего не ломая:
+**Внешний файл секретов**, например `C:\secrets\famigo\secrets.env`, настраивается по-разному для Go и Docker:
 
-- Docker: `docker compose --env-file .env --env-file C:\secrets\famigo\secrets.env up --build`
+- Docker: передайте файл через `--env-file` для подстановок Compose и измените `backend.env_file.path` в Compose на фактический путь. Одного `--env-file` недостаточно для `SMTP_PASSWORD`: в текущем Compose он передаётся через `env_file`, указывающий на корневой `./secrets.env`.
 - Без Docker: задайте путь в переменной `SECRETS_FILE` (в `backend/.env` или в системе).
   Если путь указан, а файла нет, сервер не запустится и скажет об этом, а не подставит временный секрет.
 
 Без `SECRETS_FILE` сервер ищет `secrets.env` в текущей папке и на уровень выше.
 
-**Заменить секреты** (если они попали в чат, мессенджер, git или вы просто хотите сменить их) — скрипт
-`scripts/rotate-secrets.ps1`. Он создаёт новые случайные `JWT_SECRET` и пароль базы, переписывает ваш
-`secrets.env` и **ничего не выводит на экран**. С ключом `-ApplyToDocker` он также меняет пароль в
-запущенной Docker-базе (данные сохраняются) и перезапускает контейнеры:
+**Смена пароля БД.** Инструкция находится в [корневом README](../README.md#подключение-к-бд-через-pgadmin). Сначала меняется пароль роли PostgreSQL, затем значения в файле и окружение контейнеров. Файла `scripts/rotate-secrets.ps1` и шаблона `secrets.env.example` в текущей ветке нет; автоматическая ротация ими не поддерживается. Удалять том БД для смены пароля не нужно.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\rotate-secrets.ps1 -SecretsFile C:\secrets\famigo\secrets.env -ApplyToDocker
-```
-
-После замены пользователи один раз входят заново. Без `-ApplyToDocker` Docker не трогается: тогда
-пароль базы в контейнере останется прежним, пока вы не пересоздадите базу (`docker compose down -v`,
-**это сотрёт данные**).
+Внешний pgAdmin подключается к `127.0.0.1:15432`, backend в Docker — к `db:5432`. `DOCKER_DATABASE_URL` задаёт внутреннюю строку подключения, а `DATABASE_URL` в файле используется для локального Go-процесса. В URL пароль кодируется, в `POSTGRES_PASSWORD` записывается исходным. Изменение `JWT_SECRET` инвалидирует JWT и HMAC-коды; ключи `MESSAGE_KEYS` меняются отдельно с сохранением старых ключей до перешифрования.
 
 ## Тесты
 
@@ -90,7 +81,7 @@ go test ./...
 если указать **пустую** тестовую базу:
 
 ```bash
-FAMIGO_TEST_DATABASE_URL=postgres://famigo:famigo@localhost:5432/famigo_test go test ./internal/server -v
+FAMIGO_TEST_DATABASE_URL=postgres://famigo:famigo@localhost:15432/famigo_test go test ./internal/server -v
 ```
 
 ## Структура
@@ -118,19 +109,21 @@ internal/
 
 ## API
 
-Все ответы — JSON. Ошибка всегда одного вида:
+Ответы с данными — JSON; загрузка аватаров использует multipart, выдача изображений — двоичные данные, а некоторые успешные операции возвращают 204 без тела. Ошибки API имеют вид:
 `{"error": {"code": "not_found", "message": "Дом не найден", "fields": {...}}}`.
 Защищённые адреса требуют заголовок `Authorization: Bearer <accessToken>`.
 Суммы — в **копейках**, даты — `2026-10-27`, время — RFC 3339.
 
 | Метод и адрес | Что делает |
 |---|---|
-| `POST /api/auth/register` | регистрация (имя, почта, пароль, дата рождения, два согласия) |
-| `POST /api/auth/login` | вход → `accessToken` + кука с refresh-токеном |
+| `POST /api/auth/register` | временная заявка регистрации → `challengeId`; аккаунт создаётся после проверки кода |
+| `POST /api/auth/login` | проверка пароля и отправка кода → `challengeId`, без сессии |
+| `POST /api/auth/email/verify`, `/api/auth/email/resend` | проверка кода → `accessToken` и refresh-cookie; повторная отправка |
+| `POST /api/auth/password/request`, `/api/auth/password/verify`, `/api/auth/password/reset` | запрос кода, проверка и установка нового пароля |
 | `POST /api/auth/refresh` | новый `accessToken` по куке |
 | `POST /api/auth/logout`, `/logout-all` | выйти здесь / на всех устройствах |
 | `GET/PATCH/DELETE /api/me` | профиль; удаление аккаунта — с паролем |
-| `PUT /api/me/password`, `/me/food`, `/me/settings` | пароль, предпочтения в еде (нужно согласие), настройки |
+| `PUT /api/me/password`, `/me/food`, `/me/settings` | пароль, предпочтения в еде (без повторного чекбокса), настройки |
 | `PUT/DELETE /api/me/avatar` | загрузить (multipart, поле `avatar`) / удалить аватар |
 | `GET /api/notifications`, `POST .../:id/read`, `POST .../read-all` | уведомления |
 | `GET/POST /api/families`, `POST /api/families/join` | мои семьи, создать, вступить по коду |
@@ -195,10 +188,10 @@ internal/
   случайное имя файла.
 - **Заголовки.** `nosniff`, запрет фреймов, CSP, `no-store`, `Cross-Origin-Resource-Policy`, HSTS в production.
 - **Логи.** Журнал GORM пишет запросы без значений: почта, хеши и сообщения в лог не попадают.
-- **Шифрование сообщений в базе.** Текст сообщений хранится зашифрованным (AES-256-GCM, пакет
+- **Шифрование сообщений в базе.** При заданном `MESSAGE_KEYS` текст сообщений хранится зашифрованным (AES-256-GCM, пакет
   `internal/fieldcrypt`): дамп базы или резервная копия без ключа не раскрывают переписку. Подробнее ниже.
 - **Ошибки.** Наружу — только код и текст для человека; подробности — в лог с `request_id`.
-- **Docker.** Сервер не от root в минимальном образе, база не открыта наружу,
+- **Docker.** Сервер не от root в минимальном образе, порт базы опубликован только на `127.0.0.1:15432`,
   nginx перезаписывает `X-Forwarded-For`.
 
 ## Шифрование сообщений в базе
@@ -282,7 +275,7 @@ Docker должен иметь достаточно памяти для загр
 чтобы Compose применил новые настройки к бэкенду и загрузчику модели.
 
 Защита:
-- **Модели уходят только продукты и ограничения** — без имён, почты и других личных данных.
+- **Модели передаются продукты, ограничения и заметки о питании** — без специально добавляемых имён и почты участников. Свободный текст и сведения об ограничениях могут содержать персональные данные; настройка внешнего AI требует учитывать это.
   Испорченные продукты не отправляются.
 - **Ответу нейросети не верим.** Он разбирается строго по JSON-схеме, строки чистятся и обрезаются, а каждое
   блюдо сверяется с ограничениями по словам в названии, ингредиентах и шагах (`recipes/matcher.go`). Блюдо с нарушением отбрасывается
@@ -359,7 +352,7 @@ Docker Compose читает этот файл для бэкенда автома
 
 - Отправка SMS для подтверждения телефона.
 - Настоящая оплата подписки (сейчас — демо-режим `DEMO_PAYMENTS`).
-- Разделы после MVP: карта, SOS, «Я в порядке», галерея, чеки.
+- Серверные карта, SOS, «Я в порядке», галерея и загрузка позиций чеков. Фронтенд уже содержит демонстрационные экраны, QR-сканер и ручное заполнение суммы/даты расхода.
 
 ## Сброс пароля
 
