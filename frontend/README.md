@@ -1,18 +1,57 @@
-# React + Vite
+# Famigo — frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Интерфейс Famigo на JavaScript/JSX, React 19, React Router 7 и Vite 8 с React Compiler. Стили — CSS Modules и общие CSS-переменные. Данные и действия страниц предоставляет React Context. TypeScript в исходниках не используется.
 
-Currently, two official plugins are available:
+## Запуск для разработки
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Для Node.js 22 используйте версию 22.12 или новее; полный диапазон совместимости указан в зависимостях Vite. Из корня репозитория:
 
-## React Compiler
+```bash
+cd frontend
+npm ci
+npm run dev
+```
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+Адрес: [http://localhost:5173/Famigo/](http://localhost:5173/Famigo/). Базовый путь `/Famigo/` задан в `vite.config.js` и `BrowserRouter`. Vite проксирует `/api`, включая WebSocket, на `http://localhost:8080`.
 
-Note: This will impact Vite dev & build performances.
+Для рабочих регистрации, входа и семейных данных нужен запущенный Go API с базой и настроенной почтой. Данные этих разделов не заменяются локальными демонстрационными записями при недоступности API. Инструкции: [backend](../backend/README.md) и [общий запуск](../README.md#запуск-через-docker).
 
-## Expanding the ESLint configuration
+При запуске Go API напрямую остановите Docker-сервисы `frontend` и `backend`, занимающие порт 8080; базу можно оставить в Docker. Её адрес с компьютера — `127.0.0.1:15432`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Устройство
+
+| Каталог | Назначение |
+| --- | --- |
+| `src/api` | HTTP-клиент, обновление сессии, преобразование данных, WebSocket чатов |
+| `src/store` | Профиль и семейные данные, действия страниц, тема, локальные демонстрационные разделы |
+| `src/pages` | Страницы; маршруты подключаются в `src/App.jsx` |
+| `src/components` | Общие элементы, формы и диалоги |
+| `src/layouts` | Оболочки авторизации, приложения и отдельных страниц |
+| `src/i18n` | Русский, английский, испанский, немецкий, китайский и японский языки |
+| `src/legal` | Тексты документов, версия и заглушки реквизитов оператора |
+| `src/styles` | Общие стили и токены светлой и тёмной тем |
+| `src/utils` | Даты, права, бюджет, тарифы и вспомогательные функции |
+
+Access-токен хранится в памяти, refresh-токен — в HttpOnly cookie. Регистрация и вход проходят через код на почту; запрос подтверждения хранится в `sessionStorage`. Сброс пароля доступен по `/Famigo/password-reset`. Сервер проверяет наличие аккаунта до перехода к коду, после смены пароля пользователь входит заново.
+
+Карта, геолокация, галерея и check-in используют локальное демонстрационное состояние; у SOS сообщение отправляется через семейный чат. Оплата демонстрационная. QR-сканер заполняет сумму и дату расхода, но не загружает позиции чека. Полная таблица статусов и тарифов — в [корневом README](../README.md#возможности).
+
+На сайте три основных документа: соглашение, политика и согласие на обработку данных. Условия питания и геолокации включены в основное согласие; прежние идентификаторы `food` и `geo` открывают его. Юридические тексты пока имеют статус проекта с незаполненными реквизитами.
+
+## Проверки и сборка
+
+```bash
+npm run lint
+npm run build
+npm run preview
+```
+
+Результат сборки — `dist/`. Предпросмотр проверяет статическую сборку; production-сервер и API он не разворачивает. Для запросов API по-прежнему нужен отдельно запущенный Go-сервер; для общего запуска используйте Docker с nginx.
+
+Отдельного набора frontend unit- и end-to-end-тестов пока нет. Сборка предупреждает о крупных JavaScript-бандлах.
+
+## Публикация
+
+В Docker nginx раздаёт SPA по `/Famigo/` и проксирует `/api` к backend. Общий запуск описан в корневом README.
+
+`npm run deploy` собирает приложение, копирует `index.html` в `404.html` и запускает `deploy.mjs`. Скрипт принудительно обновляет ветку `gh-pages` удалённого `origin`; выполняйте его только для намеренной публикации. Это публикация статического интерфейса: backend, PostgreSQL и почта отдельно не разворачиваются. Без доступного `/api` авторизация и семейные данные работать не будут.
