@@ -1,6 +1,6 @@
 // Пакет ai — клиент нейросети по OpenAI-совместимому API (POST /chat/completions).
 //
-// Этот формат понимают Ollama (локальная модель), Gemini, OpenRouter, Groq, DeepSeek, Qwen и
+// Этот формат понимают локальная модель (локальная модель), Gemini, OpenRouter, Groq, DeepSeek, Qwen и
 // другие, поэтому провайдер меняется настройками AI_BASE_URL, AI_MODEL и AI_API_KEY, без правок кода.
 //
 // Ответ нейросети — недоверенные данные: его разбирает и проверяет вызывающий код.
@@ -17,24 +17,29 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 )
 
 // Config — настройки подключения. Пустой BaseURL — нейросеть не настроена.
 type Config struct {
-	BaseURL string
-	Model   string
-	APIKey  string
-	Timeout time.Duration
+	Provider        string
+	GigaChatAuthKey string
+	GigaChatScope   string
+	GigaChatAuthURL string
+	BaseURL         string
+	Model           string
+	APIKey          string
+	Timeout         time.Duration
 	// MaxConcurrent — сколько запросов к модели идут одновременно. Локальная модель
-	// считает по одному запросу за раз, поэтому для Ollama это 1.
+	// считает по одному запросу за раз, поэтому для локальная модель это 1.
 	MaxConcurrent int
 	// JSONMode — schema (ответ строго по JSON-схеме) или object (просто JSON, для провайдеров
 	// без поддержки схем, например DeepSeek).
 	JSONMode string
 	// Reasoning — значение reasoning_effort. none отключает «размышления» у моделей, которые
-	// это умеют (Gemma, Qwen в Ollama): ответ приходит в несколько раз быстрее. Пусто — не отправляем.
+	// это умеют (некоторые OpenAI-совместимые модели): ответ приходит в несколько раз быстрее. Пусто — не отправляем.
 	Reasoning string
 }
 
@@ -57,11 +62,14 @@ const maxWaiting = 4
 const maxResponseBytes = 1 << 20
 
 type Client struct {
-	cfg     Config
-	http    *http.Client
-	slots   chan struct{}
-	waiting atomic.Int32
-	log     *slog.Logger
+	tokenMu      sync.Mutex
+	token        string
+	tokenExpires time.Time
+	cfg          Config
+	http         *http.Client
+	slots        chan struct{}
+	waiting      atomic.Int32
+	log          *slog.Logger
 }
 
 // New возвращает nil, если нейросеть не настроена.
@@ -69,10 +77,14 @@ func New(cfg Config, log *slog.Logger) *Client {
 	if cfg.BaseURL == "" {
 		return nil
 	}
+	client := &http.Client{}
+	if cfg.Provider == "gigachat" {
+		client = gigaHTTPClient()
+	}
 	return &Client{
 		cfg: cfg,
 		// Таймаут задаёт контекст в Complete: он учитывает и время в очереди.
-		http:  &http.Client{},
+		http:  client,
 		slots: make(chan struct{}, max(cfg.MaxConcurrent, 1)),
 		log:   log,
 	}
@@ -133,6 +145,9 @@ func (c *Client) Complete(ctx context.Context, req Request) (string, error) {
 			"json_schema": map[string]any{"name": req.SchemaName, "strict": true, "schema": req.Schema},
 		}
 	}
+	if c.cfg.Provider == "gigachat" {
+		format = map[string]any{"type": "json_schema", "schema": req.Schema, "strict": true}
+	}
 	body, err := json.Marshal(chatRequest{
 		Model: c.cfg.Model,
 		Messages: []message{
@@ -141,7 +156,7 @@ func (c *Client) Complete(ctx context.Context, req Request) (string, error) {
 		},
 		Temperature:     req.Temperature,
 		ResponseFormat:  format,
-		ReasoningEffort: c.cfg.Reasoning,
+		ReasoningEffort: c.reasoning(),
 	})
 	if err != nil {
 		return "", err
@@ -152,14 +167,34 @@ func (c *Client) Complete(ctx context.Context, req Request) (string, error) {
 		return "", err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	if c.cfg.APIKey != "" {
-		httpReq.Header.Set("Authorization", "Bearer "+c.cfg.APIKey)
+	key := c.cfg.APIKey
+	if c.cfg.Provider == "gigachat" {
+		key, err = c.gigaToken(ctx, "")
+		if err != nil {
+			return "", err
+		}
+	}
+	if key != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+key)
 	}
 
 	started := time.Now()
 	resp, err := c.http.Do(httpReq)
 	if err != nil {
 		return "", c.transportError(ctx, err)
+	}
+	if resp.StatusCode == http.StatusUnauthorized && c.cfg.Provider == "gigachat" {
+		resp.Body.Close()
+		key, err = c.gigaToken(ctx, key)
+		if err != nil {
+			return "", err
+		}
+		httpReq.Body = io.NopCloser(bytes.NewReader(body))
+		httpReq.Header.Set("Authorization", "Bearer "+key)
+		resp, err = c.http.Do(httpReq)
+		if err != nil {
+			return "", c.transportError(ctx, err)
+		}
 	}
 	defer resp.Body.Close()
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
@@ -175,7 +210,7 @@ func (c *Client) Complete(ctx context.Context, req Request) (string, error) {
 		return "", ErrRateLimited
 	case resp.StatusCode != http.StatusOK:
 		// Текст ошибки провайдера — только в журнал: в нём бывают подробности аккаунта.
-		c.log.Warn("нейросеть ответила ошибкой", "status", resp.StatusCode, "body", truncate(string(raw), 300))
+		c.log.Warn("нейросеть ответила ошибкой", "status", resp.StatusCode)
 		return "", ErrUnavailable
 	}
 

@@ -12,7 +12,9 @@ import styles from "./ChatInfo.module.css";
 
 function ChatInfo() {
   const { id } = useParams();
-  const { members, chatSettings, setChatSetting } = useData();
+  const { members, currentUserId, chatSettings, setChatSetting } = useData();
+  const actor = members.find(member => member.id === currentUserId);
+  const canChangePhoto = actor?.role === "Owner" || actor?.role === "Admin";
 
   if (id !== GROUP_CHAT_ID) {
     return <Navigate to={`/more/family/${id}`} replace />;
@@ -30,9 +32,9 @@ function ChatInfo() {
         <Avatar letter={name[0]} size={96} />
         <h2 className={styles.name}>{name}</h2>
         <span className={styles.count}>{count}</span>
-        <a href="#" className={styles.photo}>
+        {canChangePhoto && <a href="#" className={styles.photo}>
           {t("profile.changePhoto")}
-        </a>
+        </a>}
       </div>
 
       <Card flush>

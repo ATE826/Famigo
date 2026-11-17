@@ -21,8 +21,11 @@ type CookieOptions struct {
 }
 
 type Handler struct {
-	service *Service
-	cookies CookieOptions
+	captcha           captchaVerifier
+	captchaClientKey  string
+	captchaHashSecret []byte
+	service           *Service
+	cookies           CookieOptions
 	// Ограничение попыток входа на одну почту: защита от подбора пароля
 	// с множества разных IP (лимит по IP такую атаку не остановит).
 	loginByEmail *httpx.RateLimiter
@@ -39,6 +42,7 @@ func NewHandler(service *Service, cookies CookieOptions, registerByIP *httpx.Rat
 // RegisterRoutes подключает маршруты. public — без входа, cookie — авторизуются кукой
 // (защищены от CSRF), authed — только для вошедших.
 func (h *Handler) RegisterRoutes(public, cookie, authed *gin.RouterGroup) {
+	public.GET("/auth/captcha", h.captchaStatus)
 	public.POST("/auth/register", h.registerByIP.ByIP("register:"), h.register)
 	public.POST("/auth/login", h.login)
 	public.POST("/auth/email/verify", h.verifyEmail)
@@ -80,10 +84,11 @@ func (h *Handler) setRefreshCookie(c *gin.Context, value string, maxAge int) {
 func (h *Handler) clearRefreshCookie(c *gin.Context) { h.setRefreshCookie(c, "", -1) }
 
 type registerRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Birthday string `json:"birthday"`
+	CaptchaToken string `json:"captchaToken"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Password     string `json:"password"`
+	Birthday     string `json:"birthday"`
 	// Две галочки на экране регистрации. Без них аккаунт не создаётся (152-ФЗ).
 	AcceptTerms bool `json:"acceptTerms"`
 	AcceptData  bool `json:"acceptData"`
@@ -102,7 +107,7 @@ func (h *Handler) register(c *gin.Context) {
 		Birthday: v.Birthday("birthday", req.Birthday),
 		Password: req.Password,
 	}
-	v.Password("password", req.Password)
+	v.RegistrationPassword("password", req.Password)
 	v.Check(req.AcceptTerms, "acceptTerms", "Нужно принять условия")
 	v.Check(req.AcceptData, "acceptData", "Нужно согласие на обработку данных")
 	if err := v.Err(); err != nil {
@@ -114,6 +119,12 @@ func (h *Handler) register(c *gin.Context) {
 		httpx.Respond(c, errEmailUnavailable)
 		return
 	}
+	if h.captcha != nil {
+		if err := h.captcha.Verify(c.Request.Context(), req.CaptchaToken, c.ClientIP()); err != nil {
+			httpx.Respond(c, err)
+			return
+		}
+	}
 	challenge, err := h.service.beginRegistration(c.Request.Context(), in)
 	if err != nil {
 		httpx.Respond(c, err)
@@ -123,8 +134,9 @@ func (h *Handler) register(c *gin.Context) {
 }
 
 type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	CaptchaToken string `json:"captchaToken"`
+	Email        string `json:"email"`
+	Password     string `json:"password"`
 }
 
 func (h *Handler) login(c *gin.Context) {
@@ -149,7 +161,7 @@ func (h *Handler) login(c *gin.Context) {
 		httpx.Respond(c, errEmailUnavailable)
 		return
 	}
-	session, err := h.service.Login(c.Request.Context(), email, req.Password, c.Request.UserAgent())
+	session, err := h.loginWithCaptcha(c, email, req.Password, req.CaptchaToken)
 	if err != nil {
 		httpx.Respond(c, err)
 		return

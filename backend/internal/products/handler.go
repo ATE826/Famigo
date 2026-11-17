@@ -1,6 +1,8 @@
 package products
 
 import (
+	"github.com/ATE826/Famigo/backend/internal/foodpolicy"
+	"github.com/ATE826/Famigo/backend/internal/models"
 	"math"
 
 	"github.com/gin-gonic/gin"
@@ -71,6 +73,20 @@ func (h *Handler) list(c *gin.Context) {
 		httpx.Respond(c, err)
 		return
 	}
+	adult, e := foodpolicy.CanUse(h.service.db.WithContext(c.Request.Context()), auth.UserID(c))
+	if e != nil {
+		httpx.Respond(c, e)
+		return
+	}
+	if !adult {
+		filtered := make([]Product, 0, len(items))
+		for _, p := range items {
+			if p.Category != "alcohol" && !foodpolicy.ContainsAlcohol(p.Name) {
+				filtered = append(filtered, p)
+			}
+		}
+		items = filtered
+	}
 	httpx.OK(c, gin.H{"items": items})
 }
 
@@ -89,6 +105,20 @@ func (h *Handler) add(c *gin.Context) {
 	if err != nil {
 		httpx.Respond(c, err)
 		return
+	}
+	if foodpolicy.ContainsAlcohol(in.Name) {
+		in.Category = "alcohol"
+	}
+	if in.Category == "alcohol" {
+		adult, e := foodpolicy.CanUse(h.service.db.WithContext(c.Request.Context()), auth.UserID(c))
+		if e != nil {
+			httpx.Respond(c, e)
+			return
+		}
+		if !adult {
+			httpx.Respond(c, foodpolicy.ErrAdultOnly)
+			return
+		}
 	}
 	product, err := h.service.Add(c.Request.Context(), families.FamilyID(c), id[0], auth.UserID(c), in)
 	if err != nil {
@@ -114,6 +144,24 @@ func (h *Handler) update(c *gin.Context) {
 		httpx.Respond(c, err)
 		return
 	}
+	if e := h.guardExisting(c, id[0], id[1]); e != nil {
+		httpx.Respond(c, e)
+		return
+	}
+	if foodpolicy.ContainsAlcohol(in.Name) {
+		in.Category = "alcohol"
+	}
+	if in.Category == "alcohol" {
+		adult, e := foodpolicy.CanUse(h.service.db.WithContext(c.Request.Context()), auth.UserID(c))
+		if e != nil {
+			httpx.Respond(c, e)
+			return
+		}
+		if !adult {
+			httpx.Respond(c, foodpolicy.ErrAdultOnly)
+			return
+		}
+	}
 	product, err := h.service.Update(c.Request.Context(), families.FamilyID(c), id[0], id[1], in)
 	if err != nil {
 		httpx.Respond(c, err)
@@ -125,6 +173,11 @@ func (h *Handler) update(c *gin.Context) {
 func (h *Handler) delete(c *gin.Context) {
 	id, err := ids(c, "homeID", "productID")
 	if err == nil {
+		err = h.guardExisting(c, id[0], id[1])
+		if err != nil {
+			httpx.Respond(c, err)
+			return
+		}
 		err = h.service.Delete(c.Request.Context(), families.FamilyID(c), id[0], id[1])
 	}
 	if err != nil {
@@ -132,4 +185,23 @@ func (h *Handler) delete(c *gin.Context) {
 		return
 	}
 	httpx.NoContent(c)
+}
+
+func (h *Handler) guardExisting(c *gin.Context, homeID, productID uuid.UUID) error {
+	db := h.service.db.WithContext(c.Request.Context())
+	if err := requireHome(db, families.FamilyID(c), homeID); err != nil {
+		return err
+	}
+	var p models.Product
+	if db.Where("id = ? AND home_id = ?", productID, homeID).Take(&p).Error != nil {
+		return errProductNotFound
+	}
+	adult, err := foodpolicy.CanUse(db, auth.UserID(c))
+	if err != nil {
+		return err
+	}
+	if !adult && (p.Category == "alcohol" || foodpolicy.ContainsAlcohol(p.Name)) {
+		return errProductNotFound
+	}
+	return nil
 }

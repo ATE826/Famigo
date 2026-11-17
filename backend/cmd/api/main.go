@@ -15,6 +15,8 @@ import (
 	"syscall"
 	"time"
 
+	"encoding/json"
+	"github.com/ATE826/Famigo/backend/internal/ai"
 	"github.com/ATE826/Famigo/backend/internal/config"
 	"github.com/ATE826/Famigo/backend/internal/database"
 	"github.com/ATE826/Famigo/backend/internal/mail"
@@ -23,6 +25,33 @@ import (
 
 func main() {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	if len(os.Args) > 1 && os.Args[1] == "aicheck" {
+		cfg, err := config.Load(log)
+		if err != nil {
+			log.Error("настройки AI", "err", err)
+			os.Exit(1)
+		}
+		client := ai.New(cfg.AI, log)
+		if client == nil {
+			log.Error("AI не настроен")
+			os.Exit(1)
+		}
+		answer, err := client.Complete(context.Background(), ai.Request{System: "Ответь JSON по схеме. Это тест с вымышленными данными.", User: "Предложи одно простое блюдо из риса и моркови, без молока. Укажи название и список ингредиентов на русском.", SchemaName: "recipe_check", Schema: map[string]any{"type": "object", "properties": map[string]any{"name": map[string]any{"type": "string"}, "ingredients": map[string]any{"type": "array", "items": map[string]any{"type": "string"}}}, "required": []string{"name", "ingredients"}, "additionalProperties": false}, Temperature: 0.3})
+		if err != nil {
+			log.Error("проверка AI", "err", err)
+			os.Exit(1)
+		}
+		var result struct {
+			Name        string   `json:"name"`
+			Ingredients []string `json:"ingredients"`
+		}
+		if json.Unmarshal([]byte(answer), &result) != nil || result.Name == "" || len(result.Ingredients) == 0 {
+			log.Error("AI: некорректная структура рецепта")
+			os.Exit(1)
+		}
+		log.Info("AI: авторизация и JSON-рецепт проверены", "model", client.Model(), "ingredients", len(result.Ingredients))
+		return
+	}
 
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
 		os.Exit(healthcheck())

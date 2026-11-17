@@ -67,7 +67,6 @@ export default function DataProvider({ children }) {
   const [messages, setMessages] = useState({});
   const [unread, setUnread] = useState({});
   const [chatSettings, setChatSettings] = useState({});
-  const [othersReadAt, setOthersReadAt] = useState({});
   const [subscription, setSubscription] = useState(FREE_SUBSCRIPTION);
   const [notificationSettings, setNotificationSettings] = useState({
     budget: true,
@@ -177,7 +176,7 @@ export default function DataProvider({ children }) {
     const ids = {};
     const unreadMap = {};
     const settings = {};
-    const readAt = {};
+
     const seed = {};
     for (const chat of items) {
       const key = chat.kind === "family" ? "family" : chat.peerId;
@@ -185,14 +184,14 @@ export default function DataProvider({ children }) {
       ids[key] = chat.id;
       unreadMap[key] = chat.unread;
       settings[key] = { muted: chat.muted, pinned: chat.pinned };
-      readAt[key] = chat.othersReadAt;
+
       if (chat.lastMessage) seed[key] = [mapMessage(chat.lastMessage)];
     }
     setChatIds(ids);
     chatIdsRef.current = ids;
     setUnread(unreadMap);
     setChatSettings(settings);
-    setOthersReadAt(readAt);
+
     // Для чатов, история которых ещё не загружена, показываем хотя бы последнее сообщение.
     setMessages((current) => {
       const next = { ...current };
@@ -283,15 +282,15 @@ export default function DataProvider({ children }) {
 
   // ---------- Вход и аккаунт ----------
 
-  async function login(email, password) {
-    const challenge = await api("/auth/login", { method: "POST", body: { email, password } });
+  async function login(email, password, captchaToken) {
+    const challenge = await api("/auth/login", { method: "POST", body: { email, password, captchaToken } });
     rememberVerification({ ...challenge, flow: "login" });
   }
 
-  async function register({ name, email, password, birthday }) {
+  async function register({ name, email, password, birthday, captchaToken }) {
     const challenge = await api("/auth/register", {
       method: "POST",
-      body: { name, email, password, birthday: ruDateToIso(birthday), acceptTerms: true, acceptData: true },
+      body: { name, email, password, birthday: ruDateToIso(birthday), acceptTerms: true, acceptData: true, captchaToken },
     });
     rememberVerification({ ...challenge, flow: "register" });
   }
@@ -588,12 +587,19 @@ export default function DataProvider({ children }) {
     });
   }
 
-  function sendRead(key) {
-    const chatId = chatIdsRef.current[key];
-    if (!chatId) return;
-    const sent = socketRef.current?.send({ type: "read", familyId: familyRef.current, chatId });
-    if (!sent) quietly(api(base(`/chats/${chatId}/read`), { method: "POST" }));
+  function applyReadEvent(event,key) {
+    const read = new Set(event.allReadIds ?? []);
+    if(read.size)setMessages(current=>({...current,[key]:(current[key]??[]).map(m=>read.has(m.id)?{...m,readByAll:true}:m)}));
+    if(event.userId===meRef.current)setUnread(current=>({...current,[key]:event.unread}));
   }
+
+  const markMessagesSeen = useCallback(async (key,messageIds) => {
+    const chatId=chatIdsRef.current[key];
+    if(!chatId||!messageIds.length)return;
+    const event=await api(base(`/chats/${chatId}/read`),{method:'POST',body:{messageIds}});
+    applyReadEvent(event,key);
+    // The family path is built from its ref; the function stays stable for the observer.
+  },[]);
 
   async function handleSocketEvent(event) {
     if (event.familyId && event.familyId !== familyRef.current) return;
@@ -609,14 +615,13 @@ export default function DataProvider({ children }) {
       case "message": {
         upsertMessage(key, mapMessage(event.message), event.clientId);
         const mine = event.message.userId === meRef.current;
-        if (!mine && activeChatRef.current === key) sendRead(key);
-        if (!mine && activeChatRef.current !== key) {
+        if (!mine) {
           setUnread((current) => ({ ...current, [key]: (current[key] ?? 0) + 1 }));
         }
         break;
       }
       case "read":
-        if (event.userId !== meRef.current) setOthersReadAt((current) => ({ ...current, [key]: event.at }));
+        applyReadEvent(event,key);
         break;
       case "deleted":
         setMessages((current) => ({
@@ -668,13 +673,34 @@ export default function DataProvider({ children }) {
     });
   }
 
-  // Экран чата открыт: грузим историю, снимаем счётчик, отмечаем прочитанным.
+  async function loadHistoryUntil(key, messageId) {
+    const chatId = chatIdsRef.current[key];
+    if (!chatId) return false;
+    const history = [];
+    let before;
+    for (;;) {
+      const { items } = await api(base(`/chats/${chatId}/messages?limit=100${before ? `&before=${encodeURIComponent(before)}` : ""}`));
+      history.push(...items.map(mapMessage));
+      if (items.some(item => item.id === messageId)) break;
+      const next = items.at(-1)?.createdAt;
+      if (items.length < 100 || !next || next === before) return false;
+      before = next;
+    }
+    setMessages(current => {
+      const merged = new Map(history.map(message => [message.id, message]));
+      for (const message of current[key] ?? []) merged.set(message.id, message);
+      return { ...current, [key]: [...merged.values()].sort((a,b) => a.createdAt.localeCompare(b.createdAt)) };
+    });
+    return true;
+  }
+
+  // Экран чата открыт: загружаем историю. Просмотры сообщает экран отдельно.
   const openChat = useCallback(
     (key) => {
       activeChatRef.current = key;
-      setUnread((current) => ({ ...current, [key]: 0 }));
+
       loadHistory(key).catch(showError);
-      sendRead(key);
+
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- работает через ref-ы
     [showError],
@@ -718,26 +744,26 @@ export default function DataProvider({ children }) {
     }
   }
 
+  async function sendRichMessage(key, payload, file) {
+    const chatId = await ensureChat(key);
+    let result;
+    if (file) {
+      const form = new FormData(); form.append('file', file);
+      result = await api(base(`/chats/${chatId}/media`), { method:'POST', form });
+    } else {
+      result = await api(base(`/chats/${chatId}/rich`), { method:'POST', body:payload });
+    }
+    upsertMessage(key, mapMessage(result));
+    return result;
+  }
+  function chatServerId(key) { return chatIdsRef.current[key]; }
   function setChatSetting(key, field, value) {
     setChatSettings((current) => ({ ...current, [key]: { ...current[key], [field]: value } }));
     quietly(ensureChat(key).then((chatId) => api(base(`/chats/${chatId}`), { method: "PATCH", body: { [field]: value } })));
   }
 
-  // Отметка «прочитано» у своих сообщений: собеседники открывали чат позже, чем оно отправлено.
-  const messagesView = useMemo(() => {
-    const view = {};
-    for (const [key, list] of Object.entries(messages)) {
-      const readAt = othersReadAt[key];
-      view[key] = list.map((m) => {
-        if (m.from !== currentUserId) return m;
-        if (m.failed) return { ...m, status: t("chats.failed") };
-        if (m.pending) return { ...m, status: t("chats.sending") };
-        if (readAt && m.createdAt <= readAt) return { ...m, status: t("chats.read") };
-        return m;
-      });
-    }
-    return view;
-  }, [messages, othersReadAt, currentUserId]);
+  // Store status keys, so language changes translate the current status at render time.
+  const messagesView = useMemo(() => Object.fromEntries(Object.entries(messages).map(([key,list]) => [key,list.map(m => m.from !== currentUserId ? m : {...m,statusKey:m.failed?'chats.failed':m.pending?'chats.sending':m.readByAll?'chats.read':'chatRich.delivered'})])),[messages,currentUserId]);
 
   // ---------- Локальные разделы «в будущих версиях» ----------
 
@@ -848,6 +874,7 @@ export default function DataProvider({ children }) {
         addGalleryItems,
         removeGalleryItem,
         currentUserId,
+        canUseAlcohol: me?.canUseAlcohol === true,
         products,
         operations,
         openingBalance,
@@ -857,7 +884,11 @@ export default function DataProvider({ children }) {
         unread,
         chatSettings,
         sendMessage,
+        sendRichMessage,
+        chatServerId,
         openChat,
+        markMessagesSeen,
+        loadHistoryUntil,
         closeChat,
         setChatSetting,
         addOperation,

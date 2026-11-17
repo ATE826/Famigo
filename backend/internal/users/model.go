@@ -13,6 +13,7 @@ var (
 )
 
 type Profile struct {
+	CanUseAlcohol bool      `json:"canUseAlcohol"`
 	FoodConsent   bool      `json:"foodConsent"`
 	ID            uuid.UUID `json:"id"`
 	Email         string    `json:"email"`

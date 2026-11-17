@@ -73,11 +73,25 @@
 }
 
 .other {
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: start;
+  align-self: flex-start;
   gap: 8px;
   max-width: 82%;
 }
+
+.senderAvatar {
+  display: flex;
+  width: 32px;
+  height: 32px;
+  margin-top: 4px;
+  border-radius: 50%;
+  text-decoration: none;
+}
+
+a.senderAvatar:focus-visible {outline:2px solid var(--primary);outline-offset:3px;}
+a.senderAvatar:hover {filter:brightness(.94);}
 
 .otherBody {
   display: flex;
@@ -120,10 +134,17 @@
 }
 
 .meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
   padding: 0 4px;
   font-size: 11px;
   color: var(--muted);
 }
+
+.delivery {display:inline-flex;align-items:center;gap:4px;}
+.delivery svg {flex:none;}
 
 .notice {
   align-self: center;
@@ -200,3 +221,21 @@
     overflow: hidden;
   }
 }
+
+
+.otherBody {min-width:0;max-width:100%;}
+.mine,.otherBody {outline:none;}
+.mine:focus-visible .bubbleMine,.otherBody:focus-visible .bubbleOther {outline:2px solid var(--primary);outline-offset:3px;}
+.bubbleOther {overflow-wrap:anywhere;}
+.form {gap:6px;padding:10px 12px calc(12px + env(safe-area-inset-bottom));}
+.send:disabled {opacity:.45;cursor:default;}
+.reply {display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--card);border-top:1px solid var(--border);color:var(--link);}
+.reply>svg {flex:none;}
+.reply>div {display:grid;gap:2px;min-width:0;flex:1;}
+.reply b {font-size:12px;font-weight:600;}
+.reply span {font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);}
+.reply button {display:grid;place-items:center;border:0;background:transparent;color:var(--muted);width:40px;height:40px;flex:none;cursor:pointer;border-radius:50%;}
+.reply button:hover {background:var(--bg);}
+.feedback {padding:8px 16px;background:var(--primary-soft);color:var(--text);margin:0;font-size:13px;overflow-wrap:anywhere;}
+@media(min-width:768px){.mine {max-width:min(72%,520px);}.other {max-width:min(78%,560px);}}
+@media(max-width:480px){.messages {padding:12px;}.mine {max-width:90%;}.other {max-width:94%;}.bubbleMine,.bubbleOther {padding:9px 11px;}.form {gap:4px;padding-inline:8px;}.input {padding-inline:14px;height:44px;}.send {width:44px;height:44px;}}

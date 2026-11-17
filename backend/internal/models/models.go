@@ -295,6 +295,7 @@ func (ChatMember) TableName() string { return "chat_members" }
 // удалённые сообщения должны оставаться в ленте как «Сообщение удалено», а gorm.DeletedAt
 // прятал бы их из всех запросов.
 type Message struct {
+	Details   string    `gorm:"type:jsonb;default:'{}'"`
 	ID        uuid.UUID `gorm:"primaryKey;default:gen_random_uuid()"`
 	ChatID    uuid.UUID
 	UserID    *uuid.UUID

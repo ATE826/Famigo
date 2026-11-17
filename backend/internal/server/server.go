@@ -16,7 +16,7 @@ import (
 // (5 МБ файла плюс служебные части multipart).
 const (
 	jsonBodyLimit   = 1 << 20
-	uploadBodyLimit = 6 << 20
+	uploadBodyLimit = 32 << 20
 )
 
 func New(cfg config.Config, db *gorm.DB, log *slog.Logger) (http.Handler, error) {

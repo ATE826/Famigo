@@ -139,3 +139,18 @@ func (v *Validator) Password(field, value string) {
 		v.Fail(field, "Пароль не может состоять из пробелов")
 	}
 }
+
+// RegistrationPassword applies the creation policy without rejecting existing
+// users' passwords during login.
+func (v *Validator) RegistrationPassword(field, value string) {
+	v.Password(field, value)
+	var latin, digit, sign bool
+	for _, r := range value {
+		latin = latin || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+		digit = digit || (r >= '0' && r <= '9')
+		sign = sign || unicode.IsPunct(r) || unicode.IsSymbol(r)
+	}
+	if !latin || !digit || !sign {
+		v.Fail(field, "Пароль должен содержать латинскую букву, цифру и специальный символ")
+	}
+}

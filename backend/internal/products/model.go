@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	categories = []string{"dairy", "vegetables", "meat", "drinks", "other"}
+	categories = []string{"dairy", "vegetables", "meat", "drinks", "alcohol", "other"}
 	units      = []string{"pcs", "ml", "l", "g", "kg"}
 )
 

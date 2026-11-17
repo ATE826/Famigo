@@ -33,7 +33,8 @@ type Suggestions struct {
 }
 
 type suggestInput struct {
-	Servings int
+	AllowAlcohol bool
+	Servings     int
 	// AllMembers включает ограничения всей семьи; иначе только MemberIDs.
 	// Пустой MemberIDs при AllMembers=false означает отсутствие ограничений.
 	AllMembers bool
@@ -45,6 +46,7 @@ type suggestInput struct {
 // fridgeItem и eater — то, что уходит нейросети. Имён, почты и других личных данных
 // здесь нет: модели нужны только продукты и ограничения.
 type fridgeItem struct {
+	Category string  `json:"-"`
 	Name     string  `json:"name"`
 	Quantity float64 `json:"quantity"`
 	Unit     string  `json:"unit"`
@@ -52,6 +54,7 @@ type fridgeItem struct {
 }
 
 type eater struct {
+	Adult bool
 	Prefs []string
 	Note  string
 }

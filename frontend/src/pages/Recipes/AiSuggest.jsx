@@ -1,3 +1,5 @@
+import {localizeRecipeAmount} from '../../utils/recipeAmount';
+import RecipeActions from "./RecipeActions";
 import { useEffect, useId, useState } from "react";
 import Button from "../../components/Button/Button";
 import Card from "../../components/Card/Card";
@@ -12,7 +14,7 @@ import styles from "./Recipes.module.css";
 // Последний запрос по дому, языку и выбранным ограничениям. Хранится вне компонента:
 // если уйти со страницы во время генерации и вернуться, ответ не потеряется.
 const runs = new Map();
-const CATEGORIES = ["any", "snack", "hot", "cold", "soup", "salad", "bakery", "dessert", "drink"];
+const CATEGORIES = ["any", "snack", "hot", "cold", "soup", "salad", "bakery", "dessert", "drink", "alcohol"];
 
 // Записи не меняются, а заменяются новыми: React (и его компилятор) видит изменения по ссылке.
 function startRun(homeId, category, request) {
@@ -30,12 +32,12 @@ function startRun(homeId, category, request) {
   return run;
 }
 
-export default function AiSuggest({ homeId, allMembers = true, memberIds = [] }) {
-  const { members, suggestRecipes } = useData();
+export default function AiSuggest({ homeId, allMembers = true, memberIds = [], onBusyChange }) {
+  const { members, suggestRecipes, canUseAlcohol } = useData();
   const categoryId = useId();
   const selectedMembers = allMembers ? members : members.filter((member) => memberIds.includes(member.id));
   const profileKey = JSON.stringify(selectedMembers.map((member) => [member.id, member.foodPrefs, member.foodNote]).sort());
-  const runKey = `${homeId}:${getLang()}:${allMembers}:${profileKey}`;
+  const runKey = `${canUseAlcohol}:${homeId}:${getLang()}:${allMembers}:${profileKey}`;
   const [category, setCategory] = useState(() => runs.get(runKey)?.category ?? "any");
   const [servings, setServings] = useState(() => Math.min(Math.max(members.length, 1), 12));
   const [run, setRun] = useState(() => runs.get(runKey) ?? null);
@@ -46,7 +48,7 @@ export default function AiSuggest({ homeId, allMembers = true, memberIds = [] })
   if (shownHome !== runKey) {
     setShownHome(runKey);
     setRun(runs.get(runKey) ?? null);
-    setCategory(runs.get(runKey)?.category ?? category);
+    setCategory(runs.get(runKey)?.category ?? (canUseAlcohol ? category : "any"));
   }
 
   useEffect(() => {
@@ -59,6 +61,8 @@ export default function AiSuggest({ homeId, allMembers = true, memberIds = [] })
   }, [run]);
 
   function generate() {
+    if(run?.pending)return;
+    onBusyChange?.(true);
     setCopied(-1);
     setRun(startRun(runKey, category, suggestRecipes(homeId, { servings, memberIds: allMembers ? [] : memberIds, allMembers, category })));
   }
@@ -66,7 +70,7 @@ export default function AiSuggest({ homeId, allMembers = true, memberIds = [] })
   async function copyList(dish, index) {
     const lines = dish.ingredients
       .filter((i) => !i.inFridge && !i.staple)
-      .map((i) => `— ${i.name}${i.amount ? ` (${i.amount})` : ""}`)
+      .map((i) => `— ${i.name}${i.amount ? ` (${localizeRecipeAmount(i.amount)})` : ""}`)
       .join("\n");
     if (await copyText(`${t("recipes.listTitle", { dish: dish.title })}\n${lines}`)) {
       setCopied(index);
@@ -75,6 +79,7 @@ export default function AiSuggest({ homeId, allMembers = true, memberIds = [] })
   }
 
   const loading = run?.pending ?? false;
+  useEffect(()=>{onBusyChange?.(loading);return()=>onBusyChange?.(false);},[loading,onBusyChange]);
   const result = run?.result;
   const items = [...(result?.items ?? [])].sort((a, b) => a.missingCount - b.missingCount);
 
@@ -95,7 +100,7 @@ export default function AiSuggest({ homeId, allMembers = true, memberIds = [] })
             onChange={(event) => setCategory(event.target.value)}
             disabled={loading}
           >
-            {CATEGORIES.map((value) => (
+            {CATEGORIES.filter(c=>canUseAlcohol||c!=="alcohol").map((value) => (
               <option key={value} value={value}>
                 {t(`recipes.ai.categories.${value}`)}
               </option>
@@ -188,6 +193,7 @@ export default function AiSuggest({ homeId, allMembers = true, memberIds = [] })
             </ol>
           </details>
 
+          <RecipeActions dish={dish} />
           {dish.missingCount > 0 && (
             <button type="button" className={styles.copy} onClick={() => copyList(dish, index)}>
               <Icon name={copied === index ? "check" : "cart"} size={16} strokeWidth={2} />

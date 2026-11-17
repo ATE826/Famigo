@@ -20,7 +20,7 @@ function FridgeProduct() {
   const location = useLocation();
   const { id } = useParams();
   const [params] = useSearchParams();
-  const { homes, products, addProduct, updateProduct } = useData();
+  const { homes, products, addProduct, updateProduct, canUseAlcohol } = useData();
   const product = id ? products.find((p) => p.id === id) : null;
   const homeId = product?.homeId ?? homes.find((h) => h.id === params.get("home"))?.id ?? homes[0]?.id;
   const home = homes.find((h) => h.id === homeId);
@@ -106,7 +106,7 @@ function FridgeProduct() {
       />
 
       <Select id="cat" name="cat" label={t("fridgeProduct.category")} value={values.cat} onChange={handleChange}>
-        {categories.map((c) => (
+        {categories.filter(c=>canUseAlcohol||c!=="Алкоголь").map((c) => (
           <option key={c} value={c}>
             {categoryLabel(c)}
           </option>

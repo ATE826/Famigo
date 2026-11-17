@@ -6,9 +6,12 @@ import { t } from "../../i18n";
 import { useData } from "../../store/DataContext";
 import { errorText } from "../../api/client";
 import styles from "./Login.module.css";
+import SmartCaptcha, {CaptchaLoadError} from '../../components/SmartCaptcha/SmartCaptcha';
+import useCaptcha from '../../components/SmartCaptcha/useCaptcha';
 
 function Login() {
   const { login } = useData();
+  const captcha=useCaptcha();
   const [values, setValues] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
@@ -29,12 +32,14 @@ function Login() {
     else if (!/^\S+@\S+\.\S+$/.test(values.email)) found.email = t("validation.emailInvalid");
     if (!values.password) found.password = t("auth.passwordRequired");
     setErrors(found);
-    if (Object.keys(found).length > 0 || busy) return;
+    if (Object.keys(found).length > 0 || busy || captcha.blocked) return;
     setBusy(true);
     try {
-      await login(values.email.trim(), values.password);
+      await login(values.email.trim(), values.password,captcha.token);
     } catch (error) {
-      setFormError(errorText(error));
+      setFormError(error.code==='unauthorized'?t('captcha.loginFailed'):errorText(error));
+      captcha.reset();
+      await captcha.reload().catch(()=>{});
     } finally {
       setBusy(false);
     }
@@ -70,7 +75,9 @@ function Login() {
           {formError}
         </p>
       )}
-      <Button type="submit" disabled={busy}>{t("auth.signIn")}</Button>
+      {captcha.required&&<SmartCaptcha key={captcha.revision} sitekey={captcha.config.clientKey} onToken={captcha.setToken}/>}
+      {captcha.failed&&<CaptchaLoadError onRetry={()=>captcha.reload().catch(()=>{})}/>}
+      <Button type="submit" disabled={busy||captcha.blocked}>{t("auth.signIn")}</Button>
       <p className={styles.signup}>
         {t("auth.noAccount")}{" "}
         <Link to="/register" className={styles.link}>

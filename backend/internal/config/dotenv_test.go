@@ -170,13 +170,13 @@ func TestAIConfig(t *testing.T) {
 		t.Fatalf("без AI_BASE_URL подбор блюд выключен: %v", err)
 	}
 
-	t.Setenv("AI_BASE_URL", "http://localhost:11434/v1")
+	t.Setenv("AI_BASE_URL", "https://example.com/v1")
 	t.Setenv("AI_MODEL", "")
 	if _, err := Load(log); err == nil {
 		t.Fatal("без AI_MODEL должна быть ошибка")
 	}
 
-	t.Setenv("AI_MODEL", "gemma4:26b")
+	t.Setenv("AI_MODEL", "GigaChat-2-Pro")
 	cfg, err := Load(log)
 	if err != nil || cfg.AI.MaxConcurrent != 1 || cfg.AI.JSONMode != "schema" || cfg.AI.Timeout <= 0 {
 		t.Fatalf("локальная модель: %v %+v", err, cfg.AI)

@@ -25,7 +25,7 @@ func TestLiveRecipeSelection(t *testing.T) {
 	}
 	model := os.Getenv("FAMIGO_TEST_AI_MODEL")
 	if model == "" {
-		model = "gemma4:e4b"
+		model = "GigaChat-2-Pro"
 	}
 	service := NewService(nil, nil, ai.New(ai.Config{
 		BaseURL: endpoint, Model: model, Timeout: 5 * time.Minute,
@@ -251,9 +251,9 @@ func testLiveSparsePantry(t *testing.T, restrictions []string) {
 	}
 	model := os.Getenv("FAMIGO_TEST_AI_MODEL")
 	if model == "" {
-		model = "gemma4:e4b"
+		model = "GigaChat-2-Pro"
 	}
-	service := NewService(nil, nil, ai.New(ai.Config{BaseURL: endpoint, Model: model, Timeout: 5 * time.Minute, JSONMode: "schema", Reasoning: "none", MaxConcurrent: 1}, slog.Default()))
+	service := NewService(nil, nil, ai.New(ai.Config{Provider: os.Getenv("FAMIGO_TEST_AI_PROVIDER"), GigaChatAuthKey: os.Getenv("FAMIGO_TEST_GIGACHAT_KEY"), GigaChatScope: "GIGACHAT_API_PERS", BaseURL: endpoint, Model: model, Timeout: 5 * time.Minute, JSONMode: "schema", Reasoning: "none", MaxConcurrent: 1}, slog.Default()))
 	items := []fridgeItem{
 		{Name: "Говяжий фарш", Quantity: 1, Unit: "kg", DaysLeft: 60},
 		{Name: "Молоко", Quantity: 3, Unit: "l", DaysLeft: 60},

@@ -1,0 +1,7 @@
+.root {display:grid;gap:8px;min-width:0;width:100%;}
+.hint {margin:0;color:var(--muted);font-size:12px;line-height:1.5;}
+.viewport {width:100%;min-width:0;}
+.widget {min-height:118px;width:100%;min-width:0;transform-origin:top left;}
+.error {margin:0;font-size:13px;line-height:1.5;color:var(--accent-text-2);overflow-wrap:anywhere;}
+.error button {border:0;background:transparent;color:var(--link);font:inherit;text-decoration:underline;cursor:pointer;padding:4px;}
+.error button:focus-visible {outline:2px solid var(--primary);outline-offset:2px;}

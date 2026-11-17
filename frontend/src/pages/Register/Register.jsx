@@ -3,21 +3,25 @@ import { Link } from "react-router-dom";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
 import { useData } from "../../store/DataContext";
-import { birthdayError, formatDate } from "../../utils/validation";
+import { birthdayError, formatDate, registrationPasswordError, registrationPasswordHint } from "../../utils/validation";
 import { t } from "../../i18n";
 import { errorText } from "../../api/client";
 import Checkbox from "../../components/Checkbox/Checkbox";
 import LinkedText from "../../components/LinkedText/LinkedText";
 import LegalLink from "../../components/LegalModal/LegalLink";
 import styles from "./Register.module.css";
+import SmartCaptcha, {CaptchaLoadError} from '../../components/SmartCaptcha/SmartCaptcha';
+import useCaptcha from '../../components/SmartCaptcha/useCaptcha';
 
 const Register = () => {
   const { register } = useData();
+  const captcha=useCaptcha(true);
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
   const [values, setValues] = useState({ name: "", email: "", birthday: "", password: "", password2: "" });
   const [agreed, setAgreed] = useState({ terms: false, data: false });
   const [errors, setErrors] = useState({});
+  const passwordHint = values.password ? registrationPasswordHint(values.password) : errors.password;
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -33,8 +37,8 @@ const Register = () => {
     else if (!/^\S+@\S+\.\S+$/.test(values.email)) found.email = t("validation.emailInvalid");
     const birthday = values.birthday.trim() ? birthdayError(values.birthday) : t("auth.birthdayRequired");
     if (birthday) found.birthday = birthday;
-    if (!values.password) found.password = t("auth.passwordRequired");
-    else if (values.password.length < 8) found.password = t("auth.passwordShort", { count: 8 });
+    const passwordError = registrationPasswordError(values.password);
+    if(passwordError) found.password = passwordError;
     if (!values.password2) found.password2 = t("auth.confirmRequired");
     else if (values.password2 !== values.password) found.password2 = t("auth.passwordsMismatch");
     if (!agreed.terms) found.terms = t("auth.agreeRequired");
@@ -47,7 +51,7 @@ const Register = () => {
     e.preventDefault();
     const found = validate();
     setErrors(found);
-    if (Object.keys(found).length > 0 || busy) return;
+    if (Object.keys(found).length > 0 || busy || captcha.blocked) return;
     setBusy(true);
     try {
       await register({
@@ -55,8 +59,10 @@ const Register = () => {
         email: values.email.trim(),
         password: values.password,
         birthday: values.birthday.trim(),
+        captchaToken:captcha.token,
       });
     } catch (error) {
+      captcha.reset();
       if (error.code === "email_taken") setErrors({ email: errorText(error) });
       else if (Object.keys(error.fields ?? {}).length > 0) setErrors(error.fields);
       else setFormError(errorText(error));
@@ -114,7 +120,9 @@ const Register = () => {
         placeholder={t("auth.newPasswordPlaceholder")}
         value={values.password}
         onChange={handleChange}
-        hint={errors.password || t("reset.passwordHint")}
+        autoComplete="new-password"
+        aria-describedby={passwordHint ? "registration-password-hint" : undefined}
+        hint={passwordHint ? <span id="registration-password-hint" aria-live="polite">{passwordHint}</span> : undefined}
       />
       <Input
         id="password2"
@@ -166,7 +174,9 @@ const Register = () => {
           {formError}
         </p>
       )}
-      <Button type="submit" disabled={busy}>{t("common.continue")}</Button>
+      {captcha.required&&<SmartCaptcha key={captcha.revision} sitekey={captcha.config.clientKey} onToken={captcha.setToken}/>}
+      {captcha.failed&&<CaptchaLoadError onRetry={()=>captcha.reload().catch(()=>{})}/>}
+      <Button type="submit" disabled={busy||captcha.blocked}>{t("common.continue")}</Button>
       <p className={styles.login}>
         {t("auth.haveAccount")}{" "}
         <Link to="/" className={styles.link}>

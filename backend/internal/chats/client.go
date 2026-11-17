@@ -51,10 +51,11 @@ type Client struct {
 
 // incoming — команда от клиента.
 type incoming struct {
-	Type     string `json:"type"`
-	FamilyID string `json:"familyId"`
-	ChatID   string `json:"chatId"`
-	Text     string `json:"text"`
+	MessageIDs []uuid.UUID `json:"messageIds"`
+	Type       string      `json:"type"`
+	FamilyID   string      `json:"familyId"`
+	ChatID     string      `json:"chatId"`
+	Text       string      `json:"text"`
 	// ClientID — метка, которую фронтенд ставит на своё сообщение до ответа сервера,
 	// чтобы потом заменить «отправляется…» на настоящее сообщение.
 	ClientID string `json:"clientId"`
@@ -143,7 +144,7 @@ func (c *Client) handle(msg incoming) {
 			_, err = c.service.Send(ctx, familyID, chatID, c.userID, text, msg.ClientID)
 		}
 	case "read":
-		err = c.service.MarkRead(ctx, familyID, chatID, c.userID)
+		_, err = c.service.MarkViewed(ctx, familyID, chatID, c.userID, msg.MessageIDs)
 	default:
 		err = httpx.BadRequest("unknown_type", "Неизвестная команда")
 	}

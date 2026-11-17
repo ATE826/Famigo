@@ -90,7 +90,7 @@ func (s *Service) Messages(ctx context.Context, familyID, chatID, userID uuid.UU
 
 // Send сохраняет сообщение и мгновенно рассылает его участникам чата (в том числе
 // на другие устройства самого автора). clientID — метка фронтенда, возвращается в событии.
-func (s *Service) Send(ctx context.Context, familyID, chatID, userID uuid.UUID, text, clientID string) (Message, error) {
+func (s *Service) Send(ctx context.Context, familyID, chatID, userID uuid.UUID, text, clientID string, details ...string) (Message, error) {
 	if !s.sendLimiter.Allow(userID.String()) {
 		return Message{}, httpx.TooManyRequests()
 	}
@@ -100,11 +100,9 @@ func (s *Service) Send(ctx context.Context, familyID, chatID, userID uuid.UUID, 
 	var msg Message
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var err error
-		if msg, err = insertMessage(tx, s.cipher, chatID, userID, text); err != nil {
+		if msg, err = insertMessage(tx, s.cipher, chatID, userID, text, details...); err != nil {
 			return err
 		}
-		// Своё сообщение автор уже прочитал.
-		_, err = markRead(tx, chatID, userID)
 		return err
 	})
 	if err != nil {
@@ -126,19 +124,6 @@ func (s *Service) DeleteMessage(ctx context.Context, familyID, chatID, messageID
 		return httpx.NotFound("Сообщение не найдено")
 	}
 	s.broadcast(ctx, chatID, deletedEvent{Type: "deleted", FamilyID: familyID, ChatID: chatID, MessageID: messageID})
-	return nil
-}
-
-// MarkRead отмечает чат прочитанным и сообщает остальным: у отправителя появится «прочитано».
-func (s *Service) MarkRead(ctx context.Context, familyID, chatID, userID uuid.UUID) error {
-	if err := s.access(ctx, familyID, chatID, userID); err != nil {
-		return err
-	}
-	at, err := markRead(s.db.WithContext(ctx), chatID, userID)
-	if err != nil {
-		return err
-	}
-	s.broadcast(ctx, chatID, readEvent{Type: "read", FamilyID: familyID, ChatID: chatID, UserID: userID, At: at})
 	return nil
 }
 

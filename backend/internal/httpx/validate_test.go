@@ -70,6 +70,25 @@ func TestValidatorPassword(t *testing.T) {
 	}
 }
 
+func TestRegistrationPassword(t *testing.T) {
+	for _, test := range []struct {
+		password string
+		valid    bool
+	}{
+		{"abcdefgh", false}, {"12345678", false}, {"password1", false},
+		{"password!", false}, {"пароль1!", false}, {"Password1 ", false},
+		{"Ab1!", false}, {"Password1!", true}, {"a1!пароль", true},
+		{"Password1€", true}, {strings.Repeat("a", 70) + "1!", true},
+		{strings.Repeat("a", 71) + "1!", false},
+	} {
+		v := NewValidator()
+		v.RegistrationPassword("password", test.password)
+		if (v.Err() == nil) != test.valid {
+			t.Errorf("%q: valid=%v, want %v", test.password, v.Err() == nil, test.valid)
+		}
+	}
+}
+
 func TestValidatorBirthday(t *testing.T) {
 	cases := map[string]bool{"2008-10-26": true, "2999-01-01": false, "1800-01-01": false, "26.10.2008": false}
 	for date, ok := range cases {
