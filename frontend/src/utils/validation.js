@@ -1,6 +1,21 @@
 import { t } from "../i18n";
 import { todayStart } from "./dates";
 
+export function registrationPasswordHint(value) {
+  if (!value) return '';
+  const missing=[];
+  if ([...value].length < 8) missing.push(t('registrationSecurity.length'));
+  if (!/[a-zA-Z]/.test(value)) missing.push(t('registrationSecurity.latin'));
+  if (!/[0-9]/.test(value)) missing.push(t('registrationSecurity.digit'));
+  if (!/[\p{P}\p{S}]/u.test(value)) missing.push(t('registrationSecurity.sign'));
+  if (new TextEncoder().encode(value).length > 72) return t('registrationSecurity.tooLong');
+  return missing.length?t('registrationSecurity.missing',{requirements:missing.join(', ')}):'';
+}
+
+export function registrationPasswordError(value) {
+  return value?registrationPasswordHint(value):t('auth.passwordRequired');
+}
+
 export function isEmail(value) {
   return /^\S+@\S+\.\S+$/.test(value);
 }

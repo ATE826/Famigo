@@ -129,7 +129,7 @@ func str(v any) string {
 func (c *client) register(name, email string) {
 	c.t.Helper()
 	r := c.expect(http.StatusCreated, "POST", "/api/auth/register", map[string]any{
-		"name": name, "email": email, "password": "correct horse", "birthday": "1990-05-01",
+		"name": name, "email": email, "password": "correct horse1!", "birthday": "1990-05-01",
 		"acceptTerms": true, "acceptData": true,
 	})
 	c.token = str(r.Body["accessToken"])
@@ -141,14 +141,18 @@ func pngFile(t *testing.T) []byte {
 	return buf.Bytes()
 }
 
-func (c *client) upload(path, field, filename string, data []byte) response {
+func (c *client) upload(path, field, filename string, data []byte, methods ...string) response {
 	c.t.Helper()
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
 	part, _ := w.CreateFormFile(field, filename)
 	part.Write(data)
 	w.Close()
-	req, _ := http.NewRequest("PUT", c.base+path, &buf)
+	method := "PUT"
+	if len(methods) > 0 {
+		method = methods[0]
+	}
+	req, _ := http.NewRequest(method, c.base+path, &buf)
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Authorization", "Bearer "+c.token)
 	resp, err := c.http.Do(req)
@@ -278,10 +282,22 @@ func TestAPIIntegration(t *testing.T) {
 		}
 	})
 
+	step("регистрация: нельзя обойти требования к сложности пароля через API", func(t *testing.T) {
+		for _, password := range []string{"password1", "password!", "пароль1!", "Password1 "} {
+			address := email("weak")
+			anton.expect(422, "POST", "/api/auth/register", map[string]any{"name": "Weak test", "email": address, "password": password, "birthday": "1990-05-01", "acceptTerms": true, "acceptData": true})
+			var count int64
+			db.Table("pending_registrations").Where("email = ?", address).Count(&count)
+			if count != 0 {
+				t.Fatal("слабый пароль создал заявку на регистрацию")
+			}
+		}
+	})
+
 	anton.register("Антон", email("anton"))
 	step("email: no session before code, wrong code, cooldown, verification and replay", func(t *testing.T) {
 		c := newClient(t, srv.URL)
-		r := c.do("POST", "/api/auth/register", map[string]any{"name": "Email test", "email": email("verify"), "password": "correct horse", "birthday": "1990-05-01", "acceptTerms": true, "acceptData": true})
+		r := c.do("POST", "/api/auth/register", map[string]any{"name": "Email test", "email": email("verify"), "password": "correct horse1!", "birthday": "1990-05-01", "acceptTerms": true, "acceptData": true})
 		if r.Status != 201 || r.Body["accessToken"] != nil || r.Header.Get("Set-Cookie") != "" {
 			t.Fatalf("pending response: %s", r.Raw)
 		}
@@ -294,7 +310,7 @@ func TestAPIIntegration(t *testing.T) {
 		}
 		c.expect(422, "POST", "/api/auth/email/verify", map[string]any{"challengeId": id, "code": wrong})
 		c.expect(429, "POST", "/api/auth/email/resend", map[string]any{"challengeId": id})
-		if err := db.Exec("UPDATE verification_codes SET created_at = now() - interval '61 seconds' WHERE id = ?", id).Error; err != nil {
+		if err := db.Exec("UPDATE pending_registrations SET created_at = now() - interval '61 seconds' WHERE id = ?", id).Error; err != nil {
 			t.Fatal(err)
 		}
 		c.expect(200, "POST", "/api/auth/email/resend", map[string]any{"challengeId": id})
@@ -309,7 +325,7 @@ func TestAPIIntegration(t *testing.T) {
 	})
 	step("email: attempt limit and expiration", func(t *testing.T) {
 		c := newClient(t, srv.URL)
-		pending := c.do("POST", "/api/auth/login", map[string]any{"email": email("verify"), "password": "correct horse"})
+		pending := c.do("POST", "/api/auth/login", map[string]any{"email": email("verify"), "password": "correct horse1!"})
 		if pending.Status != 200 || pending.Body["accessToken"] != nil {
 			t.Fatalf("login bypass: %s", pending.Raw)
 		}
@@ -334,7 +350,7 @@ func TestAPIIntegration(t *testing.T) {
 
 	step("повторная почта в другом регистре", func(t *testing.T) {
 		r := newClient(t, srv.URL).expect(409, "POST", "/api/auth/register", map[string]any{
-			"name": "Клон", "email": strings.ToUpper(email("anton")), "password": "correct horse",
+			"name": "Клон", "email": strings.ToUpper(email("anton")), "password": "correct horse1!",
 			"birthday": "1990-05-01", "acceptTerms": true, "acceptData": true,
 		})
 		if !strings.Contains(r.Raw, "email_taken") {
@@ -349,7 +365,7 @@ func TestAPIIntegration(t *testing.T) {
 		if str(wrongPass.Body["error"].(map[string]any)["message"]) != str(noUser.Body["error"].(map[string]any)["message"]) {
 			t.Fatal("ответы различаются — можно узнать, кто зарегистрирован")
 		}
-		c.expect(200, "POST", "/api/auth/login", map[string]any{"email": strings.ToUpper(email("anton")), "password": "correct horse"})
+		c.expect(200, "POST", "/api/auth/login", map[string]any{"email": strings.ToUpper(email("anton")), "password": "correct horse1!"})
 	})
 
 	step("доступ без токена и с поддельным токеном", func(t *testing.T) {
@@ -368,7 +384,7 @@ func TestAPIIntegration(t *testing.T) {
 
 	step("refresh: ротация и защита от повтора украденного токена", func(t *testing.T) {
 		c := newClient(t, srv.URL)
-		c.expect(200, "POST", "/api/auth/login", map[string]any{"email": email("anton"), "password": "correct horse"})
+		c.expect(200, "POST", "/api/auth/login", map[string]any{"email": email("anton"), "password": "correct horse1!"})
 		u, _ := http.NewRequest("GET", srv.URL+"/api/auth", nil)
 		first := c.http.Jar.Cookies(u.URL)
 		if len(first) == 0 {
@@ -403,7 +419,7 @@ func TestAPIIntegration(t *testing.T) {
 		// Завершены все сессии Антона, в том числе основная: её access-токен тоже перестал работать
 		// сразу, а не через 15 минут. Дальше тест продолжает с новым входом.
 		anton.expect(401, "GET", "/api/me", nil)
-		r := anton.expect(200, "POST", "/api/auth/login", map[string]any{"email": email("anton"), "password": "correct horse"})
+		r := anton.expect(200, "POST", "/api/auth/login", map[string]any{"email": email("anton"), "password": "correct horse1!"})
 		anton.token = str(r.Body["accessToken"])
 		anton.expect(200, "GET", "/api/me", nil)
 	})
@@ -411,7 +427,7 @@ func TestAPIIntegration(t *testing.T) {
 	step("выход сразу отзывает access-токен (а не через 15 минут)", func(t *testing.T) {
 		// Входим под Бобом: у Антона лимит попыток на почту (10 в минуту) уже потрачен предыдущими шагами.
 		login := func(c *client) string {
-			r := c.expect(200, "POST", "/api/auth/login", map[string]any{"email": email("bob"), "password": "correct horse"})
+			r := c.expect(200, "POST", "/api/auth/login", map[string]any{"email": email("bob"), "password": "correct horse1!"})
 			return str(r.Body["accessToken"])
 		}
 		phone, laptop := newClient(t, srv.URL), newClient(t, srv.URL)
@@ -437,11 +453,11 @@ func TestAPIIntegration(t *testing.T) {
 	step("смена пароля и «выйти везде» отзывают все прежние токены", func(t *testing.T) {
 		dave, other := newClient(t, srv.URL), newClient(t, srv.URL)
 		dave.register("Дэйв", email("dave"))
-		r := other.expect(200, "POST", "/api/auth/login", map[string]any{"email": email("dave"), "password": "correct horse"})
+		r := other.expect(200, "POST", "/api/auth/login", map[string]any{"email": email("dave"), "password": "correct horse1!"})
 		other.token = str(r.Body["accessToken"])
 		other.expect(200, "GET", "/api/me", nil)
 
-		changed := dave.expect(200, "PUT", "/api/me/password", map[string]any{"currentPassword": "correct horse", "newPassword": "battery staple"})
+		changed := dave.expect(200, "PUT", "/api/me/password", map[string]any{"currentPassword": "correct horse1!", "newPassword": "battery staple"})
 		dave.expect(401, "GET", "/api/me", nil)  // сессия, из которой меняли пароль, завершена
 		other.expect(401, "GET", "/api/me", nil) // и все остальные тоже
 		dave.token = str(changed.Body["accessToken"])
@@ -472,7 +488,7 @@ func TestAPIIntegration(t *testing.T) {
 				want = http.StatusTooManyRequests
 			}
 			r := c.do("POST", "/api/auth/register", map[string]any{
-				"name": "Лимит", "email": fmt.Sprintf("limit%d-%s@example.com", i, run), "password": "correct horse",
+				"name": "Лимит", "email": fmt.Sprintf("limit%d-%s@example.com", i, run), "password": "correct horse1!",
 				"birthday": "1990-05-01", "acceptTerms": true, "acceptData": true,
 			})
 			if r.Status != want {
@@ -601,7 +617,7 @@ func TestAPIIntegration(t *testing.T) {
 		anton.expect(201, "POST", "/api/families/"+familyID+"/homes/"+homeA+"/products",
 			map[string]any{"name": "x' OR 1=1--", "category": "dairy", "quantity": 1.5, "unit": "l", "expiresOn": "2026-12-01"})
 		// Таблица users жива: вход работает.
-		newClient(t, srv.URL).expect(200, "POST", "/api/auth/login", map[string]any{"email": email("bob"), "password": "correct horse"})
+		newClient(t, srv.URL).expect(200, "POST", "/api/auth/login", map[string]any{"email": email("bob"), "password": "correct horse1!"})
 		// «Мусор» вместо UUID в адресе — 404, а не ошибка базы.
 		anton.expect(404, "GET", "/api/families/"+familyID+"/homes/1%20OR%201=1", nil)
 	})
@@ -867,10 +883,94 @@ func TestAPIIntegration(t *testing.T) {
 		// «Прочитано»: Боб читает — Антон (по WebSocket) узнаёт об этом.
 		antonConn, _, _ := dial(anton, origin)
 		defer antonConn.Close()
-		bobConn.WriteJSON(map[string]any{"type": "read", "familyId": familyID, "chatId": familyChat})
+		bobConn.WriteJSON(map[string]any{"type": "read", "familyId": familyID, "chatId": familyChat, "messageIds": []any{history.Body["items"].([]any)[0].(map[string]any)["id"]}})
 		if r := readEvent(antonConn, "read"); r["chatId"] != familyChat {
 			t.Fatalf("событие прочтения: %v", r)
 		}
+	})
+
+	step("просмотры: все получатели, только видимые сообщения и сохранение статуса", func(t *testing.T) {
+		fid := str(anton.expect(201, "POST", "/api/families", map[string]any{"name": "Проверка просмотров"}).Body["id"])
+		defer db.Exec("DELETE FROM families WHERE id = ?", fid)
+		code := str(anton.expect(200, "POST", "/api/families/"+fid+"/invite", nil).Body["code"])
+		bob.expect(200, "POST", "/api/families/join", map[string]any{"code": code})
+		chat := str(anton.expect(200, "GET", "/api/families/"+fid+"/chats", nil).Body["items"].([]any)[0].(map[string]any)["id"])
+		base := "/api/families/" + fid + "/chats/" + chat
+		first := str(anton.expect(201, "POST", base+"/messages", map[string]any{"text": "Вне экрана"}).Body["id"])
+		second := str(anton.expect(201, "POST", base+"/messages", map[string]any{"text": "На экране"}).Body["id"])
+		body := map[string]any{"messageIds": []string{second}}
+		eve.expect(404, "POST", base+"/read", body)
+		eve.expect(200, "POST", "/api/families/join", map[string]any{"code": code})
+		bob.expect(400, "POST", base+"/read", map[string]any{"messageIds": []string{}})
+		one := bob.expect(200, "POST", base+"/read", body)
+		if len(one.Body["allReadIds"].([]any)) != 0 {
+			t.Fatal("одного читателя недостаточно")
+		}
+		all := eve.expect(200, "POST", base+"/read", body)
+		if !strings.Contains(all.Raw, second) {
+			t.Fatal("последний читатель не выставил прочитано")
+		}
+		bob.expect(200, "POST", base+"/read", body)
+		var count int64
+		db.Raw("SELECT count(*) FROM message_views WHERE message_id = ?", second).Scan(&count)
+		if count != 2 {
+			t.Fatal("повторный просмотр создал лишнюю отметку")
+		}
+		// Отправка ответа не означает, что человек видел предыдущие сообщения.
+		bob.expect(201, "POST", base+"/rich", map[string]any{"text": "Ответ без просмотра первого"})
+		history := anton.expect(200, "GET", base+"/messages", nil).Body["items"].([]any)
+		for _, item := range history {
+			m := item.(map[string]any)
+			if m["id"] == first && m["readByAll"] != false {
+				t.Fatal("пропущенное сообщение стало прочитанным")
+			}
+			if m["id"] == second && m["readByAll"] != true {
+				t.Fatal("статус не сохранился в истории")
+			}
+		}
+	})
+
+	step("избранное, ответы, пересылка и защита медиа", func(t *testing.T) {
+		dish := map[string]any{"title": "Тестовый рис", "servings": 2, "minutes": 20, "ingredients": []map[string]any{{"name": "Рис", "amount": "100 г", "inFridge": true}}, "steps": []string{"Сварить рис"}, "missingCount": 0}
+		saved := anton.expect(200, "POST", "/api/me/recipes", dish)
+		bobFavorites := bob.expect(200, "GET", "/api/me/recipes", nil)
+		if len(bobFavorites.Body["items"].([]any)) != 0 {
+			t.Fatal("чужое избранное раскрыто")
+		}
+		id := str(saved.Body["id"])
+		bob.expect(204, "DELETE", "/api/me/recipes/"+id, nil)
+		if !strings.Contains(anton.expect(200, "GET", "/api/me/recipes", nil).Raw, id) {
+			t.Fatal("чужой пользователь удалил рецепт")
+		}
+		items := anton.expect(200, "GET", "/api/families/"+familyID+"/chats", nil).Body["items"].([]any)
+		chat := str(items[0].(map[string]any)["id"])
+		base := "/api/families/" + familyID + "/chats/" + chat
+		sent := anton.expect(201, "POST", base+"/rich", map[string]any{"recipe": dish})
+		reply := bob.expect(201, "POST", base+"/rich", map[string]any{"text": "Ответ", "replyId": sent.Body["id"]})
+		if !strings.Contains(reply.Raw, "Тестовый рис") {
+			t.Fatal("нет цитаты")
+		}
+		media := anton.upload(base+"/media", "file", "test.png", pngFile(t), "POST")
+		if media.Status != 201 {
+			t.Fatal(media.Raw)
+		}
+		asset := str(media.Body["details"].(map[string]any)["media"].(map[string]any)["id"])
+		bob.expect(200, "GET", base+"/media/"+asset, nil)
+		eve.expect(404, "GET", base+"/media/"+asset, nil)
+		direct := str(anton.expect(200, "POST", "/api/families/"+familyID+"/chats/direct", map[string]any{"userId": bobID}).Body["chatId"])
+		target := "/api/families/" + familyID + "/chats/" + direct
+		forwarded := anton.expect(201, "POST", target+"/rich", map[string]any{"sourceChatId": chat, "forwardId": media.Body["id"]})
+		forwardedAsset := str(forwarded.Body["details"].(map[string]any)["media"].(map[string]any)["id"])
+		bob.expect(200, "GET", target+"/media/"+forwardedAsset, nil)
+		bob.expect(404, "GET", target+"/media/"+asset, nil)
+		anton.expect(204, "DELETE", base+"/messages/"+str(media.Body["id"]), nil)
+		bob.expect(404, "GET", base+"/media/"+asset, nil)
+		bob.expect(200, "GET", target+"/media/"+forwardedAsset, nil)
+		bad := anton.upload(base+"/media", "file", "fake.png", []byte("<script>bad</script>"), "POST")
+		if bad.Status != 400 {
+			t.Fatal("опасный файл принят")
+		}
+		anton.expect(204, "DELETE", "/api/me/recipes/"+id, nil)
 	})
 
 	step("аватар", func(t *testing.T) {
@@ -961,6 +1061,48 @@ func TestAPIIntegration(t *testing.T) {
 		}
 	})
 
+	step("алкоголь: сервер проверяет возраст", func(t *testing.T) {
+		base := "/api/families/" + familyID + "/homes/" + homeA
+		body := map[string]any{"name": "Красное вино", "category": "alcohol", "quantity": 1, "unit": "l", "expiresOn": "2099-01-01"}
+		wine := anton.expect(201, "POST", base+"/products", body)
+		var original models.User
+		if err := db.Where("id = ?", bobID).Take(&original).Error; err != nil {
+			t.Fatal(err)
+		}
+		minorDate := time.Now().AddDate(-17, 0, 0)
+		if err := db.Model(&models.User{}).Where("id = ?", bobID).Update("birthday", minorDate).Error; err != nil {
+			t.Fatal(err)
+		}
+		defer db.Model(&models.User{}).Where("id = ?", bobID).Update("birthday", original.Birthday)
+		if bob.expect(200, "GET", "/api/me", nil).Body["canUseAlcohol"] != false {
+			t.Fatal("minor marked adult")
+		}
+		if strings.Contains(bob.expect(200, "GET", base+"/products", nil).Raw, str(wine.Body["id"])) {
+			t.Fatal("alcohol exposed to minor")
+		}
+		denied := bob.expect(403, "POST", base+"/products", body)
+		if !strings.Contains(denied.Raw, "adult_only") {
+			t.Fatal(denied.Raw)
+		}
+		body["category"] = "other"
+		bob.expect(403, "POST", base+"/products", body)
+		bob.expect(404, "PUT", base+"/products/"+str(wine.Body["id"]), body)
+		denied = bob.expect(403, "POST", base+"/recipes/suggest", map[string]any{"servings": 2, "category": "alcohol", "allMembers": false})
+		if !strings.Contains(denied.Raw, "adult_only") {
+			t.Fatal(denied.Raw)
+		}
+		denied = anton.expect(403, "POST", base+"/recipes/suggest", map[string]any{"servings": 2, "category": "alcohol", "allMembers": false, "memberIds": []string{bobID}})
+		if !strings.Contains(denied.Raw, "adult_only") {
+			t.Fatal(denied.Raw)
+		}
+		bob.expect(400, "POST", base+"/recipes/suggest", map[string]any{"servings": 2, "category": "alcohol", "allowAlcohol": true})
+		if err := db.Model(&models.User{}).Where("id = ?", bobID).Update("birthday", nil).Error; err != nil {
+			t.Fatal(err)
+		}
+		bob.expect(403, "POST", base+"/products", body)
+		anton.expect(204, "DELETE", base+"/products/"+str(wine.Body["id"]), nil)
+	})
+
 	step("слишком большой запрос", func(t *testing.T) {
 		huge := `{"name":"` + strings.Repeat("a", 2<<20) + `"}`
 		anton.expect(413, "PATCH", "/api/me", huge)
@@ -968,7 +1110,7 @@ func TestAPIIntegration(t *testing.T) {
 
 	step("удаление владельца передаёт права администратору", func(t *testing.T) {
 		anton.expect(403, "DELETE", "/api/me", map[string]any{"password": "wrong password"})
-		anton.expect(204, "DELETE", "/api/me", map[string]any{"password": "correct horse"})
+		anton.expect(204, "DELETE", "/api/me", map[string]any{"password": "correct horse1!"})
 		// Токен удалённого аккаунта ещё не истёк, но больше нигде не работает.
 		anton.expect(401, "GET", "/api/me", nil)
 		anton.expect(401, "POST", "/api/families", map[string]any{"name": "Призрак"})

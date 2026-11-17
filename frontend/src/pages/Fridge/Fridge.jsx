@@ -16,12 +16,13 @@ import styles from "./Fridge.module.css";
 import { useEasterEggs } from "../../components/EasterEggs/EasterEggContext";
 
 const ALL = "all";
-const filters = [ALL, ...categories];
+
 
 function Fridge() {
   const { searchCat } = useEasterEggs();
-  const { homes, products, fridgeHomeId, setFridgeHomeId, changeQty, currentUserId, plan } = useData();
+  const { homes, products, fridgeHomeId, setFridgeHomeId, changeQty, currentUserId, plan, canUseAlcohol } = useData();
   const [params] = useSearchParams();
+  const filters = [ALL,...categories.filter(c=>canUseAlcohol||c!=="Алкоголь")];
   const [category, setCategory] = useState(ALL);
   const [query, setQuery] = useState("");
 

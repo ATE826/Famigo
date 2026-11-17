@@ -16,12 +16,14 @@ import (
 	"time"
 
 	"github.com/ATE826/Famigo/backend/internal/ai"
+	"github.com/ATE826/Famigo/backend/internal/auth"
 	"github.com/ATE826/Famigo/backend/internal/fieldcrypt"
 	"github.com/ATE826/Famigo/backend/internal/mail"
 )
 
 type Config struct {
-	Mail mail.Config
+	Captcha auth.CaptchaConfig
+	Mail    mail.Config
 	// Production включает строгий режим: обязательный JWT_SECRET, Secure-куки, HSTS.
 	Production bool
 	Port       string
@@ -97,6 +99,23 @@ func Load(log *slog.Logger) (Config, error) {
 	}
 
 	var err error
+	cfg.Captcha = auth.CaptchaConfig{ClientKey: strings.TrimSpace(os.Getenv("SMARTCAPTCHA_CLIENT_KEY")), ServerKey: strings.TrimSpace(os.Getenv("SMARTCAPTCHA_SERVER_KEY")), AllowedHosts: splitList(os.Getenv("SMARTCAPTCHA_ALLOWED_HOSTS"))}
+	if (cfg.Captcha.ClientKey == "") != (cfg.Captcha.ServerKey == "") {
+		return Config{}, errors.New("SmartCaptcha: задайте оба ключа SMARTCAPTCHA_CLIENT_KEY и SMARTCAPTCHA_SERVER_KEY")
+	}
+	if len(cfg.Captcha.AllowedHosts) == 0 {
+		for _, origin := range cfg.AllowedOrigins {
+			if u, e := url.Parse(origin); e == nil && u.Hostname() != "" {
+				cfg.Captcha.AllowedHosts = append(cfg.Captcha.AllowedHosts, u.Hostname())
+			}
+		}
+	}
+	if !cfg.Production {
+		cfg.Captcha.AllowedHosts = append(cfg.Captcha.AllowedHosts, "localhost", "127.0.0.1")
+	}
+	if cfg.Captcha.ClientKey != "" && len(cfg.Captcha.AllowedHosts) == 0 {
+		return Config{}, errors.New("SmartCaptcha: не заданы разрешённые хосты")
+	}
 	if err := cfg.Mail.Validate(); err != nil {
 		return Config{}, err
 	}
@@ -163,14 +182,32 @@ func Load(log *slog.Logger) (Config, error) {
 }
 
 // loadAI — настройки нейросети. Подходит любой OpenAI-совместимый API:
-// локальный Ollama (http://localhost:11434/v1) или облачный (Gemini, OpenRouter, Groq…).
+// локальный локальная модель (https://example.com/v1) или облачный (Gemini, OpenRouter, Groq…).
 func loadAI() (ai.Config, error) {
 	cfg := ai.Config{
-		BaseURL:   strings.TrimSpace(os.Getenv("AI_BASE_URL")),
-		Model:     strings.TrimSpace(os.Getenv("AI_MODEL")),
-		APIKey:    strings.TrimSpace(os.Getenv("AI_API_KEY")),
-		JSONMode:  getEnv("AI_JSON_MODE", "schema"),
-		Reasoning: strings.TrimSpace(os.Getenv("AI_REASONING")),
+		Provider:        getEnv("AI_PROVIDER", "openai"),
+		GigaChatAuthKey: strings.TrimSpace(os.Getenv("GIGACHAT_AUTH_KEY")),
+		GigaChatScope:   getEnv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS"),
+		BaseURL:         strings.TrimSpace(os.Getenv("AI_BASE_URL")),
+		Model:           strings.TrimSpace(os.Getenv("AI_MODEL")),
+		APIKey:          strings.TrimSpace(os.Getenv("AI_API_KEY")),
+		JSONMode:        getEnv("AI_JSON_MODE", "schema"),
+		Reasoning:       strings.TrimSpace(os.Getenv("AI_REASONING")),
+	}
+	if cfg.Provider != "openai" && cfg.Provider != "gigachat" {
+		return cfg, errors.New("AI_PROVIDER: ожидается openai или gigachat")
+	}
+	if cfg.Provider == "gigachat" {
+		cfg.BaseURL = "https://api.giga.chat/v1"
+		cfg.Model = getEnv("GIGACHAT_MODEL", "GigaChat-2-Pro")
+		cfg.APIKey, cfg.Reasoning = "", ""
+		cfg.JSONMode = "schema"
+		if cfg.GigaChatAuthKey == "" {
+			return cfg, errors.New("GIGACHAT_AUTH_KEY не задан")
+		}
+		if cfg.GigaChatScope != "GIGACHAT_API_PERS" && cfg.GigaChatScope != "GIGACHAT_API_B2B" && cfg.GigaChatScope != "GIGACHAT_API_CORP" {
+			return cfg, errors.New("GIGACHAT_SCOPE: неизвестный режим доступа")
+		}
 	}
 	var err error
 	if cfg.Timeout, err = getDuration("AI_TIMEOUT", 5*time.Minute); err != nil {
@@ -179,15 +216,18 @@ func loadAI() (ai.Config, error) {
 	if cfg.MaxConcurrent, err = getInt("AI_MAX_CONCURRENT", 1); err != nil {
 		return ai.Config{}, err
 	}
+	if cfg.Provider == "gigachat" {
+		cfg.MaxConcurrent = 1
+	}
 	if cfg.BaseURL == "" {
 		return cfg, nil
 	}
 	u, err := url.Parse(cfg.BaseURL)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		return ai.Config{}, errors.New("AI_BASE_URL: ожидается адрес вида http://localhost:11434/v1")
+		return ai.Config{}, errors.New("AI_BASE_URL: ожидается адрес вида https://example.com/v1")
 	}
 	if cfg.Model == "" {
-		return ai.Config{}, errors.New("AI_MODEL: укажите модель, например gemma4:26b")
+		return ai.Config{}, errors.New("AI_MODEL: укажите модель, например GigaChat-2-Pro")
 	}
 	if cfg.JSONMode != "schema" && cfg.JSONMode != "object" {
 		return ai.Config{}, errors.New("AI_JSON_MODE: ожидается schema или object")

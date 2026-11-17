@@ -157,14 +157,23 @@ func (h *Handler) deleteMessage(c *gin.Context) {
 
 func (h *Handler) markRead(c *gin.Context) {
 	chatID, err := httpx.ParamUUID(c, "chatID")
-	if err == nil {
-		err = h.service.MarkRead(c.Request.Context(), families.FamilyID(c), chatID, auth.UserID(c))
-	}
 	if err != nil {
 		httpx.Respond(c, err)
 		return
 	}
-	httpx.NoContent(c)
+	var req struct {
+		MessageIDs []uuid.UUID `json:"messageIds"`
+	}
+	if err = httpx.DecodeJSON(c, &req); err != nil {
+		httpx.Respond(c, err)
+		return
+	}
+	event, err := h.service.MarkViewed(c.Request.Context(), families.FamilyID(c), chatID, auth.UserID(c), req.MessageIDs)
+	if err != nil {
+		httpx.Respond(c, err)
+		return
+	}
+	httpx.OK(c, event)
 }
 
 type settingsRequest struct {

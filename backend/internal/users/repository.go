@@ -1,9 +1,11 @@
 package users
 
 import (
+	"github.com/ATE826/Famigo/backend/internal/foodpolicy"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"time"
 
 	"github.com/ATE826/Famigo/backend/internal/models"
 )
@@ -35,6 +37,7 @@ func toProfile(u models.User) Profile {
 		prefs[i] = p.Value
 	}
 	return Profile{
+		CanUseAlcohol: foodpolicy.Adult(u.Birthday, time.Now()),
 		ID:            u.ID,
 		Email:         u.Email,
 		EmailVerified: u.EmailVerifiedAt != nil,

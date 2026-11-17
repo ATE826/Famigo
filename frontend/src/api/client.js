@@ -97,6 +97,9 @@ export async function api(path, options) {
 // Текст ошибки для человека: по известным кодам — на языке интерфейса,
 // иначе — сообщение сервера.
 const KNOWN = {
+  captcha_required: 'captcha.required',
+  captcha_invalid: 'captcha.invalid',
+  captcha_unavailable: 'captcha.unavailable',
 	account_not_found: "reset.accountMissing",
   invalid_code: "errors.invalidCode",
   email_unavailable: "errors.emailUnavailable",
@@ -118,4 +121,12 @@ export function errorText(error) {
   }
   const key = KNOWN[error?.code];
   return key ? t(key) : (error?.message ?? t("errors.generic"));
+}
+
+export async function mediaBlob(path) {
+  const request = () => fetch(BASE + path, {headers: accessToken ? {Authorization:`Bearer ${accessToken}`} : {}, credentials:'same-origin'});
+  let response = await request();
+  if(response.status === 401) {await refreshSession(); response=await request();}
+  if(!response.ok) throw new Error(t('errors.generic'));
+  return response.blob();
 }

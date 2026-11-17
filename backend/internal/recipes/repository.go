@@ -3,6 +3,7 @@ package recipes
 import (
 	"time"
 
+	"github.com/ATE826/Famigo/backend/internal/foodpolicy"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
@@ -33,7 +34,7 @@ func fridge(db *gorm.DB, homeID uuid.UUID, today time.Time) ([]fridgeItem, error
 	items := make([]fridgeItem, len(rows))
 	for i, p := range rows {
 		items[i] = fridgeItem{
-			Name: p.Name, Quantity: p.Quantity, Unit: p.Unit,
+			Category: p.Category, Name: p.Name, Quantity: p.Quantity, Unit: p.Unit,
 			DaysLeft: int(p.ExpiresOn.Sub(today).Hours() / 24),
 		}
 	}
@@ -44,7 +45,7 @@ func fridge(db *gorm.DB, homeID uuid.UUID, today time.Time) ([]fridgeItem, error
 // ok=false — кто-то из memberIDs не состоит в семье.
 func eaters(db *gorm.DB, familyID uuid.UUID, memberIDs []uuid.UUID) (list []eater, ok bool, err error) {
 	query := db.
-		Preload("User", func(db *gorm.DB) *gorm.DB { return db.Select("id", "food_note") }).
+		Preload("User", func(db *gorm.DB) *gorm.DB { return db.Select("id", "food_note", "birthday") }).
 		Preload("User.FoodPrefs").
 		Where("family_id = ?", familyID)
 	if len(memberIDs) > 0 {
@@ -63,7 +64,7 @@ func eaters(db *gorm.DB, familyID uuid.UUID, memberIDs []uuid.UUID) (list []eate
 		for j, p := range m.User.FoodPrefs {
 			prefs[j] = p.Value
 		}
-		list[i] = eater{Prefs: prefs}
+		list[i] = eater{Prefs: prefs, Adult: foodpolicy.Adult(m.User.Birthday, time.Now())}
 		if m.User.FoodNote != nil {
 			list[i].Note = *m.User.FoodNote
 		}

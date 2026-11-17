@@ -53,7 +53,7 @@ func (r suggestRequest) validate() (suggestInput, error) {
 	if in.Category == "" {
 		in.Category = "any"
 	}
-	v.OneOf("category", in.Category, "any", "snack", "hot", "cold", "soup", "salad", "bakery", "dessert", "drink")
+	v.OneOf("category", in.Category, "any", "snack", "hot", "cold", "soup", "salad", "bakery", "dessert", "drink", "alcohol")
 	v.OneOf("language", in.Language, languages...)
 	v.Check(in.Servings >= 1 && in.Servings <= 12, "servings", "От 1 до 12 порций")
 	v.Check(len(r.MemberIDs) <= 50, "memberIds", "Слишком много участников")
@@ -103,7 +103,7 @@ func (h *Handler) suggest(c *gin.Context) {
 		_ = rc.SetWriteDeadline(deadline)
 	}
 
-	result, err := h.service.Suggest(c.Request.Context(), families.FamilyID(c), homeID, in)
+	result, err := h.service.Suggest(c.Request.Context(), families.FamilyID(c), homeID, in, auth.UserID(c))
 	if err != nil {
 		httpx.Respond(c, err)
 		return

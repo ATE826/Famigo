@@ -82,6 +82,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, db *gorm.DB, log *slog.Log
 	api.GET("/health", health.NewHandler(sqlDB).Check)
 
 	auth.NewHandler(authService, auth.CookieOptions{Secure: cfg.CookieSecure, SameSite: cfg.CookieSameSite}, registerLimiter).
+		WithCaptcha(cfg.Captcha, cfg.JWTSecret).
 		RegisterRoutes(public, cookie, authed)
 	users.NewHandler(usersService).RegisterRoutes(authed, authedUpload, api)
 	notifications.NewHandler(notifyService).RegisterRoutes(authed)
@@ -89,10 +90,13 @@ func registerRoutes(r *gin.Engine, cfg config.Config, db *gorm.DB, log *slog.Log
 	subscriptions.NewHandler(subsService).RegisterRoutes(family)
 	homes.NewHandler(homes.NewService(db, subsService)).RegisterRoutes(family)
 	products.NewHandler(products.NewService(db)).RegisterRoutes(family)
+	recipes.RegisterFavorites(authed, db)
 	recipes.NewHandler(recipes.NewService(db, subsService, ai.New(cfg.AI, log))).RegisterRoutes(family)
 	budget.NewHandler(budget.NewService(db, notifyService)).RegisterRoutes(family)
 	calendar.NewHandler(calendar.NewService(db, notifyService)).RegisterRoutes(family)
 	hub := chats.NewHub(log)
-	chats.NewHandler(chats.NewService(db, hub, log, messageCipher), hub, cfg.AllowedOrigins).RegisterRoutes(authed, family, api)
+	chatHandler := chats.NewHandler(chats.NewService(db, hub, log, messageCipher), hub, cfg.AllowedOrigins)
+	chatHandler.RegisterRoutes(authed, family, api)
+	chatHandler.RegisterRichRoutes(family, authedUpload.Group("/families/:familyID", families.RequireMember(db)))
 	return nil
 }

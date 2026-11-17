@@ -41,18 +41,14 @@ func listChats(db *gorm.DB, c *fieldcrypt.Cipher, familyID, userID uuid.UUID) ([
 		ids[i] = m.ChatID
 	}
 
-	// 2. Остальные участники: собеседник личного чата и «когда они последний раз читали».
+	// 2. Остальные участники: собеседник личного чата.
 	var others []models.ChatMember
 	if err := db.Where("chat_id IN ? AND user_id <> ?", ids, userID).Find(&others).Error; err != nil {
 		return nil, err
 	}
 	peers := map[uuid.UUID]uuid.UUID{}
-	readAt := map[uuid.UUID]time.Time{}
 	for _, o := range others {
 		peers[o.ChatID] = o.UserID
-		if o.LastReadAt.After(readAt[o.ChatID]) {
-			readAt[o.ChatID] = o.LastReadAt
-		}
 	}
 
 	// 3. Непрочитанные: чужие неудалённые сообщения новее моего last_read_at.
@@ -63,7 +59,8 @@ func listChats(db *gorm.DB, c *fieldcrypt.Cipher, familyID, userID uuid.UUID) ([
 	err := db.Model(&models.Message{}).
 		Select("messages.chat_id, count(*) AS count").
 		Joins("JOIN chat_members cm ON cm.chat_id = messages.chat_id AND cm.user_id = ?", userID).
-		Where("messages.chat_id IN ? AND messages.created_at > cm.last_read_at AND messages.deleted_at IS NULL", ids).
+		Where("messages.chat_id IN ? AND messages.deleted_at IS NULL", ids).
+		Where("NOT EXISTS (SELECT 1 FROM message_views v WHERE v.message_id = messages.id AND v.user_id = ?)", userID).
 		Where("messages.user_id IS DISTINCT FROM ?", userID).
 		Group("messages.chat_id").
 		Scan(&unread).Error
@@ -96,12 +93,14 @@ func listChats(db *gorm.DB, c *fieldcrypt.Cipher, familyID, userID uuid.UUID) ([
 		if peer, ok := peers[m.ChatID]; ok && m.Chat.Kind == "direct" {
 			ch.PeerID = &peer
 		}
-		if at, ok := readAt[m.ChatID]; ok {
-			ch.OthersReadAt = &at
-		}
 		activity[m.ChatID] = m.Chat.CreatedAt
 		if msg, ok := lastBy[m.ChatID]; ok {
 			view := toMessage(c, msg)
+			views := []Message{view}
+			if err := fillViewStatus(db, m.ChatID, views); err != nil {
+				return nil, err
+			}
+			view = views[0]
 			ch.LastMessage = &view
 			activity[m.ChatID] = msg.CreatedAt
 		}
@@ -122,6 +121,7 @@ func toMessage(c *fieldcrypt.Cipher, m models.Message) Message {
 	msg := Message{ID: m.ID, UserID: m.UserID, CreatedAt: m.CreatedAt, Deleted: m.DeletedAt != nil}
 	if !msg.Deleted {
 		msg.Text = decryptText(c, m)
+		msg.Details = []byte(m.Details)
 	}
 	return msg
 }
@@ -174,13 +174,19 @@ func listMessages(db *gorm.DB, c *fieldcrypt.Cipher, chatID uuid.UUID, before *t
 	for i, m := range rows {
 		messages[i] = toMessage(c, m)
 	}
+	if err := fillViewStatus(db, chatID, messages); err != nil {
+		return nil, err
+	}
 	return messages, nil
 }
 
 // insertMessage шифрует текст и сохраняет сообщение. Id создаётся здесь, а не в базе:
 // он нужен до записи, чтобы привязать к нему шифртекст (messageAAD).
-func insertMessage(db *gorm.DB, c *fieldcrypt.Cipher, chatID, userID uuid.UUID, text string) (Message, error) {
+func insertMessage(db *gorm.DB, c *fieldcrypt.Cipher, chatID, userID uuid.UUID, text string, details ...string) (Message, error) {
 	m := models.Message{ID: uuid.New(), ChatID: chatID, UserID: &userID}
+	if len(details) > 0 {
+		m.Details = details[0]
+	}
 	sealed, err := c.Encrypt(text, messageAAD(chatID, m.ID))
 	if err != nil {
 		return Message{}, err
@@ -190,7 +196,7 @@ func insertMessage(db *gorm.DB, c *fieldcrypt.Cipher, chatID, userID uuid.UUID, 
 		return Message{}, err
 	}
 	// Автору и участникам отдаём открытый текст, который мы только что получили.
-	return Message{ID: m.ID, UserID: &userID, Text: text, CreatedAt: m.CreatedAt}, nil
+	return Message{ID: m.ID, UserID: &userID, Text: text, Details: []byte(m.Details), CreatedAt: m.CreatedAt}, nil
 }
 
 // deleteMessage — удалить можно только своё сообщение (условие user_id = ?).
@@ -200,17 +206,6 @@ func deleteMessage(db *gorm.DB, chatID, messageID, userID uuid.UUID) (bool, erro
 		Where("chat_id = ? AND id = ? AND user_id = ? AND deleted_at IS NULL", chatID, messageID, userID).
 		Updates(map[string]any{"deleted_at": gorm.Expr("now()"), "text": ""})
 	return res.RowsAffected > 0, res.Error
-}
-
-// markRead ставит last_read_at = now() по часам базы (по ним же стоит created_at сообщений)
-// и через RETURNING возвращает это время, чтобы разослать его остальным.
-func markRead(db *gorm.DB, chatID, userID uuid.UUID) (time.Time, error) {
-	var m models.ChatMember
-	err := db.Model(&m).
-		Clauses(clause.Returning{Columns: []clause.Column{{Name: "last_read_at"}}}).
-		Where("chat_id = ? AND user_id = ?", chatID, userID).
-		Update("last_read_at", gorm.Expr("now()")).Error
-	return m.LastReadAt, err
 }
 
 // memberIDs — кому рассылать события чата: только его участникам.

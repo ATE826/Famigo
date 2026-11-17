@@ -13,44 +13,6 @@
 name: famigo
 
 services:
-  # Ollama доступна только внутри сети Compose. Модели сохраняются между запусками.
-  ollama:
-    image: ollama/ollama:latest
-    gpus: all
-    environment:
-      OLLAMA_KEEP_ALIVE: 30m
-      # Место для пяти рецептов, списка продуктов и ограничений в одном запросе.
-      OLLAMA_CONTEXT_LENGTH: 16384
-    volumes:
-      - famigo-ollama:/root/.ollama
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-      start_period: 10s
-    restart: unless-stopped
-
-  # При первом старте скачивает модель; установленную модель повторно не скачивает.
-  # Работает параллельно с сайтом: загрузка модели не задерживает бэкенд и фронтенд.
-  ollama-init:
-    image: ollama/ollama:latest
-    environment:
-      OLLAMA_HOST: http://ollama:11434
-      OLLAMA_MODEL: ${AI_MODEL:-gemma4:e4b}
-    entrypoint: ["/bin/sh", "-ec"]
-    command:
-      - |
-        if ollama show "$$OLLAMA_MODEL" >/dev/null 2>&1; then
-          echo "Model $$OLLAMA_MODEL is already installed"
-        else
-          exec ollama pull "$$OLLAMA_MODEL"
-        fi
-    depends_on:
-      ollama:
-        condition: service_healthy
-    restart: "no"
-
   # PostgreSQL доступен контейнерам и локальному pgAdmin на этом компьютере.
   # Привязка к 127.0.0.1 исключает публикацию порта на сетевых интерфейсах.
   db:
@@ -98,6 +60,10 @@ services:
       DEMO_PAYMENTS: ${DEMO_PAYMENTS:-true}
       UPLOAD_DIR: /app/uploads
       # Нейросеть для подбора блюд (см. .env). Ключ облачного провайдера — в secrets.env.
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      GIGACHAT_MODEL: ${GIGACHAT_MODEL:-GigaChat-2-Pro}
+      GIGACHAT_SCOPE: ${GIGACHAT_SCOPE:-GIGACHAT_API_PERS}
+      # GIGACHAT_AUTH_KEY передаётся из env_file, без пустого перекрытия.
       AI_BASE_URL: ${AI_BASE_URL:-}
       AI_MODEL: ${AI_MODEL:-}
       AI_API_KEY: ${AI_API_KEY:-}
@@ -132,7 +98,6 @@ services:
 volumes:
   famigo-db:
   famigo-uploads:
-  famigo-ollama:
 
 networks:
   default:

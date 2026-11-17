@@ -60,7 +60,10 @@ type RegisterInput struct {
 }
 
 func (s *Service) Login(ctx context.Context, email, password, userAgent string) (Session, error) {
-	db := s.db.WithContext(ctx)
+	return s.loginUsing(s.db.WithContext(ctx), email, password, userAgent)
+}
+
+func (s *Service) loginUsing(db *gorm.DB, email, password, userAgent string) (Session, error) {
 	user, err := findByEmail(db, email)
 	if database.IsNotFound(err) {
 		equalizeTiming(password)

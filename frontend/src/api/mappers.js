@@ -4,7 +4,7 @@
 
 const invert = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k]));
 
-const productCategories = { Молочные: "dairy", Овощи: "vegetables", Мясо: "meat", Напитки: "drinks", Другое: "other" };
+const productCategories = { Молочные: "dairy", Овощи: "vegetables", Мясо: "meat", Напитки: "drinks", Алкоголь:"alcohol", Другое: "other" };
 const units = { "шт.": "pcs", мл: "ml", л: "l", г: "g", кг: "kg" };
 const budgetCategories = {
   Продукты: "groceries",
@@ -81,6 +81,7 @@ export function mergeMe(member, me) {
   if (!me) return member;
   return {
     ...member,
+    canUseAlcohol: me.canUseAlcohol === true,
     email: me.email,
     phone: me.phone ?? "",
     phoneVerified: me.phoneVerified,
@@ -180,9 +181,11 @@ export function mapMessage(m) {
   const created = new Date(m.createdAt);
   return {
     id: m.id,
+      readByAll: m.readByAll === true,
     from: m.userId,
     text: m.text,
     deleted: m.deleted,
+    details: m.details,
     createdAt: m.createdAt,
     day: localDateKey(created),
     time: localTime(created),

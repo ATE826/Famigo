@@ -1,7 +1,7 @@
 import { t, tValue } from "../../i18n";
 import { todayStart } from "../../utils/dates";
 
-export const categories = ["Молочные", "Овощи", "Мясо", "Напитки", "Другое"];
+export const categories = ["Молочные", "Овощи", "Мясо", "Напитки", "Алкоголь", "Другое"];
 
 export const units = ["шт.", "мл", "л", "кг", "г"];
 
