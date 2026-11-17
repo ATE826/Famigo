@@ -29,7 +29,7 @@ docker compose --env-file .env --env-file secrets.env up --build
 локальная модель из Windows автоматически не копируется. Модели сохраняются в томе
 `famigo-ollama`; обычный `docker compose down` их не удаляет.
 
-Для разработки без файла секретов: `docker compose up -d --build`.
+Для пустой тестовой установки без секретов контейнеры можно запустить командой `docker compose up -d --build`, но почтовое подтверждение работать не будет. Для существующей базы со своим паролем и постоянных ключей используйте команду с обоими `--env-file` выше при каждом запуске; короткая команда эти значения для подстановок не загружает.
 Проверить загрузку: `docker compose logs -f ollama-init`.
 Проверить модель: `docker compose exec ollama ollama list`.
 Посмотреть использование GPU после запроса: `docker compose exec ollama ollama ps`.
@@ -271,7 +271,7 @@ Docker должен иметь достаточно памяти для загр
 
 Если API сообщает, что нейросеть недоступна, проверьте `docker compose logs backend`.
 Ошибка `model '…' not found` означает, что выбранная модель ещё не установлена в Docker.
-Запустите `docker compose up -d` и для подбора блюд дождитесь успешного завершения `ollama-init`:
+Запустите `docker compose --env-file .env --env-file secrets.env up -d` и для подбора блюд дождитесь успешного завершения `ollama-init`:
 `docker compose logs -f ollama-init`. После смены `AI_MODEL` также выполняйте `up -d`,
 чтобы Compose применил новые настройки к бэкенду и загрузчику модели.
 
