@@ -33,3 +33,7 @@ export function assignableRoles(actor) {
 export function canManageHomes(actor) {
   return Boolean(actor) && (actor.role === "Owner" || actor.role === "Admin");
 }
+
+export function canManageSubscription(actor) {
+  return actor?.role === "Owner" || actor?.role === "Admin";
+}

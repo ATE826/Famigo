@@ -25,8 +25,8 @@ type Plan struct {
 
 var Plans = map[string]Plan{
 	PlanFree:        {ID: PlanFree, MaxHomes: 2, StorageBytes: 2 * gb},
-	PlanPremium:     {ID: PlanPremium, MaxHomes: 3, StorageBytes: 10 * gb, Geo: true, PriceMonth: 24900, PriceYear: 249000},
-	PlanPremiumPlus: {ID: PlanPremiumPlus, MaxHomes: 0, StorageBytes: 100 * gb, Geo: true, Recipes: true, PriceMonth: 49900, PriceYear: 499000},
+	PlanPremium:     {ID: PlanPremium, MaxHomes: 3, StorageBytes: 10 * gb, Geo: true, PriceMonth: 49900, PriceYear: 499000},
+	PlanPremiumPlus: {ID: PlanPremiumPlus, MaxHomes: 0, StorageBytes: 100 * gb, Geo: true, Recipes: true, PriceMonth: 149900, PriceYear: 1499000},
 }
 
 // AllowsHomes — можно ли иметь столько домов на этом тарифе.

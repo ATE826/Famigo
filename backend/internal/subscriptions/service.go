@@ -56,8 +56,11 @@ func (s *Service) Subscribe(ctx context.Context, familyID, userID uuid.UUID, rol
 }
 
 // SetAutoRenew — отменить (подписка доживёт до конца оплаченного срока) или возобновить.
-// Может владелец, администратор или тот, кто платит.
+// Только владелец или администратор; прежняя оплата не сохраняет права после смены роли.
 func (s *Service) SetAutoRenew(ctx context.Context, familyID, userID uuid.UUID, role string, on bool) (Subscription, error) {
+	if err := families.RequireManager(role); err != nil {
+		return Subscription{}, err
+	}
 	db := s.db.WithContext(ctx)
 	current, err := s.Current(db, familyID)
 	if err != nil {
@@ -65,10 +68,6 @@ func (s *Service) SetAutoRenew(ctx context.Context, familyID, userID uuid.UUID, 
 	}
 	if current.Plan.ID == PlanFree {
 		return Subscription{}, httpx.Conflict("no_subscription", "Нет активной подписки")
-	}
-	isPayer := current.PayerID != nil && *current.PayerID == userID
-	if !families.CanManage(role) && !isPayer {
-		return Subscription{}, httpx.Forbidden("Управлять подпиской может владелец, администратор или тот, кто платит")
 	}
 	if err := setCancel(db, familyID, !on); err != nil {
 		return Subscription{}, err

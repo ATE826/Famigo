@@ -678,6 +678,10 @@ const de = {
     agree: "Ich erteile meine {consent}",
     confirm: "Einschalten",
   },
+  familyBilling: {
+    "scope": "Ein Abonnement für die ganze Familie. Die Preise gelten pro Familie ohne Aufpreis pro Mitglied.",
+    "managersOnly": "Nur Eigentümer und Administratoren können ein Abonnement abschließen, den Tarif ändern und die Verlängerung verwalten."
+},
   premium: {
     title: "Abo",
     subtitle: "Einer zahlt, die ganze Familie nutzt es",

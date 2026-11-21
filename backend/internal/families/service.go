@@ -176,7 +176,8 @@ func (s *Service) RemoveMember(ctx context.Context, familyID, actorID, targetID 
 }
 
 // Leave — выйти из семьи самому. Если уходит владелец, права перейдут
-// администратору (триггер pass_family_ownership в базе).
+// администратору с самым ранним назначением, иначе первому вступившему участнику
+// (триггер pass_family_ownership в базе).
 func (s *Service) Leave(ctx context.Context, familyID, userID uuid.UUID) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := removeMember(tx, familyID, userID)

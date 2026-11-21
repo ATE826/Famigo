@@ -586,6 +586,118 @@ func TestAPIIntegration(t *testing.T) {
 		bob.expect(403, "DELETE", "/api/families/"+familyID+"/members/"+antonID, nil)
 	})
 
+	step("семейная подписка: права, общий тариф и понижение плательщика", func(t *testing.T) {
+		fid := str(anton.expect(201, "POST", "/api/families", map[string]any{"name": "Семейный тариф"}).Body["id"])
+		defer db.Exec("DELETE FROM families WHERE id=?", fid)
+		base := "/api/families/" + fid
+		// Membership is a fixture here; joining and its rate limit have a separate scenario.
+		if err := db.Exec("INSERT INTO family_members(family_id,user_id,role) VALUES (?,?,'member')", fid, bobID).Error; err != nil {
+			t.Fatal(err)
+		}
+		if err := db.Exec("INSERT INTO chat_members(chat_id,user_id) SELECT id,? FROM chats WHERE family_id=? AND kind='family'", bobID, fid).Error; err != nil {
+			t.Fatal(err)
+		}
+		purchase := map[string]any{"plan": "premium", "period": "month"}
+		bob.expect(403, "POST", base+"/subscription", purchase)
+		anton.expect(200, "POST", base+"/subscription", purchase)
+		shared := bob.expect(200, "GET", base+"/subscription", nil)
+		if shared.Body["plan"].(map[string]any)["id"] != "premium" || shared.Body["plan"].(map[string]any)["priceMonth"] != float64(49900) {
+			t.Fatal("общий тариф или семейная цена не совпали")
+		}
+		bob.expect(403, "POST", base+"/subscription/cancel", nil)
+		anton.expect(204, "PATCH", base+"/members/"+bobID, map[string]any{"role": "admin"})
+		plus := bob.expect(200, "POST", base+"/subscription", map[string]any{"plan": "premium_plus", "period": "year"})
+		if p := plus.Body["plan"].(map[string]any); p["priceMonth"] != float64(149900) || p["priceYear"] != float64(1499000) {
+			t.Fatal("неверная семейная цена Premium+")
+		}
+		bob.expect(200, "POST", base+"/subscription/cancel", nil)
+		bob.expect(200, "POST", base+"/subscription/resume", nil)
+		anton.expect(204, "PATCH", base+"/members/"+bobID, map[string]any{"role": "member"})
+		// Даже указанный плательщик теряет управление при понижении роли.
+		bob.expect(403, "POST", base+"/subscription", purchase)
+		bob.expect(403, "POST", base+"/subscription/cancel", nil)
+		bob.expect(403, "POST", base+"/subscription/resume", nil)
+		anton.expect(200, "POST", base+"/subscription/cancel", nil)
+		anton.expect(200, "POST", base+"/subscription/resume", nil)
+		if anton.expect(200, "GET", base+"/subscription", nil).Body["plan"].(map[string]any)["id"] != "premium_plus" {
+			t.Fatal("подписка перестала быть общей")
+		}
+		eve.expect(404, "GET", base+"/subscription", nil)
+		if anton.expect(200, "GET", "/api/families/"+familyID+"/subscription", nil).Body["plan"].(map[string]any)["id"] != "free" {
+			t.Fatal("подписка затронула другую семью")
+		}
+	})
+
+	step("наследование владельца: назначение админов, повторное назначение и стаж участника", func(t *testing.T) {
+		eveID := str(eve.expect(200, "GET", "/api/me", nil).Body["id"])
+		makeFamily := func() string {
+			t.Helper()
+			fid := str(anton.expect(201, "POST", "/api/families", map[string]any{"name": "Преемник"}).Body["id"])
+			t.Cleanup(func() { db.Exec("DELETE FROM families WHERE id=?", fid) })
+			for i, uid := range []string{bobID, eveID} {
+				if err := db.Exec("INSERT INTO family_members(family_id,user_id,role,joined_at) VALUES (?,?,'member',?)", fid, uid, time.Now().Add(time.Duration(i-3)*24*time.Hour)).Error; err != nil {
+					t.Fatal(err)
+				}
+				if err := db.Exec("INSERT INTO chat_members(chat_id,user_id) SELECT id,? FROM chats WHERE family_id=? AND kind='family'", uid, fid).Error; err != nil {
+					t.Fatal(err)
+				}
+			}
+			return "/api/families/" + fid
+		}
+		promote := func(base, uid, role string) {
+			t.Helper()
+			anton.expect(204, "PATCH", base+"/members/"+uid, map[string]any{"role": role})
+		}
+		// Eve joined later but was appointed administrator first.
+		base := makeFamily()
+		promote(base, eveID, "admin")
+		promote(base, bobID, "admin")
+		var before, after time.Time
+		db.Raw("SELECT admin_assigned_at FROM family_members WHERE family_id=? AND user_id=?", strings.TrimPrefix(base, "/api/families/"), eveID).Scan(&before)
+		promote(base, eveID, "admin")
+		db.Raw("SELECT admin_assigned_at FROM family_members WHERE family_id=? AND user_id=?", strings.TrimPrefix(base, "/api/families/"), eveID).Scan(&after)
+		if !before.Equal(after) {
+			t.Fatal("повтор той же роли сбросил стаж администратора")
+		}
+		anton.expect(204, "POST", base+"/leave", nil)
+		if eve.expect(200, "GET", base, nil).Body["role"] != "owner" {
+			t.Fatal("выбран стаж вступления вместо назначения")
+		}
+		anton.expect(404, "GET", base, nil)
+		eve.expect(200, "POST", base+"/subscription", map[string]any{"plan": "premium", "period": "month"})
+		// Reappointment starts a new administrator tenure.
+		base = makeFamily()
+		promote(base, bobID, "admin")
+		promote(base, eveID, "admin")
+		promote(base, bobID, "member")
+		promote(base, bobID, "admin")
+		anton.expect(204, "POST", base+"/leave", nil)
+		if eve.expect(200, "GET", base, nil).Body["role"] != "owner" {
+			t.Fatal("повторное назначение сохранило прежний стаж")
+		}
+		// Without administrators choose the earliest joined member.
+		base = makeFamily()
+		anton.expect(204, "POST", base+"/leave", nil)
+		if bob.expect(200, "GET", base, nil).Body["role"] != "owner" {
+			t.Fatal("не выбран первый вступивший участник")
+		}
+		// Explicit transfer makes the former owner a newly appointed admin.
+		base = makeFamily()
+		promote(base, eveID, "admin")
+		anton.expect(204, "POST", base+"/owner", map[string]any{"userId": bobID})
+		bob.expect(204, "POST", base+"/leave", nil)
+		if eve.expect(200, "GET", base, nil).Body["role"] != "owner" {
+			t.Fatal("бывший владелец обошёл ранее назначенного администратора")
+		}
+		fid := str(anton.expect(201, "POST", "/api/families", map[string]any{"name": "Последний участник"}).Body["id"])
+		anton.expect(204, "POST", "/api/families/"+fid+"/leave", nil)
+		var count int64
+		db.Table("families").Where("id=?", fid).Count(&count)
+		if count != 0 {
+			t.Fatal("пустая семья не удалена")
+		}
+	})
+
 	step("дома и лимит тарифа", func(t *testing.T) {
 		home := func(name string) map[string]any {
 			return map[string]any{"name": name, "kind": "apartment", "rooms": 3, "peopleCount": 2}

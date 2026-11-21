@@ -152,11 +152,12 @@ func (Family) TableName() string { return "families" }
 
 // FamilyMember — участник семьи. HomeID — дом, где он сейчас живёт.
 type FamilyMember struct {
-	FamilyID uuid.UUID `gorm:"primaryKey"`
-	UserID   uuid.UUID `gorm:"primaryKey"`
-	Role     string
-	HomeID   *uuid.UUID
-	JoinedAt time.Time `gorm:"default:now()"`
+	AdminAssignedAt *time.Time
+	FamilyID        uuid.UUID `gorm:"primaryKey"`
+	UserID          uuid.UUID `gorm:"primaryKey"`
+	Role            string
+	HomeID          *uuid.UUID
+	JoinedAt        time.Time `gorm:"default:now()"`
 
 	Family Family `gorm:"foreignKey:FamilyID"`
 	User   User   `gorm:"foreignKey:UserID"`

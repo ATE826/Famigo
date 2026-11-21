@@ -678,6 +678,10 @@ const es = {
     agree: "Doy mi {consent}",
     confirm: "Activar",
   },
+  familyBilling: {
+    "scope": "Una suscripción para toda la familia. El precio es por familia, sin recargos por miembro.",
+    "managersOnly": "Solo el propietario y los administradores pueden contratar, cambiar el plan y gestionar la renovación."
+},
   premium: {
     title: "Suscripción",
     subtitle: "Paga uno, lo usa toda la familia",

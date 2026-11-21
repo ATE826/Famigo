@@ -6,11 +6,15 @@ import { PLANS } from "../../utils/plans";
 import { formatMoney } from "../../utils/budget";
 import { errorText } from "../../api/client";
 import styles from "./CheckoutDialog.module.css";
+import {useData} from '../../store/DataContext';
+import {canManageSubscription} from '../../utils/permissions';
 
 export default function CheckoutDialog({ planId, period, onConfirm, onClose }) {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
+  const {members,currentUserId}=useData();
+  const canManage=canManageSubscription(members.find(member=>member.id===currentUserId));
   const price = PLANS[planId].price[period];
   const planName = t(`premium.plans.${planId}.name`);
 
@@ -23,7 +27,7 @@ export default function CheckoutDialog({ planId, period, onConfirm, onClose }) {
   }, [onClose]);
 
   async function pay() {
-    if (busy) return;
+    if (busy||!canManage) return;
     setBusy(true);
     try {
       await onConfirm();
@@ -35,6 +39,7 @@ export default function CheckoutDialog({ planId, period, onConfirm, onClose }) {
     }
   }
 
+  if(!canManage)return null;
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div
@@ -68,6 +73,7 @@ export default function CheckoutDialog({ planId, period, onConfirm, onClose }) {
             <h2 id="checkout-title" className={styles.title}>
               {t("premium.checkout.title")}
             </h2>
+            <p className={styles.note}>{t('familyBilling.scope')}</p>
 
             <dl className={styles.summary}>
               <div className={styles.line}>

@@ -10,7 +10,7 @@ import { useData } from "../../store/DataContext";
 import { formatMoney } from "../../utils/budget";
 import { PLANS, PLAN_ORDER, yearSavingPercent } from "../../utils/plans";
 import { formatBytes } from "../../utils/storage";
-import { canManageHomes } from "../../utils/permissions";
+import { canManageSubscription } from "../../utils/permissions";
 import styles from "./Premium.module.css";
 
 function featuresOf(planId) {
@@ -42,7 +42,7 @@ function Premium() {
   const [cancelling, setCancelling] = useState(false);
   const payer = members.find((m) => m.id === subscription.payerId);
   const me = members.find((m) => m.id === currentUserId);
-  const canManage = subscription.payerId === currentUserId || canManageHomes(me);
+  const canManage = canManageSubscription(me);
   const dateFormat = new Intl.DateTimeFormat(getLocale(), { day: "numeric", month: "long", year: "numeric" });
 
   const periods = [
@@ -53,6 +53,8 @@ function Premium() {
   return (
     <Page wide>
       <PageHeader title={t("premium.title")} subtitle={t("premium.subtitle")} to="/settings" />
+      <p className={styles.familyNote}>{t('familyBilling.scope')}</p>
+      {!canManage&&<p className={styles.familyNote}>{t('familyBilling.managersOnly')}</p>}
 
       <div className={styles.toggle}>
         <Segmented options={periods} value={period} onChange={setPeriod} label={t("premium.billing.label")} />
@@ -100,7 +102,7 @@ function Premium() {
                 ))}
               </ul>
 
-              {id !== "free" && (
+              {id !== "free" && canManage && (
                 <button
                   type="button"
                   className={styles.cta}
@@ -157,7 +159,7 @@ function Premium() {
         </section>
       )}
 
-      {cancelling && (
+      {cancelling && canManage && (
         <ConfirmDialog
           title={t("premium.cancelDialog.title")}
           text={t("premium.cancelDialog.text", {
@@ -174,7 +176,7 @@ function Premium() {
         />
       )}
 
-      {checkout && (
+      {checkout && canManage && (
         <CheckoutDialog
           planId={checkout.planId}
           period={checkout.period}

@@ -675,6 +675,10 @@ const zh = {
     agree: "我同意{consent}",
     confirm: "开启",
   },
+  familyBilling: {
+    "scope": "一份订阅，全家共享。价格按家庭计算，不按成员额外收费。",
+    "managersOnly": "只有家庭所有者和管理员可以订阅、更改套餐和管理续订。"
+},
   premium: {
     title: "订阅",
     subtitle: "一人付费，全家使用",

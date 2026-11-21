@@ -1,5 +1,4 @@
-// Тарифы Famigo. Цены Premium взяты из проекта (249 ₽/мес, 2 490 ₽/год).
-// Цена Premium+ временная, её нужно утвердить.
+// Семейные цены: один тариф на всех участников, год — стоимость 10 месяцев.
 export const GB = 1024 ** 3;
 
 export const PLANS = {
@@ -18,7 +17,7 @@ export const PLANS = {
   premium: {
     id: "premium",
     rank: 1,
-    price: { month: 249, year: 2490 },
+    price: { month: 499, year: 4990 },
     homes: 3,
     storage: 10 * GB,
     geo: true,
@@ -30,7 +29,7 @@ export const PLANS = {
   premiumPlus: {
     id: "premiumPlus",
     rank: 2,
-    price: { month: 499, year: 4990 },
+    price: { month: 1499, year: 14990 },
     homes: Infinity,
     storage: 100 * GB,
     geo: true,

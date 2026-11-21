@@ -678,6 +678,10 @@ const en = {
     agree: "I give my {consent}",
     confirm: "Turn on",
   },
+  familyBilling: {
+    "scope": "One subscription for the whole family. Prices are per family, with no extra charge per member.",
+    "managersOnly": "Only the family owner and administrators can subscribe, change plans and manage renewal."
+},
   premium: {
     title: "Subscription",
     subtitle: "One person pays, the whole family uses it",
