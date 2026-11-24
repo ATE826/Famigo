@@ -1,4 +1,5 @@
 const de = {
+  homeAccess: {"title":"Haus im aktuellen Tarif nicht verfügbar","text":"Die Daten bleiben gespeichert. Free umfasst die ersten 2 hinzugefügten Häuser, Premium die ersten 3. Ein höherer Tarif stellt den Zugriff wieder her."},
   reset: {
   accountMissing: "Kein Konto mit dieser E-Mail gefunden",
   "emailTitle": "Passwort zurücksetzen",
@@ -741,7 +742,7 @@ const de = {
     },
     cancelDialog: {
       title: "Abo kündigen?",
-      text: "Der Tarif {plan} gilt bis {date}, danach wechselst du zu Free: Die Karte ist dann nicht mehr verfügbar und du kannst keine Zuhause oder Dateien über dem Limit hinzufügen. Bereits hinzugefügte Daten werden nicht gelöscht.",
+      text: "{plan} gilt bis {date}, danach wechselt die ganze Familie zu Free. Nur die ersten 2 hinzugefügten Häuser bleiben zugänglich. Weitere Häuser und Daten bleiben bis zum Upgrade gesperrt, werden aber nicht gelöscht. Die Karte ist nicht verfügbar; neue Dateien über dem Limit können nicht hinzugefügt werden.",
       keep: "Abo behalten",
       confirm: "Abo kündigen",
     },

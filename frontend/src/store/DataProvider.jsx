@@ -58,7 +58,7 @@ export default function DataProvider({ children }) {
   const [me, setMe] = useState(null);
   const [family, setFamily] = useState(null);
   const [apiMembers, setApiMembers] = useState([]);
-  const [homes, setHomes] = useState([]);
+  const [storedHomes, setHomes] = useState([]);
   const [products, setProducts] = useState([]);
   const [operations, setOperations] = useState([]);
   const [openingBalance, setOpeningBalance] = useState(0);
@@ -92,6 +92,28 @@ export default function DataProvider({ children }) {
   const currentUserId = me?.id ?? null;
   const familyId = family?.id ?? null;
   const plan = PLANS[activePlanId(subscription)];
+  const homes = useMemo(() => storedHomes.map((home, index) => ({ ...home, locked: index >= plan.homes })), [storedHomes, plan.homes]);
+
+  useEffect(() => {
+    if (status !== "ready" || !familyId) return undefined;
+    let stopped = false;
+    let busy = false;
+    async function refreshPlan() {
+      if (busy || document.hidden) return;
+      busy = true;
+      try {
+        const sub = await api(`/families/${familyId}/subscription`);
+        if (!stopped) {
+          setSubscription(mapSubscription(sub));
+          await loadHomes(familyId);
+        }
+      } catch { /* A temporary network failure must not end the session. */ }
+      finally { busy = false; }
+    }
+    const timer = setInterval(refreshPlan, 30000);
+    window.addEventListener("focus", refreshPlan);
+    return () => { stopped = true; clearInterval(timer); window.removeEventListener("focus", refreshPlan); };
+  }, [familyId, status]);
 
   // Ссылки для обработчиков WebSocket: им нужны свежие значения без переподключения.
   const familyRef = useRef(null);
@@ -136,6 +158,7 @@ export default function DataProvider({ children }) {
     const { items } = await api(`/families/${fid}/homes`);
     const full = await Promise.all(
       items.map(async (h) => {
+        if (h.locked) return { home: mapHome(h), products: [] };
         const [details, list] = await Promise.all([
           api(`/families/${fid}/homes/${h.id}`),
           api(`/families/${fid}/homes/${h.id}/products`),
@@ -536,6 +559,7 @@ export default function DataProvider({ children }) {
   async function subscribe(planId, period) {
     const sub = await api(base("/subscription"), { method: "POST", body: { plan: toApi.plan(planId), period } });
     setSubscription(mapSubscription(sub));
+    await loadHomes(familyRef.current);
   }
 
   function setAutoRenew(on) {

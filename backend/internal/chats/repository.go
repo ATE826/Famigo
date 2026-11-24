@@ -121,7 +121,12 @@ func toMessage(c *fieldcrypt.Cipher, m models.Message) Message {
 	msg := Message{ID: m.ID, UserID: m.UserID, CreatedAt: m.CreatedAt, Deleted: m.DeletedAt != nil}
 	if !msg.Deleted {
 		msg.Text = decryptText(c, m)
-		msg.Details = []byte(m.Details)
+		details, err := decryptDetails(c, m)
+		if err != nil {
+			msg.Text = undecryptable
+		} else {
+			msg.Details = []byte(details)
+		}
 	}
 	return msg
 }
@@ -184,8 +189,14 @@ func listMessages(db *gorm.DB, c *fieldcrypt.Cipher, chatID uuid.UUID, before *t
 // он нужен до записи, чтобы привязать к нему шифртекст (messageAAD).
 func insertMessage(db *gorm.DB, c *fieldcrypt.Cipher, chatID, userID uuid.UUID, text string, details ...string) (Message, error) {
 	m := models.Message{ID: uuid.New(), ChatID: chatID, UserID: &userID}
+	plainDetails := "{}"
 	if len(details) > 0 {
-		m.Details = details[0]
+		plainDetails = details[0]
+	}
+	var err error
+	m.Details, err = encryptDetails(c, m, plainDetails)
+	if err != nil {
+		return Message{}, err
 	}
 	sealed, err := c.Encrypt(text, messageAAD(chatID, m.ID))
 	if err != nil {
@@ -196,7 +207,7 @@ func insertMessage(db *gorm.DB, c *fieldcrypt.Cipher, chatID, userID uuid.UUID, 
 		return Message{}, err
 	}
 	// Автору и участникам отдаём открытый текст, который мы только что получили.
-	return Message{ID: m.ID, UserID: &userID, Text: text, Details: []byte(m.Details), CreatedAt: m.CreatedAt}, nil
+	return Message{ID: m.ID, UserID: &userID, Text: text, Details: []byte(plainDetails), CreatedAt: m.CreatedAt}, nil
 }
 
 // deleteMessage — удалить можно только своё сообщение (условие user_id = ?).
@@ -204,7 +215,7 @@ func insertMessage(db *gorm.DB, c *fieldcrypt.Cipher, chatID, userID uuid.UUID, 
 func deleteMessage(db *gorm.DB, chatID, messageID, userID uuid.UUID) (bool, error) {
 	res := db.Model(&models.Message{}).
 		Where("chat_id = ? AND id = ? AND user_id = ? AND deleted_at IS NULL", chatID, messageID, userID).
-		Updates(map[string]any{"deleted_at": gorm.Expr("now()"), "text": ""})
+		Updates(map[string]any{"deleted_at": gorm.Expr("now()"), "text": "", "details": "{}"})
 	return res.RowsAffected > 0, res.Error
 }
 

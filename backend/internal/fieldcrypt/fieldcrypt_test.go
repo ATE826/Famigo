@@ -12,6 +12,33 @@ func key(id uint16, fill byte) Key {
 	return Key{ID: id, Secret: bytes.Repeat([]byte{fill}, KeySize)}
 }
 
+func TestBinaryEncryption(t *testing.T) {
+	c := mustNew(t, key(1, 'a'))
+	plain := []byte{0, 255, 1, 0, 128, 7}
+	stored, err := c.EncryptBytes(plain, "attachment-A")
+	if err != nil || bytes.Equal(stored, plain) {
+		t.Fatal("binary content was not encrypted")
+	}
+	got, err := c.DecryptBytes(stored, "attachment-A")
+	if err != nil || !bytes.Equal(got, plain) {
+		t.Fatal("binary round trip failed")
+	}
+	if _, err = c.DecryptBytes(stored, "attachment-B"); err == nil {
+		t.Fatal("attachment relocation accepted")
+	}
+	stored[len(stored)-1] ^= 1
+	if _, err = c.DecryptBytes(stored, "attachment-A"); err == nil {
+		t.Fatal("modified attachment accepted")
+	}
+	if _, err = mustNew(t, key(2, 'b')).DecryptBytes(stored, "attachment-A"); !errors.Is(err, ErrUnknownKey) {
+		t.Fatal("missing key accepted")
+	}
+	legacy, err := c.DecryptBytes(plain, "attachment-A")
+	if err != nil || !bytes.Equal(legacy, plain) {
+		t.Fatal("legacy binary unreadable")
+	}
+}
+
 func mustNew(t *testing.T, keys ...Key) *Cipher {
 	t.Helper()
 	c, err := New(keys)

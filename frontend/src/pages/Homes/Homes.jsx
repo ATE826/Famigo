@@ -52,6 +52,7 @@ function Homes() {
             </div>
             <div className={styles.info}>
               <h2 className={styles.name}>{h.name}</h2>
+              {h.locked && <p className={styles.locked}>{t("homeAccess.title")}</p>}
               <span className={styles.place}>{h.place}</span>
               <div className={styles.tags}>
                 <span className={styles.tagGreen}>{roomsLabel(h.rooms)}</span>

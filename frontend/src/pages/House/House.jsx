@@ -1,3 +1,4 @@
+import LockedHome from "../../components/LockedHome/LockedHome";
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import Avatar from "../../components/Avatar/Avatar";
@@ -31,6 +32,8 @@ function House() {
   const [expandedId, setExpandedId] = useState(null);
   const [removingId, setRemovingId] = useState(null);
   const home = homes.find((h) => h.id === id);
+
+  if (home?.locked) return <LockedHome home={home} />;
 
   if (!home) {
     return <Navigate to="/more/homes" replace />;

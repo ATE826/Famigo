@@ -33,7 +33,7 @@ func toHome(h models.Home) Home {
 
 func listHomes(db *gorm.DB, familyID uuid.UUID) ([]Home, error) {
 	var rows []models.Home
-	if err := homesQuery(db, familyID).Order("homes.created_at").Find(&rows).Error; err != nil {
+	if err := homesQuery(db, familyID).Order("homes.created_at, homes.id").Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	homes := make([]Home, len(rows))

@@ -13,6 +13,7 @@ import { useData } from "../../store/DataContext";
 import { homeOf } from "../../utils/homes";
 import AiSuggest from "./AiSuggest";
 import Favorites from "./Favorites";
+import LockedHome from "../../components/LockedHome/LockedHome";
 
 import styles from "./Recipes.module.css";
 
@@ -36,6 +37,9 @@ function Recipes() {
     if(generating)return;
     setSelectedIds((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
   }
+
+  const selectedHome = homes.find((h) => h.id === homeId);
+  if (selectedHome?.locked) return <LockedHome home={selectedHome} />;
 
   return (
     <Page>

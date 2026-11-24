@@ -73,7 +73,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, db *gorm.DB, log *slog.Log
 	cookie := jsonAPI.Group("", refreshLimiter.ByIP("refresh:"), httpx.SameOrigin(cfg.AllowedOrigins))
 	authed := jsonAPI.Group("", auth.RequireAuth(tokens, db))
 	authedUpload := uploadAPI.Group("", auth.RequireAuth(tokens, db))
-	family := authed.Group("/families/:familyID", families.RequireMember(db))
+	family := authed.Group("/families/:familyID", families.RequireMember(db), subsService.RequireHomeAccess())
 
 	sqlDB, err := db.DB()
 	if err != nil {

@@ -48,6 +48,16 @@
   font-size: 14px;
 }
 
+.locked {
+  margin: 6px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-soft);
+  color: var(--on-soft);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
 .tags {
   display: flex;
   gap: 8px;

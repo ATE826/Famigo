@@ -1,3 +1,4 @@
+import LockedHome from "../../components/LockedHome/LockedHome";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Card from "../../components/Card/Card";
@@ -40,6 +41,8 @@ function Fridge() {
       (category === ALL || p.cat === category) &&
       p.name.toLowerCase().includes(query.trim().toLowerCase()),
   );
+
+  if (home?.locked) return <LockedHome home={home} />;
 
   if (!home) {
     return (

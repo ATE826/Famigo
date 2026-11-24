@@ -91,6 +91,7 @@ export function mergeMe(member, me) {
 
 export function mapHome(h, tasks = []) {
   return {
+    locked: Boolean(h.locked),
     id: h.id,
     name: h.name,
     kind: h.kind,

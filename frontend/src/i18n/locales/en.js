@@ -1,4 +1,5 @@
 const en = {
+  homeAccess: {"title":"Home unavailable on your current plan","text":"Your home data is saved. Free includes the first 2 homes added; Premium includes the first 3. Upgrade to restore access."},
   reset: {
   accountMissing: "No account was found with this email",
   "emailTitle": "Reset your password",
@@ -741,7 +742,7 @@ const en = {
     },
     cancelDialog: {
       title: "Cancel your subscription?",
-      text: "The {plan} plan stays active until {date}, then you'll switch to Free: the map will be unavailable and you won't be able to add new homes or files beyond the limit. Data you've already added is not deleted.",
+      text: "{plan} remains active until {date}, then the whole family moves to Free. Only the first 2 homes added remain accessible. Other homes and their data are kept but locked until you upgrade. The map becomes unavailable and new files above the limit cannot be added.",
       keep: "Keep subscription",
       confirm: "Cancel subscription",
     },

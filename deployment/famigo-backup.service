@@ -1,0 +1,9 @@
+[Unit]
+Description=Famigo database and uploads backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /opt/famigo/deployment/backup.sh
+UMask=0077

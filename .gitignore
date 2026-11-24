@@ -1,8 +1,37 @@
+# Зависимости и результаты сборки.
 node_modules/
 dist/
-.DS_Store
+coverage/
+
+# Временные файлы, кеши и журналы.
+/tmp/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
 *.log
+*.tmp
+*.bak
+*.swp
+~$*
+.DS_Store
+Thumbs.db
+Desktop.ini
+
 # Секреты. Обычные настройки (.env) в репозитории, пароли и ключи — нет.
 secrets.env
 *.secrets.env
 !secrets.env.example
+.env.local
+.env.*.local
+.ssh/
+*.ppk
+
+# Локальные резервные копии и выгрузки баз.
+/backups/
+*.dump
+*.sql.gz
+
+# Личные инструкции по обслуживанию установленного сервера.
+/_docs/guides/
+/deployment/README.md

@@ -1,4 +1,5 @@
 const es = {
+  homeAccess: {"title":"Vivienda no disponible con el plan actual","text":"Los datos están guardados. Free permite acceder a las primeras 2 viviendas añadidas y Premium a las primeras 3. Mejora el plan para recuperar el acceso."},
   reset: {
   accountMissing: "No se encontró una cuenta con este correo",
   "emailTitle": "Restablecer contraseña",
@@ -741,7 +742,7 @@ const es = {
     },
     cancelDialog: {
       title: "¿Cancelar la suscripción?",
-      text: "El plan {plan} seguirá activo hasta el {date}; después pasarás a Free: el mapa dejará de estar disponible y no podrás añadir casas ni archivos por encima del límite. Los datos ya añadidos no se eliminan.",
+      text: "{plan} estará activo hasta {date}; después toda la familia pasará a Free. Solo estarán disponibles las primeras 2 viviendas añadidas. Las demás viviendas y sus datos se conservarán, pero quedarán bloqueadas hasta mejorar el plan. El mapa no estará disponible y no se podrán añadir archivos por encima del límite.",
       keep: "Mantener suscripción",
       confirm: "Cancelar suscripción",
     },

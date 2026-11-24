@@ -1,3 +1,4 @@
+import LockedHome from "../../components/LockedHome/LockedHome";
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import Button from "../../components/Button/Button";
@@ -20,6 +21,8 @@ function TaskCreate() {
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const home = homes.find((h) => h.id === id);
+
+  if (home?.locked) return <LockedHome home={home} />;
 
   if (!home) {
     return <Navigate to="/more/homes" replace />;

@@ -1,4 +1,4 @@
-// Пакет fieldcrypt — шифрование отдельных полей в базе (сейчас: текст сообщений чата).
+// Пакет fieldcrypt — шифрование отдельных полей в базе (тексты, детали и вложения чатов).
 //
 // Зачем: если у кого-то окажется дамп базы или резервная копия, сообщения в нём будут
 // нечитаемыми. Ключ хранится не в базе, а в secrets.env (MESSAGE_KEYS).
@@ -19,10 +19,11 @@
 // (так работают старые сообщения до миграции и режим разработки без ключа).
 //
 // Ограничение: nonce случайный, 96 бит. NIST советует не больше 2^32 (около 4 миллиардов)
-// сообщений на один ключ. На таком объёме ключ нужно менять: номер ключа в записи это позволяет.
+// операций шифрования на один ключ. На таком объёме ключ нужно менять: номер ключа в записи это позволяет.
 package fieldcrypt
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -33,6 +34,53 @@ import (
 	"strconv"
 	"strings"
 )
+
+const BinaryPrefix = "enc:bin:v1:"
+
+func (c *Cipher) ActiveBinaryPrefix() []byte {
+	return []byte(BinaryPrefix + strconv.Itoa(int(c.active)) + ":")
+}
+
+// Binary envelopes avoid Base64 expansion for large attachments.
+func (c *Cipher) EncryptBytes(plain []byte, aad string) ([]byte, error) {
+	if !c.Enabled() {
+		return plain, nil
+	}
+	gcm := c.aead[c.active]
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, err
+	}
+	out := append(c.ActiveBinaryPrefix(), nonce...)
+	return gcm.Seal(out, nonce, plain, []byte(aad)), nil
+}
+
+func (c *Cipher) DecryptBytes(stored []byte, aad string) ([]byte, error) {
+	rest, encrypted := bytes.CutPrefix(stored, []byte(BinaryPrefix))
+	if !encrypted {
+		return stored, nil
+	}
+	idText, raw, ok := bytes.Cut(rest, []byte(":"))
+	if !ok {
+		return nil, ErrDecrypt
+	}
+	id, err := strconv.ParseUint(string(idText), 10, 16)
+	if err != nil {
+		return nil, ErrDecrypt
+	}
+	gcm, ok := c.aead[uint16(id)]
+	if !ok {
+		return nil, ErrUnknownKey
+	}
+	if len(raw) < gcm.NonceSize() {
+		return nil, ErrDecrypt
+	}
+	plain, err := gcm.Open(nil, raw[:gcm.NonceSize()], raw[gcm.NonceSize():], []byte(aad))
+	if err != nil {
+		return nil, ErrDecrypt
+	}
+	return plain, nil
+}
 
 const (
 	// Prefix — признак зашифрованной записи.

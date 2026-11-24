@@ -129,6 +129,10 @@ func (h *Handler) richSend(c *gin.Context) {
 				httpx.Respond(c, errChatNotFound)
 				return
 			}
+			if err := decryptMedia(h.service.cipher, &row); err != nil {
+				httpx.Respond(c, err)
+				return
+			}
 			row.ID = uuid.New()
 			row.ChatID = chatID
 			row.MessageID = nil
@@ -157,6 +161,9 @@ func (h *Handler) saveRich(c *gin.Context, chatID uuid.UUID, text string, detail
 		}
 		if media != nil {
 			media.MessageID = &msg.ID
+			if err = encryptMedia(h.service.cipher, media); err != nil {
+				return err
+			}
 			if err = tx.Create(media).Error; err != nil {
 				return err
 			}
@@ -241,6 +248,10 @@ func (h *Handler) getMedia(c *gin.Context) {
 		return
 	}
 	c.Header("X-Content-Type-Options", "nosniff")
+	if err := decryptMedia(h.service.cipher, &row); err != nil {
+		httpx.Respond(c, err)
+		return
+	}
 	c.Header("Cache-Control", "no-store")
 	c.Data(http.StatusOK, row.Mime, row.Data)
 }

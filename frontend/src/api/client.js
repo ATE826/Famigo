@@ -97,6 +97,7 @@ export async function api(path, options) {
 // Текст ошибки для человека: по известным кодам — на языке интерфейса,
 // иначе — сообщение сервера.
 const KNOWN = {
+  home_plan_locked: 'homeAccess.text',
   captcha_required: 'captcha.required',
   captcha_invalid: 'captcha.invalid',
   captcha_unavailable: 'captcha.unavailable',

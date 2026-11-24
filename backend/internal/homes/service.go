@@ -29,7 +29,23 @@ var (
 )
 
 func (s *Service) List(ctx context.Context, familyID uuid.UUID) ([]Home, error) {
-	return listHomes(s.db.WithContext(ctx), familyID)
+	db := s.db.WithContext(ctx)
+	items, err := listHomes(db, familyID)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := s.subs.AccessibleHomeIDs(db, familyID)
+	if err != nil {
+		return nil, err
+	}
+	allowed := make(map[uuid.UUID]bool, len(ids))
+	for _, id := range ids {
+		allowed[id] = true
+	}
+	for i := range items {
+		items[i].Locked = !allowed[items[i].ID]
+	}
+	return items, nil
 }
 
 func (s *Service) Get(ctx context.Context, familyID, homeID uuid.UUID) (HomeDetails, error) {

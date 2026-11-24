@@ -719,6 +719,69 @@ func TestAPIIntegration(t *testing.T) {
 		}
 	})
 
+	step("истечение семейной подписки блокирует лишние дома без удаления данных", func(t *testing.T) {
+		fid := str(anton.expect(201, "POST", "/api/families", map[string]any{"name": "Лимит доступа"}).Body["id"])
+		t.Cleanup(func() { db.Exec("DELETE FROM families WHERE id=?", fid) })
+		if err := db.Exec("INSERT INTO family_members(family_id,user_id,role) VALUES (?,?,'member')", fid, bobID).Error; err != nil {
+			t.Fatal(err)
+		}
+		base := "/api/families/" + fid
+		anton.expect(200, "POST", base+"/subscription", map[string]any{"plan": "premium_plus", "period": "month"})
+		var ids []string
+		for i := 0; i < 4; i++ {
+			hid := str(anton.expect(201, "POST", base+"/homes", map[string]any{"name": fmt.Sprintf("Дом %d", i), "kind": "house", "rooms": 2, "peopleCount": 1}).Body["id"])
+			if err := db.Exec("UPDATE homes SET created_at=? WHERE id=?", time.Now().Add(time.Duration(i-5)*time.Hour), hid).Error; err != nil {
+				t.Fatal(err)
+			}
+			ids = append(ids, hid)
+		}
+		path := base + "/homes/" + ids[3]
+		taskID := str(anton.expect(201, "POST", path+"/tasks", map[string]any{"text": "Сохранённое дело"}).Body["id"])
+		productID := str(anton.expect(201, "POST", path+"/products", map[string]any{"name": "Рис", "category": "other", "quantity": 1, "unit": "kg", "expiresOn": "2027-01-01"}).Body["id"])
+		if err := db.Exec("UPDATE subscriptions SET renews_at=now()-interval '1 second' WHERE family_id=?", fid).Error; err != nil {
+			t.Fatal(err)
+		}
+		for _, client := range []*client{anton, bob} {
+			if client.expect(200, "GET", base+"/subscription", nil).Body["plan"].(map[string]any)["id"] != "free" {
+				t.Fatal("тариф не истёк для всей семьи")
+			}
+			items := client.expect(200, "GET", base+"/homes", nil).Body["items"].([]any)
+			if len(items) != 4 {
+				t.Fatal("дома потеряны")
+			}
+			for i, item := range items {
+				h := item.(map[string]any)
+				if h["id"] != ids[i] || h["locked"] != (i >= 2) {
+					t.Fatal("неверный порядок или блокировка домов")
+				}
+				if i < 2 {
+					client.expect(200, "GET", base+"/homes/"+ids[i], nil)
+				}
+			}
+			for _, endpoint := range []string{path, path + "/products"} {
+				if !strings.Contains(client.expect(403, "GET", endpoint, nil).Raw, "home_plan_locked") {
+					t.Fatal("нет ошибки тарифа")
+				}
+			}
+			client.expect(403, "PUT", path, map[string]any{"name": "Изменение"})
+			client.expect(403, "DELETE", path, nil)
+			client.expect(403, "POST", path+"/tasks", map[string]any{"text": "Обход"})
+			client.expect(403, "PATCH", path+"/tasks/"+taskID, map[string]any{"done": true})
+			client.expect(403, "DELETE", path+"/products/"+productID, nil)
+			client.expect(403, "POST", path+"/recipes/suggest", map[string]any{})
+		}
+		anton.expect(200, "POST", base+"/subscription", map[string]any{"plan": "premium", "period": "month"})
+		bob.expect(200, "GET", base+"/homes/"+ids[2], nil)
+		bob.expect(403, "GET", path, nil)
+		anton.expect(200, "POST", base+"/subscription", map[string]any{"plan": "premium_plus", "period": "month"})
+		if !strings.Contains(bob.expect(200, "GET", path, nil).Raw, taskID) {
+			t.Fatal("дело не восстановилось")
+		}
+		if !strings.Contains(bob.expect(200, "GET", path+"/products", nil).Raw, productID) {
+			t.Fatal("продукт не восстановился")
+		}
+	})
+
 	step("SQL-инъекции сохраняются как обычный текст", func(t *testing.T) {
 		evil := "'); DROP TABLE users;--"
 		r := anton.expect(201, "POST", "/api/families/"+familyID+"/homes/"+homeA+"/tasks",
@@ -1075,6 +1138,87 @@ func TestAPIIntegration(t *testing.T) {
 		forwardedAsset := str(forwarded.Body["details"].(map[string]any)["media"].(map[string]any)["id"])
 		bob.expect(200, "GET", target+"/media/"+forwardedAsset, nil)
 		bob.expect(404, "GET", target+"/media/"+asset, nil)
+		// Stored content is encrypted, while authorized HTTP responses remain unchanged.
+		var stored models.Message
+		stored = models.Message{}
+		if err := db.First(&stored, "id=?", sent.Body["id"]).Error; err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(stored.Details, "Тестовый рис") || !strings.Contains(stored.Details, "enc:v1:1:") {
+			t.Fatal("recipe details stored openly")
+		}
+		stored = models.Message{}
+		if err := db.First(&stored, "id=?", reply.Body["id"]).Error; err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(stored.Details, "Тестовый рис") {
+			t.Fatal("reply quote stored openly")
+		}
+		var attachment struct {
+			Data       []byte
+			Name, Mime string
+		}
+		if err := db.Table("chat_media").Where("id=?", asset).Take(&attachment).Error; err != nil {
+			t.Fatal(err)
+		}
+		if bytes.Equal(attachment.Data, pngFile(t)) || attachment.Name == "test.png" || attachment.Mime == "image/png" {
+			t.Fatal("media stored openly")
+		}
+		if got := bob.expect(200, "GET", base+"/media/"+asset, nil); got.Raw != string(pngFile(t)) || got.Header.Get("Content-Type") != "image/png" {
+			t.Fatal("media download changed")
+		}
+		// Rotation and removal of the old key must preserve media and JSON details.
+		cipher21, _ := fieldcrypt.New([]fieldcrypt.Key{key2, key1})
+		if _, failed, err := chats.Reencrypt(ctx, db, cipher21, log); err != nil || failed != 0 {
+			t.Fatalf("rich rotation: %v", err)
+		}
+		cipher2, _ := fieldcrypt.New([]fieldcrypt.Key{key2})
+		if err := db.Table("chat_media").Where("id=?", asset).Take(&attachment).Error; err != nil {
+			t.Fatal(err)
+		}
+		mediaBinding := "media|" + chat + "|" + str(media.Body["id"]) + "|" + asset
+		if plain, err := cipher2.DecryptBytes(attachment.Data, mediaBinding+"|data"); err != nil || !bytes.Equal(plain, pngFile(t)) {
+			t.Fatal("rotated attachment requires old key")
+		}
+		if name, err := cipher2.Decrypt(attachment.Name, mediaBinding+"|name"); err != nil || name != "test.png" {
+			t.Fatal("rotated filename requires old key")
+		}
+		stored = models.Message{}
+		if err := db.First(&stored, "id=?", sent.Body["id"]).Error; err != nil {
+			t.Fatal(err)
+		}
+		var detailEnvelope string
+		if err := json.Unmarshal([]byte(stored.Details), &detailEnvelope); err != nil {
+			t.Fatal(err)
+		}
+		if plain, err := cipher2.Decrypt(detailEnvelope, "message|"+chat+"|"+str(sent.Body["id"])+"|details"); err != nil || !strings.Contains(plain, "Тестовый рис") {
+			t.Fatal("rotated recipe unreadable")
+		}
+		cipher12, _ := fieldcrypt.New([]fieldcrypt.Key{key1, key2})
+		if _, failed, err := chats.Reencrypt(ctx, db, cipher12, log); err != nil || failed != 0 {
+			t.Fatalf("restore key: %v", err)
+		}
+		// Simulate historical plaintext records, then migrate them with the same key.
+		plainDetails, _ := json.Marshal(map[string]any{"recipe": dish})
+		db.Model(&models.Message{}).Where("id=?", sent.Body["id"]).Update("details", string(plainDetails))
+		db.Table("chat_media").Where("id=?", asset).Updates(map[string]any{"data": pngFile(t), "name": "test.png", "mime": "image/png"})
+		cipher1, _ := fieldcrypt.New([]fieldcrypt.Key{key1})
+		if _, failed, err := chats.Reencrypt(ctx, db, cipher1, log); err != nil || failed != 0 {
+			t.Fatalf("legacy rich migration: %v", err)
+		}
+		if !strings.Contains(bob.expect(200, "GET", base+"/messages", nil).Raw, "Тестовый рис") {
+			t.Fatal("legacy recipe lost")
+		}
+		if got := bob.expect(200, "GET", base+"/media/"+asset, nil); got.Raw != string(pngFile(t)) {
+			t.Fatal("legacy media lost")
+		}
+		// Corrupt ciphertext must never be served as a file.
+		db.Table("chat_media").Where("id=?", asset).Take(&attachment)
+		corrupt := append([]byte(nil), attachment.Data...)
+		corrupt[len(corrupt)-1] ^= 1
+		db.Table("chat_media").Where("id=?", asset).Update("data", corrupt)
+		bob.expect(500, "GET", base+"/media/"+asset, nil)
+		db.Table("chat_media").Where("id=?", asset).Update("data", attachment.Data)
 		anton.expect(204, "DELETE", base+"/messages/"+str(media.Body["id"]), nil)
 		bob.expect(404, "GET", base+"/media/"+asset, nil)
 		bob.expect(200, "GET", target+"/media/"+forwardedAsset, nil)

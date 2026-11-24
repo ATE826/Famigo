@@ -1,4 +1,5 @@
 const zh = {
+  homeAccess: {"title":"当前套餐无法访问此住宅","text":"住宅数据已保留。Free 可访问最先添加的 2 处住宅，Premium 可访问最先添加的 3 处。升级套餐即可恢复访问。"},
   reset: {
   accountMissing: "未找到使用此邮箱的账户",
   "emailTitle": "重置密码",
@@ -738,7 +739,7 @@ const zh = {
     },
     cancelDialog: {
       title: "确定取消订阅吗？",
-      text: "{plan} 套餐有效期至 {date}，之后将切换为 Free：地图将无法使用，超出上限后无法再添加住所和文件。已添加的数据不会被删除。",
+      text: "{plan} 有效至 {date}，之后全家将转为 Free。仅最先添加的 2 处住宅可用，其余住宅及数据保留，但在升级前无法访问。地图将不可用，也无法添加超出限额的新文件。",
       keep: "保留订阅",
       confirm: "取消订阅",
     },

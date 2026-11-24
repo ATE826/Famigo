@@ -1,0 +1,37 @@
+# Run with the base compose file and a private server secrets.env.
+services:
+  db:
+    ports: !reset []
+  backend:
+    environment:
+      APP_ENV: production
+      COOKIE_SECURE: "true"
+      DEMO_PAYMENTS: "false"
+  frontend:
+    ports: !reset []
+    volumes:
+      - ./deployment/nginx.production.conf:/etc/nginx/conf.d/default.conf:ro
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      SITE_HOST: ${SITE_HOST:?Set SITE_HOST in the server environment file}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL for certificate account contact}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deployment/Caddyfile:/etc/caddy/Caddyfile:ro
+      - famigo-caddy-data:/data
+      - famigo-caddy-config:/config
+    networks:
+      default:
+        ipv4_address: 10.88.0.10
+    depends_on:
+      frontend:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  famigo-caddy-data:
+  famigo-caddy-config:

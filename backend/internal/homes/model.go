@@ -10,6 +10,7 @@ import (
 var kinds = []string{"apartment", "house", "dacha", "other"}
 
 type Home struct {
+	Locked      bool        `json:"locked"`
 	ID          uuid.UUID   `json:"id"`
 	Name        string      `json:"name"`
 	Kind        string      `json:"kind"`

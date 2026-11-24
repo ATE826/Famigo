@@ -1,0 +1,20 @@
+{$SITE_HOST} {
+    tls {
+        issuer acme {
+            email {$ACME_EMAIL}
+        }
+    }
+    header Strict-Transport-Security "max-age=31536000"
+    reverse_proxy frontend:8080
+}
+
+# Keep the existing address available while the new domain is delegated.
+famigoapp.ru {
+    tls {
+        issuer acme {
+            email {$ACME_EMAIL}
+        }
+    }
+    header Strict-Transport-Security "max-age=31536000"
+    reverse_proxy frontend:8080
+}

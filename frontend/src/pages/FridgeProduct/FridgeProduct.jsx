@@ -1,3 +1,4 @@
+import LockedHome from "../../components/LockedHome/LockedHome";
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Button from "../../components/Button/Button";
@@ -33,6 +34,8 @@ function FridgeProduct() {
     expires: product ? fullToShort(product.expires) : "",
   });
   const [errors, setErrors] = useState({});
+
+  if (home?.locked) return <LockedHome home={home} />;
 
   if ((id && !product) || !home) {
     return <Navigate to="/more/fridge" replace />;

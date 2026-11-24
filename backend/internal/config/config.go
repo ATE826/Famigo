@@ -120,7 +120,7 @@ func Load(log *slog.Logger) (Config, error) {
 		return Config{}, err
 	}
 	if cfg.Mail.Provider == "smtp" && cfg.Mail.SMTPPassword == "" {
-		log.Warn("SMTP_PASSWORD не задан: отправка кодов отключена, добавьте пароль приложения Gmail в secrets.env")
+		log.Warn("SMTP_PASSWORD не задан: отправка кодов отключена, добавьте пароль приложения выбранного почтового ящика в secrets.env")
 	}
 	if cfg.AccessTokenTTL, err = getDuration("ACCESS_TOKEN_TTL", 15*time.Minute); err != nil {
 		return Config{}, err
