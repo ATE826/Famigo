@@ -59,7 +59,7 @@ function App() {
       <DataProvider>
         <LanguageProvider>
           <LegalProvider>
-            <BrowserRouter basename="/Famigo">
+            <BrowserRouter basename={import.meta.env.BASE_URL}>
               <EasterEggs>
               <Routes>
                 <Route element={<AuthLayout />}>

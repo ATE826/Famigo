@@ -1,4 +1,5 @@
 .screen {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -58,12 +59,44 @@
 }
 
 .messages {
+  min-height: 0;
+  overscroll-behavior: contain;
   flex: 1;
   overflow-y: auto;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.dropOverlay {
+  position: absolute;
+  inset: 8px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: var(--card);
+  color: var(--text);
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius-card);
+  pointer-events: none;
+}
+.dropOverlay svg {color: var(--primary);}
+.dropOverlay span {color: var(--muted);font-size:14px;}
+@media (max-width: 1023px) {
+  .screen {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--chat-top, 0px);
+    height: var(--chat-height, 100dvh);
+    z-index: 100;
+    overflow: hidden;
+  }
 }
 
 .day {
@@ -229,6 +262,7 @@ a.senderAvatar:hover {filter:brightness(.94);}
 .bubbleOther {overflow-wrap:anywhere;}
 .form {gap:6px;padding:10px 12px calc(12px + env(safe-area-inset-bottom));}
 .send:disabled {opacity:.45;cursor:default;}
+.send > svg {transform:translate(-1px,1px);}
 .reply {display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--card);border-top:1px solid var(--border);color:var(--link);}
 .reply>svg {flex:none;}
 .reply>div {display:grid;gap:2px;min-width:0;flex:1;}
@@ -239,3 +273,24 @@ a.senderAvatar:hover {filter:brightness(.94);}
 .feedback {padding:8px 16px;background:var(--primary-soft);color:var(--text);margin:0;font-size:13px;overflow-wrap:anywhere;}
 @media(min-width:768px){.mine {max-width:min(72%,520px);}.other {max-width:min(78%,560px);}}
 @media(max-width:480px){.messages {padding:12px;}.mine {max-width:90%;}.other {max-width:94%;}.bubbleMine,.bubbleOther {padding:9px 11px;}.form {gap:4px;padding-inline:8px;}.input {padding-inline:14px;height:44px;}.send {width:44px;height:44px;}}
+
+.typing { flex: none; min-height: 24px; padding: 3px 16px; font-size: 12px; line-height: 18px; color: var(--muted); overflow-wrap: anywhere; }
+
+.bubbleMine.roundBubble,.bubbleOther.roundBubble {padding:0;background:transparent;border:0;border-radius:0;}
+.roundBubble .author {padding:0 6px 4px;}
+.recordingForm .input,.recordingForm> :first-child {visibility:hidden;}
+
+.selectionBar {display:flex;flex:none;align-items:center;gap:8px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--border);color:var(--text);}
+.selectionBar strong {flex:1;font-size:14px;min-width:0;}
+.selectionBar button {display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;min-width:44px;padding:8px 12px;border:0;border-radius:12px;background:transparent;color:var(--link);font:inherit;font-size:13px;cursor:pointer;}
+.selectionBar button:hover:not(:disabled) {background:var(--primary-soft);}
+.selectionBar button:disabled {opacity:.4;cursor:default;}
+.selectionBar button:focus-visible {outline:2px solid var(--primary);}
+.selectable {cursor:pointer;padding:6px;border-radius:18px;}
+.selected {background:color-mix(in srgb,var(--primary) 18%,transparent);box-shadow:inset 0 0 0 2px var(--primary);}
+.selectable::before {content:'';display:block;align-self:flex-start;width:16px;height:16px;border:1px solid var(--border);border-radius:50%;background:var(--card);flex:none;}
+.selected::before {background:var(--primary);border-color:var(--primary);box-shadow:inset 0 0 0 3px var(--card);}
+@media(max-width:480px){.selectionBar {gap:4px;padding:6px 8px;}.selectionBar button span {display:none;}}
+
+.bubbleMine.mediaBubble,.bubbleOther.mediaBubble {min-width:0;max-width:100%;width:fit-content;padding:6px;border:0;border-radius:16px;}
+.mediaBubble .author {padding:2px 6px 4px;}

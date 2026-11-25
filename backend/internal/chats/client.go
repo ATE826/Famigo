@@ -45,12 +45,15 @@ type Client struct {
 	sessionID uuid.UUID
 	send      chan []byte
 
-	mu     sync.Mutex
-	closed bool
+	mu         sync.Mutex
+	closed     bool
+	typing     *typingState // guarded by hub.mu
+	lastTyping time.Time    // accessed only by readPump
 }
 
 // incoming — команда от клиента.
 type incoming struct {
+	Typing     bool        `json:"typing"`
 	MessageIDs []uuid.UUID `json:"messageIds"`
 	Type       string      `json:"type"`
 	FamilyID   string      `json:"familyId"`
@@ -136,6 +139,12 @@ func (c *Client) handle(msg incoming) {
 
 	var err error
 	switch msg.Type {
+	case "typing":
+		if msg.Typing && time.Since(c.lastTyping) < time.Second {
+			return
+		}
+		c.lastTyping = time.Now()
+		err = c.updateTyping(ctx, familyID, chatID, msg.Typing)
 	case "send":
 		v := httpx.NewValidator()
 		text := v.MultilineText("text", msg.Text, 1, 2000)

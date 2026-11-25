@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -28,19 +29,23 @@ type mediaRow struct {
 func (mediaRow) TableName() string { return "chat_media" }
 
 type mediaInfo struct {
-	ID   uuid.UUID `json:"id"`
-	Mime string    `json:"mime"`
-	Name string    `json:"name"`
+	Kind     string    `json:"kind,omitempty"`
+	Duration float64   `json:"duration,omitempty"`
+	ID       uuid.UUID `json:"id"`
+	Mime     string    `json:"mime"`
+	Name     string    `json:"name"`
 }
 type quote struct {
 	ID   uuid.UUID `json:"id"`
 	Text string    `json:"text"`
 }
 type richDetails struct {
-	Reply     *quote        `json:"reply,omitempty"`
-	Forwarded bool          `json:"forwarded,omitempty"`
-	Media     *mediaInfo    `json:"media,omitempty"`
-	Recipe    *recipes.Dish `json:"recipe,omitempty"`
+	Reply      *quote        `json:"reply,omitempty"`
+	Forwarded  bool          `json:"forwarded,omitempty"`
+	Media      *mediaInfo    `json:"media,omitempty"`
+	MediaItems []mediaInfo   `json:"mediaItems,omitempty"`
+	Caption    string        `json:"caption,omitempty"`
+	Recipe     *recipes.Dish `json:"recipe,omitempty"`
 }
 type richRequest struct {
 	Text         string        `json:"text"`
@@ -86,7 +91,7 @@ func (h *Handler) richSend(c *gin.Context) {
 		return
 	}
 	details := richDetails{Recipe: req.Recipe}
-	var media *mediaRow
+	var media []mediaRow
 	if req.Recipe != nil {
 		raw, _ := json.Marshal(req.Recipe)
 		if len(raw) > 60000 || req.Recipe.Title == "" || len(req.Recipe.Steps) == 0 {
@@ -123,9 +128,13 @@ func (h *Handler) richSend(c *gin.Context) {
 		}
 		details.Reply = nil
 		details.Forwarded = true
+		infos := details.MediaItems
 		if details.Media != nil {
+			infos = []mediaInfo{*details.Media}
+		}
+		for i := range infos {
 			var row mediaRow
-			if h.service.db.WithContext(c.Request.Context()).Where("id = ? AND chat_id = ? AND message_id = ?", details.Media.ID, *req.SourceChatID, m.ID).Take(&row).Error != nil {
+			if h.service.db.WithContext(c.Request.Context()).Where("id = ? AND chat_id = ? AND message_id = ?", infos[i].ID, *req.SourceChatID, m.ID).Take(&row).Error != nil {
 				httpx.Respond(c, errChatNotFound)
 				return
 			}
@@ -136,17 +145,22 @@ func (h *Handler) richSend(c *gin.Context) {
 			row.ID = uuid.New()
 			row.ChatID = chatID
 			row.MessageID = nil
-			media = &row
-			details.Media = &mediaInfo{ID: row.ID, Mime: row.Mime, Name: row.Name}
+			media = append(media, row)
+			infos[i].ID = row.ID
+		}
+		if details.Media != nil {
+			details.Media = &infos[0]
+		} else {
+			details.MediaItems = infos
 		}
 	}
 	if req.Text == "" {
 		httpx.Respond(c, httpx.BadRequest("empty_message", "Введите сообщение"))
 		return
 	}
-	h.saveRich(c, chatID, req.Text, details, media)
+	h.saveRich(c, chatID, req.Text, details, media...)
 }
-func (h *Handler) saveRich(c *gin.Context, chatID uuid.UUID, text string, details richDetails, media *mediaRow) {
+func (h *Handler) saveRich(c *gin.Context, chatID uuid.UUID, text string, details richDetails, media ...mediaRow) {
 	if !h.service.sendLimiter.Allow(auth.UserID(c).String()) {
 		httpx.Respond(c, httpx.TooManyRequests())
 		return
@@ -159,12 +173,13 @@ func (h *Handler) saveRich(c *gin.Context, chatID uuid.UUID, text string, detail
 		if err != nil {
 			return err
 		}
-		if media != nil {
-			media.MessageID = &msg.ID
-			if err = encryptMedia(h.service.cipher, media); err != nil {
+		for i := range media {
+			row := &media[i]
+			row.MessageID = &msg.ID
+			if err = encryptMedia(h.service.cipher, row); err != nil {
 				return err
 			}
-			if err = tx.Create(media).Error; err != nil {
+			if err = tx.Create(row).Error; err != nil {
 				return err
 			}
 		}
@@ -193,36 +208,113 @@ func (h *Handler) uploadMedia(c *gin.Context) {
 		return
 	}
 	defer c.Request.MultipartForm.RemoveAll()
-	file, header, err := c.Request.FormFile("file")
-	if err != nil {
-		httpx.Respond(c, httpx.BadRequest("invalid_file", "Выберите файл"))
+	headers := c.Request.MultipartForm.File["file"]
+	if len(headers) == 0 || len(headers) > 10 {
+		httpx.Respond(c, httpx.BadRequest("invalid_album", "Выберите от 1 до 10 файлов"))
 		return
 	}
-	defer file.Close()
-	data, err := io.ReadAll(io.LimitReader(file, 25<<20+1))
-	if err != nil || len(data) == 0 || len(data) > 25<<20 {
-		httpx.Respond(c, httpx.BadRequest("invalid_file", "Фото или видео до 25 МБ"))
+	caption := strings.TrimSpace(c.PostForm("text"))
+	if len([]rune(caption)) > 2000 {
+		httpx.Respond(c, httpx.BadRequest("invalid_message", "Подпись слишком длинная"))
 		return
 	}
-	mime := http.DetectContentType(data)
-	if len(data) >= 12 && string(data[4:8]) == "ftyp" && string(data[8:12]) == "qt  " {
-		mime = "video/quicktime"
+	kind := c.PostForm("kind")
+	duration := 0.0
+	if kind != "" {
+		var parseErr error
+		duration, parseErr = strconv.ParseFloat(c.PostForm("duration"), 64)
+		if len(headers) != 1 || (kind != "voice" && kind != "round") || parseErr != nil || !(duration > 0 && duration <= 86400) || (kind == "round" && duration > 60) {
+			httpx.Respond(c, httpx.BadRequest("invalid_recording", "Некорректная запись"))
+			return
+		}
 	}
-	if !allowedMedia(mime) {
-		httpx.Respond(c, httpx.BadRequest("invalid_file", "Поддерживаются JPEG, PNG, GIF, WebP, MP4 и WebM"))
-		return
+	details := richDetails{Caption: caption}
+	if reply := c.PostForm("replyId"); reply != "" {
+		replyID, parseErr := uuid.Parse(reply)
+		if parseErr != nil {
+			httpx.Respond(c, httpx.BadRequest("invalid_reply", "Некорректный ответ"))
+			return
+		}
+		m, sourceErr := h.source(c, chatID, replyID)
+		if sourceErr != nil {
+			httpx.Respond(c, sourceErr)
+			return
+		}
+		runes := []rune(m.Text)
+		if len(runes) > 300 {
+			runes = runes[:300]
+		}
+		details.Reply = &quote{ID: m.ID, Text: string(runes)}
 	}
-	name := filepath.Base(header.Filename)
-	if len(name) > 200 {
-		name = "media"
+	var rows []mediaRow
+	var infos []mediaInfo
+	var names []string
+	var total int64
+	for _, header := range headers {
+		if header.Size <= 0 || header.Size > 25<<20 || total+header.Size > 100<<20 {
+			httpx.Respond(c, httpx.BadRequest("invalid_file", "До 25 МБ на файл и до 100 МБ на сообщение"))
+			return
+		}
+		total += header.Size
+		file, openErr := header.Open()
+		if openErr != nil {
+			httpx.Respond(c, httpx.BadRequest("invalid_file", "Не удалось прочитать файл"))
+			return
+		}
+		data, readErr := io.ReadAll(io.LimitReader(file, 25<<20+1))
+		file.Close()
+		if readErr != nil || len(data) == 0 || len(data) > 25<<20 {
+			httpx.Respond(c, httpx.BadRequest("invalid_file", "Фото или видео до 25 МБ"))
+			return
+		}
+		mime := http.DetectContentType(data)
+		if len(data) >= 12 && string(data[4:8]) == "ftyp" && string(data[8:12]) == "qt  " {
+			mime = "video/quicktime"
+		}
+		if kind == "voice" {
+			if mime == "video/webm" {
+				mime = "audio/webm"
+			}
+			if mime == "video/mp4" {
+				mime = "audio/mp4"
+			}
+			if !strings.HasPrefix(mime, "audio/") && mime != "application/ogg" {
+				httpx.Respond(c, httpx.BadRequest("invalid_recording", "Неверный аудиоформат"))
+				return
+			}
+		}
+		if kind == "round" && !strings.HasPrefix(mime, "video/") {
+			httpx.Respond(c, httpx.BadRequest("invalid_recording", "Неверный видеоформат"))
+			return
+		}
+		if !allowedMedia(mime) || (len(headers) > 1 && !strings.HasPrefix(mime, "image/") && !strings.HasPrefix(mime, "video/")) {
+			httpx.Respond(c, httpx.BadRequest("invalid_file", "Поддерживаются JPEG, PNG, GIF, WebP, MP4 и WebM"))
+			return
+		}
+		name := filepath.Base(header.Filename)
+		if len(name) > 200 {
+			name = "media"
+		}
+		row := mediaRow{ID: uuid.New(), ChatID: chatID, Mime: mime, Name: name, Data: data}
+		rows = append(rows, row)
+		infos = append(infos, mediaInfo{ID: row.ID, Mime: mime, Name: name, Kind: kind, Duration: duration})
+		names = append(names, name)
 	}
-	row := &mediaRow{ID: uuid.New(), ChatID: chatID, Mime: mime, Name: name, Data: data}
-	details := richDetails{Media: &mediaInfo{ID: row.ID, Mime: mime, Name: name}}
-	h.saveRich(c, chatID, name, details, row)
+	if len(infos) == 1 {
+		details.Media = &infos[0]
+	} else {
+		details.MediaItems = infos
+	}
+	text := caption
+	if text == "" {
+		text = strings.Join(names, ", ")
+	}
+	h.saveRich(c, chatID, text, details, rows...)
 }
+
 func allowedMedia(mime string) bool {
 	switch mime {
-	case "image/jpeg", "image/png", "image/gif", "image/webp", "video/mp4", "video/webm", "video/quicktime":
+	case "image/jpeg", "image/png", "image/gif", "image/webp", "video/mp4", "video/webm", "video/quicktime", "audio/webm", "audio/mp4", "audio/ogg", "application/ogg", "audio/mpeg", "audio/wave", "audio/wav":
 		return true
 	}
 	return false

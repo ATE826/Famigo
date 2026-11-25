@@ -147,12 +147,45 @@ func (c *client) upload(path, field, filename string, data []byte, methods ...st
 	w := multipart.NewWriter(&buf)
 	part, _ := w.CreateFormFile(field, filename)
 	part.Write(data)
+	if len(methods) > 1 {
+		for _, option := range methods[1:] {
+			if key, value, ok := strings.Cut(option, "="); ok {
+				w.WriteField(key, value)
+			}
+		}
+	}
 	w.Close()
 	method := "PUT"
 	if len(methods) > 0 {
 		method = methods[0]
 	}
 	req, _ := http.NewRequest(method, c.base+path, &buf)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	resp, err := c.http.Do(req)
+	if err != nil {
+		c.t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	r := response{Status: resp.StatusCode, Raw: string(raw), Header: resp.Header}
+	json.Unmarshal(raw, &r.Body)
+	return r
+}
+
+func (c *client) uploadAlbum(path string, files [][]byte, fields map[string]string) response {
+	c.t.Helper()
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	for i, data := range files {
+		part, _ := w.CreateFormFile("file", fmt.Sprintf("photo-%d.png", i))
+		part.Write(data)
+	}
+	for key, value := range fields {
+		w.WriteField(key, value)
+	}
+	w.Close()
+	req, _ := http.NewRequest("POST", c.base+path, &buf)
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Authorization", "Bearer "+c.token)
 	resp, err := c.http.Do(req)
@@ -853,6 +886,7 @@ func TestAPIIntegration(t *testing.T) {
 	step("чаты: XSS хранится текстом, чужой чат недоступен", func(t *testing.T) {
 		chats := anton.expect(200, "GET", "/api/families/"+familyID+"/chats", nil)
 		familyChat := str(chats.Body["items"].([]any)[0].(map[string]any)["id"])
+
 		xss := "<script>alert(1)</script>"
 		anton.expect(201, "POST", "/api/families/"+familyID+"/chats/"+familyChat+"/messages", map[string]any{"text": xss})
 		m := bob.expect(200, "GET", "/api/families/"+familyID+"/chats/"+familyChat+"/messages", nil)
@@ -1020,6 +1054,19 @@ func TestAPIIntegration(t *testing.T) {
 		chats := anton.expect(200, "GET", "/api/families/"+familyID+"/chats", nil)
 		familyChat := str(chats.Body["items"].([]any)[0].(map[string]any)["id"])
 
+		bobConn.WriteJSON(map[string]any{"type": "typing", "familyId": familyID, "chatId": familyChat, "typing": true})
+		typing := readEvent(bobConn, "typing")
+		if ids, ok := typing["userIds"].([]any); !ok || len(ids) != 1 {
+			t.Fatalf("missing typing participant: %v", typing)
+		}
+		eveConn.WriteJSON(map[string]any{"type": "typing", "familyId": familyID, "chatId": familyChat, "typing": true})
+		if denied := readEvent(eveConn, "error"); denied["code"] != "not_found" {
+			t.Fatalf("foreign chat typing allowed: %v", denied)
+		}
+		bobConn.WriteJSON(map[string]any{"type": "typing", "familyId": familyID, "chatId": familyChat, "typing": false})
+		if stopped := readEvent(bobConn, "typing"); len(stopped["userIds"].([]any)) != 0 {
+			t.Fatalf("typing not cleared: %v", stopped)
+		}
 		// Сообщение через REST приходит Бобу по WebSocket.
 		anton.expect(201, "POST", "/api/families/"+familyID+"/chats/"+familyChat+"/messages", map[string]any{"text": "Ужин в 19:00"})
 		ev := readEvent(bobConn, "message")
@@ -1219,12 +1266,124 @@ func TestAPIIntegration(t *testing.T) {
 		db.Table("chat_media").Where("id=?", asset).Update("data", corrupt)
 		bob.expect(500, "GET", base+"/media/"+asset, nil)
 		db.Table("chat_media").Where("id=?", asset).Update("data", attachment.Data)
+		bob.expect(404, "DELETE", base+"/messages/"+str(media.Body["id"]), nil)
+		var remainingMedia int64
+		if err := db.Table("chat_media").Where("id = ?", asset).Count(&remainingMedia).Error; err != nil || remainingMedia != 1 {
+			t.Fatalf("another user's attachment changed: count=%d err=%v", remainingMedia, err)
+		}
+		bob.expect(400, "DELETE", base+"/messages/"+str(media.Body["id"])+"?scope=invalid", nil)
+		bob.expect(404, "DELETE", base+"/messages/"+str(media.Body["id"])+"?scope=me", nil)
+		var hiddenByOther int64
+		if err := db.Table("hidden_chat_messages").Where("message_id = ?", media.Body["id"]).Count(&hiddenByOther).Error; err != nil || hiddenByOther != 0 {
+			t.Fatalf("another user's message was hidden: count=%d err=%v", hiddenByOther, err)
+		}
+		foundForBob := false
+		for _, item := range bob.expect(200, "GET", base+"/messages", nil).Body["items"].([]any) {
+			if str(item.(map[string]any)["id"]) == str(media.Body["id"]) {
+				foundForBob = true
+			}
+		}
+		if !foundForBob {
+			t.Fatal("another user's message disappeared after rejected deletion")
+		}
+		anton.expect(204, "DELETE", base+"/messages/"+str(media.Body["id"])+"?scope=me", nil)
+		anton.expect(204, "DELETE", base+"/messages/"+str(media.Body["id"])+"?scope=me", nil)
+		for _, item := range anton.expect(200, "GET", base+"/messages", nil).Body["items"].([]any) {
+			if str(item.(map[string]any)["id"]) == str(media.Body["id"]) {
+				t.Fatal("hidden message returned to the hiding account")
+			}
+		}
+		var sharedMediaCount int64
+		if err := db.Table("chat_media").Where("id = ?", asset).Count(&sharedMediaCount).Error; err != nil || sharedMediaCount != 1 {
+			t.Fatalf("personal deletion removed shared attachment: %d %v", sharedMediaCount, err)
+		}
+		anton.expect(200, "GET", base+"/media/"+asset, nil)
 		anton.expect(204, "DELETE", base+"/messages/"+str(media.Body["id"]), nil)
+		if err := db.Table("chat_media").Where("message_id = ?", media.Body["id"]).Count(&remainingMedia).Error; err != nil || remainingMedia != 0 {
+			t.Fatalf("deleted attachment still stored: count=%d err=%v", remainingMedia, err)
+		}
 		bob.expect(404, "GET", base+"/media/"+asset, nil)
 		bob.expect(200, "GET", target+"/media/"+forwardedAsset, nil)
+		// Albums are one message; every file and the common caption travel together.
+		album := anton.uploadAlbum(base+"/media", [][]byte{pngFile(t), pngFile(t)}, map[string]string{"text": "Фото с прогулки", "replyId": str(sent.Body["id"])})
+		if album.Status != 201 || album.Body["text"] != "Фото с прогулки" {
+			t.Fatalf("album upload: %d %s", album.Status, album.Raw)
+		}
+		albumDetails := album.Body["details"].(map[string]any)
+		albumItems := albumDetails["mediaItems"].([]any)
+		if len(albumItems) != 2 || albumDetails["caption"] != "Фото с прогулки" || str(albumDetails["reply"].(map[string]any)["id"]) != str(sent.Body["id"]) {
+			t.Fatalf("album metadata lost: %v", albumDetails)
+		}
+		var albumRows []struct{ Data []byte }
+		if err := db.Table("chat_media").Where("message_id = ?", album.Body["id"]).Find(&albumRows).Error; err != nil || len(albumRows) != 2 || bytes.Equal(albumRows[0].Data, pngFile(t)) {
+			t.Fatalf("album files not stored encrypted: %v", err)
+		}
+		for _, item := range albumItems {
+			assetID := str(item.(map[string]any)["id"])
+			if got := bob.expect(200, "GET", base+"/media/"+assetID, nil); got.Raw != string(pngFile(t)) {
+				t.Fatal("album photo changed")
+			}
+		}
+		albumForward := bob.expect(201, "POST", target+"/rich", map[string]any{"sourceChatId": chat, "forwardId": album.Body["id"]})
+		forwardDetails := albumForward.Body["details"].(map[string]any)
+		forwardItems := forwardDetails["mediaItems"].([]any)
+		if len(forwardItems) != 2 || forwardDetails["caption"] != "Фото с прогулки" || forwardDetails["reply"] != nil {
+			t.Fatalf("forwarded album metadata: %v", forwardDetails)
+		}
+		anton.expect(204, "DELETE", base+"/messages/"+str(album.Body["id"]), nil)
+		for i, item := range albumItems {
+			assetID := str(item.(map[string]any)["id"])
+			bob.expect(404, "GET", base+"/media/"+assetID, nil)
+			forwardID := str(forwardItems[i].(map[string]any)["id"])
+			if forwardID == assetID {
+				t.Fatal("forwarded album reuses original attachment")
+			}
+			if got := bob.expect(200, "GET", target+"/media/"+forwardID, nil); got.Raw != string(pngFile(t)) {
+				t.Fatal("forwarded album file lost")
+			}
+		}
+		var messagesBefore, messagesAfter, filesBefore, filesAfter int64
+		db.Model(&models.Message{}).Where("chat_id = ?", chat).Count(&messagesBefore)
+		db.Table("chat_media").Where("chat_id = ?", chat).Count(&filesBefore)
+		invalidAlbum := anton.uploadAlbum(base+"/media", [][]byte{pngFile(t), []byte("<script>bad</script>")}, nil)
+		if invalidAlbum.Status != 400 {
+			t.Fatalf("invalid album accepted: %d", invalidAlbum.Status)
+		}
+		db.Model(&models.Message{}).Where("chat_id = ?", chat).Count(&messagesAfter)
+		db.Table("chat_media").Where("chat_id = ?", chat).Count(&filesAfter)
+		if messagesBefore != messagesAfter || filesBefore != filesAfter {
+			t.Fatal("invalid album was partially saved")
+		}
+		tooMany := make([][]byte, 11)
+		for i := range tooMany {
+			tooMany[i] = pngFile(t)
+		}
+		if got := anton.uploadAlbum(base+"/media", tooMany, nil); got.Status != 400 {
+			t.Fatalf("album limit bypassed: %d", got.Status)
+		}
+		singleCaption := anton.uploadAlbum(base+"/media", [][]byte{pngFile(t)}, map[string]string{"text": "Одно фото с подписью"})
+		if singleCaption.Status != 201 || singleCaption.Body["details"].(map[string]any)["caption"] != "Одно фото с подписью" || singleCaption.Body["details"].(map[string]any)["media"] == nil {
+			t.Fatalf("single photo caption: %s", singleCaption.Raw)
+		}
 		bad := anton.upload(base+"/media", "file", "fake.png", []byte("<script>bad</script>"), "POST")
 		if bad.Status != 400 {
 			t.Fatal("опасный файл принят")
+		}
+		voiceData := append([]byte("OggS\x00"), make([]byte, 64)...)
+		voice := anton.upload(base+"/media", "file", "voice.ogg", voiceData, "POST", "kind=voice", "duration=2")
+		if voice.Status != 201 {
+			t.Fatalf("voice upload failed: %d %s", voice.Status, voice.Raw)
+		}
+		voiceInfo := voice.Body["details"].(map[string]any)["media"].(map[string]any)
+		if voiceInfo["kind"] != "voice" || voiceInfo["duration"] != float64(2) {
+			t.Fatalf("voice metadata lost: %v", voiceInfo)
+		}
+		if got := bob.expect(200, "GET", base+"/media/"+str(voiceInfo["id"]), nil); got.Raw != string(voiceData) {
+			t.Fatal("voice bytes changed")
+		}
+		tooLong := anton.upload(base+"/media", "file", "round.webm", voiceData, "POST", "kind=round", "duration=61")
+		if tooLong.Status != 400 {
+			t.Fatal("oversized video-note duration accepted")
 		}
 		anton.expect(204, "DELETE", "/api/me/recipes/"+id, nil)
 	})

@@ -4,7 +4,7 @@ import {createPortal} from 'react-dom';
 import Icon from '../Icon/Icon';
 import styles from './MessageMenu.module.css';
 
-export default function MessageMenu({x,y,onReply,onForward,onClose}) {
+export default function MessageMenu({x,y,onReply,onForward,onDelete,onSelect,onClose}) {
  const ref=useRef(null);
  useEffect(()=>{
   const node=ref.current;
@@ -20,5 +20,7 @@ export default function MessageMenu({x,y,onReply,onForward,onClose}) {
  return createPortal(<div className={styles.backdrop} onPointerDown={e=>{if(e.target===e.currentTarget)onClose();}} onContextMenu={e=>{e.preventDefault();onClose();}}><div ref={ref} className={styles.menu} role="menu" aria-label={t("chatRich.actions")} onKeyDown={navigate}>
   <button type="button" role="menuitem" onClick={onReply}><Icon name="reply" size={19}/>{t("chatRich.reply")}</button>
   <button type="button" role="menuitem" onClick={onForward}><Icon name="forward" size={19}/>{t("chatRich.forward")}</button>
+  {onSelect&&<button type="button" role="menuitem" onClick={onSelect}><Icon name="check" size={19}/>{t("chatRich.select")}</button>}
+  {onDelete&&<button type="button" role="menuitem" onClick={onDelete}><Icon name="trash" size={19}/>{t("common.delete")}</button>}
  </div></div>,document.body);
 }

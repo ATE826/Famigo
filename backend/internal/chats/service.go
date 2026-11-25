@@ -85,7 +85,7 @@ func (s *Service) Messages(ctx context.Context, familyID, chatID, userID uuid.UU
 	if err := s.access(ctx, familyID, chatID, userID); err != nil {
 		return nil, err
 	}
-	return listMessages(s.db.WithContext(ctx), s.cipher, chatID, before, limit)
+	return listMessages(s.db.WithContext(ctx), s.cipher, chatID, userID, before, limit)
 }
 
 // Send сохраняет сообщение и мгновенно рассылает его участникам чата (в том числе

@@ -13,6 +13,6 @@ RUN npm run build
 FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
-# Сайт собран с base '/Famigo/' (как на GitHub Pages), поэтому кладём его в эту папку.
-COPY --from=build /app/dist /usr/share/nginx/html/Famigo
+# Основной сайт работает в корне домена.
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080

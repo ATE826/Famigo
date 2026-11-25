@@ -1,0 +1,3 @@
+.wave {display:flex;align-items:center;gap:2px;width:100%;height:32px;min-width:0;overflow:hidden;}
+.wave span {flex:1;min-width:1px;max-width:4px;background:var(--primary);opacity:.35;border-radius:2px;}
+.wave .played,.live span {opacity:1;}

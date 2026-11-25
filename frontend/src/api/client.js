@@ -124,8 +124,8 @@ export function errorText(error) {
   return key ? t(key) : (error?.message ?? t("errors.generic"));
 }
 
-export async function mediaBlob(path) {
-  const request = () => fetch(BASE + path, {headers: accessToken ? {Authorization:`Bearer ${accessToken}`} : {}, credentials:'same-origin'});
+export async function mediaBlob(path, {signal} = {}) {
+  const request = () => fetch(BASE + path, {headers: accessToken ? {Authorization:`Bearer ${accessToken}`} : {}, credentials:'same-origin', signal});
   let response = await request();
   if(response.status === 401) {await refreshSession(); response=await request();}
   if(!response.ok) throw new Error(t('errors.generic'));

@@ -8,13 +8,12 @@
     reverse_proxy frontend:8080
 }
 
-# Keep the existing address available while the new domain is delegated.
-famigoapp.ru {
+# Redirect the temporary address after moving to the registered domain.
+famigo.153-76-160-227.sslip.io {
     tls {
         issuer acme {
             email {$ACME_EMAIL}
         }
     }
-    header Strict-Transport-Security "max-age=31536000"
-    reverse_proxy frontend:8080
+    redir https://famigoapp.ru{uri} 308
 }

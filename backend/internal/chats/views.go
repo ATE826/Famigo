@@ -67,7 +67,8 @@ func (s *Service) MarkViewed(ctx context.Context, familyID, chatID, userID uuid.
 		}
 		return tx.Raw(`SELECT count(*) FROM messages m WHERE m.chat_id = ? AND m.deleted_at IS NULL
     AND m.user_id IS DISTINCT FROM ? AND NOT EXISTS
-    (SELECT 1 FROM message_views v WHERE v.message_id=m.id AND v.user_id=?)`, chatID, userID, userID).Scan(&event.Unread).Error
+    (SELECT 1 FROM message_views v WHERE v.message_id=m.id AND v.user_id=?)
+    AND NOT EXISTS (SELECT 1 FROM hidden_chat_messages h WHERE h.message_id=m.id AND h.user_id=?)`, chatID, userID, userID, userID).Scan(&event.Unread).Error
 	})
 	if err != nil {
 		return event, err

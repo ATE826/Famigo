@@ -13,7 +13,7 @@ export function chatList(members, currentUserId, chatSettings) {
 
 export function lastMessageOf(chat, messages) {
   const list = messages[chat.id] ?? [];
-  return list[list.length - 1];
+  return [...list].reverse().find(message => !message.deleted);
 }
 
 export function lastMessageText(chat, messages, members, currentUserId) {

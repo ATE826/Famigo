@@ -60,6 +60,7 @@ func listChats(db *gorm.DB, c *fieldcrypt.Cipher, familyID, userID uuid.UUID) ([
 		Select("messages.chat_id, count(*) AS count").
 		Joins("JOIN chat_members cm ON cm.chat_id = messages.chat_id AND cm.user_id = ?", userID).
 		Where("messages.chat_id IN ? AND messages.deleted_at IS NULL", ids).
+		Where("NOT EXISTS (SELECT 1 FROM hidden_chat_messages h WHERE h.message_id=messages.id AND h.user_id=?)", userID).
 		Where("NOT EXISTS (SELECT 1 FROM message_views v WHERE v.message_id = messages.id AND v.user_id = ?)", userID).
 		Where("messages.user_id IS DISTINCT FROM ?", userID).
 		Group("messages.chat_id").
@@ -75,7 +76,8 @@ func listChats(db *gorm.DB, c *fieldcrypt.Cipher, familyID, userID uuid.UUID) ([
 	// 4. Последнее сообщение каждого чата: DISTINCT ON оставляет по одной строке на чат.
 	var last []models.Message
 	err = db.Select("DISTINCT ON (chat_id) *").
-		Where("chat_id IN ?", ids).
+		Where("chat_id IN ? AND deleted_at IS NULL", ids).
+		Where("NOT EXISTS (SELECT 1 FROM hidden_chat_messages h WHERE h.message_id=messages.id AND h.user_id=?)", userID).
 		Order("chat_id, created_at DESC, id DESC").
 		Find(&last).Error
 	if err != nil {
@@ -166,8 +168,8 @@ func bothInFamily(db *gorm.DB, familyID, a, b uuid.UUID) (bool, error) {
 }
 
 // listMessages — страница сообщений от новых к старым.
-func listMessages(db *gorm.DB, c *fieldcrypt.Cipher, chatID uuid.UUID, before *time.Time, limit int) ([]Message, error) {
-	q := db.Where("chat_id = ?", chatID)
+func listMessages(db *gorm.DB, c *fieldcrypt.Cipher, chatID, userID uuid.UUID, before *time.Time, limit int) ([]Message, error) {
+	q := db.Where("chat_id = ?", chatID).Where("NOT EXISTS (SELECT 1 FROM hidden_chat_messages h WHERE h.message_id=messages.id AND h.user_id=?)", userID)
 	if before != nil {
 		q = q.Where("created_at < ?", *before)
 	}
@@ -211,12 +213,23 @@ func insertMessage(db *gorm.DB, c *fieldcrypt.Cipher, chatID, userID uuid.UUID, 
 }
 
 // deleteMessage — удалить можно только своё сообщение (условие user_id = ?).
-// Текст стирается, чтобы удалённое сообщение нигде не хранилось.
+// Содержимое и вложения удаляются одной транзакцией; служебная запись остаётся.
 func deleteMessage(db *gorm.DB, chatID, messageID, userID uuid.UUID) (bool, error) {
-	res := db.Model(&models.Message{}).
-		Where("chat_id = ? AND id = ? AND user_id = ? AND deleted_at IS NULL", chatID, messageID, userID).
-		Updates(map[string]any{"deleted_at": gorm.Expr("now()"), "text": "", "details": "{}"})
-	return res.RowsAffected > 0, res.Error
+	deleted := false
+	err := db.Transaction(func(tx *gorm.DB) error {
+		res := tx.Model(&models.Message{}).
+			Where("chat_id = ? AND id = ? AND user_id = ? AND deleted_at IS NULL", chatID, messageID, userID).
+			Updates(map[string]any{"deleted_at": gorm.Expr("now()"), "text": "", "details": "{}"})
+		if res.Error != nil || res.RowsAffected == 0 {
+			return res.Error
+		}
+		if err := tx.Exec("DELETE FROM chat_media WHERE chat_id = ? AND message_id = ?", chatID, messageID).Error; err != nil {
+			return err
+		}
+		deleted = true
+		return nil
+	})
+	return deleted && err == nil, err
 }
 
 // memberIDs — кому рассылать события чата: только его участникам.

@@ -1,7 +1,9 @@
 # Run with the base compose file and a private server secrets.env.
 services:
   db:
-    ports: !reset []
+    # SSH tunnels can reach PostgreSQL through the server's loopback only.
+    ports: !override
+      - "127.0.0.1:15432:5432"
   backend:
     environment:
       APP_ENV: production

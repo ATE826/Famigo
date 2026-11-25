@@ -63,6 +63,7 @@ export default function DataProvider({ children }) {
   const [operations, setOperations] = useState([]);
   const [openingBalance, setOpeningBalance] = useState(0);
   const [events, setEvents] = useState([]);
+  const [typingByChat, setTypingByChat] = useState({});
   const [chatIds, setChatIds] = useState({});
   const [messages, setMessages] = useState({});
   const [unread, setUnread] = useState({});
@@ -628,7 +629,7 @@ export default function DataProvider({ children }) {
   async function handleSocketEvent(event) {
     if (event.familyId && event.familyId !== familyRef.current) return;
     let key = keyOfChat(event.chatId);
-    if (!key && event.type === "message") {
+    if (!key && (event.type === "message" || event.type === "typing")) {
       // Новый личный чат, о котором мы ещё не знали.
       await loadChats(familyRef.current);
       key = keyOfChat(event.chatId);
@@ -636,6 +637,9 @@ export default function DataProvider({ children }) {
     if (!key && event.type !== "error") return;
 
     switch (event.type) {
+      case "typing":
+        setTypingByChat(current=>({...current,[key]:{userIds:event.userIds??[],expiresAt:Date.now()+7000}}));
+        break;
       case "message": {
         upsertMessage(key, mapMessage(event.message), event.clientId);
         const mine = event.message.userId === meRef.current;
@@ -647,11 +651,13 @@ export default function DataProvider({ children }) {
       case "read":
         applyReadEvent(event,key);
         break;
+      case "hidden":
       case "deleted":
         setMessages((current) => ({
           ...current,
           [key]: (current[key] ?? []).map((m) => (m.id === event.messageId ? { ...m, text: "", deleted: true } : m)),
         }));
+        if(event.type === 'hidden')quietly(loadChats(familyRef.current));
         break;
       case "error":
         if (event.clientId) markPendingFailed(event.clientId);
@@ -671,6 +677,7 @@ export default function DataProvider({ children }) {
   useEffect(() => {
     if (status !== "ready" || !familyId) return undefined;
     const socket = connectChatSocket({
+      onClose: () => setTypingByChat({}),
       onEvent: (event) => handleSocketEventRef.current(event),
       onOpen: () => {
         loadChats(familyRef.current).catch(() => {});
@@ -772,13 +779,34 @@ export default function DataProvider({ children }) {
     const chatId = await ensureChat(key);
     let result;
     if (file) {
-      const form = new FormData(); form.append('file', file);
+      const form = new FormData();
+      for (const item of (Array.isArray(file)?file:[file])) form.append('file', item);
+      if(payload.text)form.append('text',payload.text);
+      if(payload.replyId)form.append('replyId',payload.replyId);
+      if(payload.kind){form.append('kind',payload.kind);form.append('duration',String(payload.duration));}
       result = await api(base(`/chats/${chatId}/media`), { method:'POST', form });
     } else {
       result = await api(base(`/chats/${chatId}/rich`), { method:'POST', body:payload });
     }
     upsertMessage(key, mapMessage(result));
     return result;
+  }
+  const sendTyping = useCallback((key, typing) => {
+    const chatId=chatIdsRef.current[key];
+    if(chatId)socketRef.current?.send({type:'typing',familyId:familyRef.current,chatId,typing});
+  }, []);
+  useEffect(()=>{
+    const timer=setInterval(()=>setTypingByChat(current=>{
+      const entries=Object.entries(current).filter(([,state])=>state.expiresAt>Date.now());
+      return entries.length===Object.keys(current).length?current:Object.fromEntries(entries);
+    }),1000);
+    return()=>clearInterval(timer);
+  },[]);
+  async function deleteChatMessage(key, messageId, scope = 'all') {
+    const chatId = await ensureChat(key);
+    await api(base(`/chats/${chatId}/messages/${messageId}?scope=${scope}`), {method: 'DELETE'});
+    setMessages(current => ({...current, [key]: (current[key] ?? []).map(m => m.id === messageId ? {...m, text: '', details: {}, deleted: true} : m)}));
+    if(scope === 'me')quietly(loadChats(familyRef.current));
   }
   function chatServerId(key) { return chatIdsRef.current[key]; }
   function setChatSetting(key, field, value) {
@@ -909,6 +937,9 @@ export default function DataProvider({ children }) {
         chatSettings,
         sendMessage,
         sendRichMessage,
+        deleteChatMessage,
+        sendTyping,
+        typingByChat,
         chatServerId,
         openChat,
         markMessagesSeen,

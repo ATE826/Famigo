@@ -146,7 +146,14 @@ func (h *Handler) deleteMessage(c *gin.Context) {
 	}
 	messageID, err := httpx.ParamUUID(c, "messageID")
 	if err == nil {
-		err = h.service.DeleteMessage(c.Request.Context(), families.FamilyID(c), chatID, messageID, auth.UserID(c))
+		switch c.DefaultQuery("scope", "all") {
+		case "me":
+			err = h.service.HideMessage(c.Request.Context(), families.FamilyID(c), chatID, messageID, auth.UserID(c))
+		case "all":
+			err = h.service.DeleteMessage(c.Request.Context(), families.FamilyID(c), chatID, messageID, auth.UserID(c))
+		default:
+			err = httpx.BadRequest("invalid_scope", "Неизвестный вариант удаления")
+		}
 	}
 	if err != nil {
 		httpx.Respond(c, err)

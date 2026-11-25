@@ -45,6 +45,7 @@ func (h *Hub) add(c *Client) bool {
 func (h *Hub) remove(c *Client) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	h.stopTypingLocked(c)
 	if set, ok := h.clients[c.userID]; ok {
 		delete(set, c)
 		if len(set) == 0 {

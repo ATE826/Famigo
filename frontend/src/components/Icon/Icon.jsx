@@ -1,4 +1,6 @@
 const paths = {
+ microphone:"M9 5a3 3 0 016 0v7a3 3 0 01-6 0V5zM5 10v2a7 7 0 0014 0v-2M12 19v3M8 22h8",
+ pause:"M8 5v14M16 5v14",
  paperclip:"M21 11.5l-8.2 8.2a6 6 0 01-8.5-8.5l9.1-9.1a4 4 0 015.7 5.7l-9.2 9.1a2 2 0 01-2.8-2.8L16 5.8",
  video:"M3 6h12v12H3zM15 10l6-4v12l-6-4",
  reply:"M9 5l-6 6 6 6M3 11h9a8 8 0 018 8",

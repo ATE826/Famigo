@@ -1,0 +1,9 @@
+.player {display:flex;align-items:center;gap:12px;width:min(300px,65vw);max-width:100%;padding:2px;}
+.play {display:grid;place-items:center;flex:none;width:44px;height:44px;border:0;border-radius:50%;background:var(--primary);color:white;cursor:pointer;}
+.play:disabled {opacity:.5;cursor:default;}
+.body {flex:1;min-width:0;display:grid;gap:4px;}
+.track {position:relative;min-width:0;}
+.track input {position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;margin:0;}
+.track:focus-within {outline:2px solid var(--primary);outline-offset:3px;border-radius:4px;}
+.time {font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.play:focus-visible {outline:2px solid var(--primary);outline-offset:3px;}

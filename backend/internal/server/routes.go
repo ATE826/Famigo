@@ -97,6 +97,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, db *gorm.DB, log *slog.Log
 	hub := chats.NewHub(log)
 	chatHandler := chats.NewHandler(chats.NewService(db, hub, log, messageCipher), hub, cfg.AllowedOrigins)
 	chatHandler.RegisterRoutes(authed, family, api)
-	chatHandler.RegisterRichRoutes(family, authedUpload.Group("/families/:familyID", families.RequireMember(db)))
+	chatUploads := api.Group("", httpx.BodyLimit(101<<20), auth.RequireAuth(tokens, db)).Group("/families/:familyID", families.RequireMember(db))
+	chatHandler.RegisterRichRoutes(family, chatUploads)
 	return nil
 }

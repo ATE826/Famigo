@@ -1,10 +1,16 @@
+import DeleteMessageDialog from "./DeleteMessageDialog";
+import Recorder from "./Recorder";
 import MessageMenu from "../../components/ChatShare/MessageMenu";
 import Attachments from "../../components/ChatShare/Attachments";
-import {prepareMedia} from "../../utils/media";
+import AttachmentDraft from "./AttachmentDraft";
+import useAttachmentDraft from "./useAttachmentDraft";
 import ChatShare from "../../components/ChatShare/ChatShare";
 import MessageContent from "../../components/ChatShare/MessageContent";
+import MediaViewer from "../../components/ChatShare/MediaViewer";
+import MessagePresence from "./MessagePresence";
+import useChatViewport from "./useChatViewport";
 import {errorText} from "../../api/client";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import Avatar from "../../components/Avatar/Avatar";
 import Icon from "../../components/Icon/Icon";
@@ -46,17 +52,42 @@ function Chat() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { members, currentUserId, messages, sendMessage, sendRichMessage, chatServerId, openChat, closeChat, loadHistoryUntil, markMessagesSeen } = useData();
+  const { members, currentUserId, messages, sendMessage, sendRichMessage, deleteChatMessage, sendTyping, typingByChat, chatServerId, openChat, closeChat, loadHistoryUntil, markMessagesSeen } = useData();
+  const screenRef = useRef(null);
+  const submitBusy = useRef(false);
+  const dragDepth = useRef(0);
+  const [dragging, setDragging] = useState(false);
+  const typingClock = useRef(0);
+  const typingTimer = useRef(null);
+  useEffect(()=>{
+    const stop=()=>{clearTimeout(typingTimer.current);typingClock.current=0;sendTyping(id,false);};
+    const visibility=()=>{if(document.hidden)stop();};
+    document.addEventListener('visibilitychange',visibility);
+    window.addEventListener('blur',stop);
+    return()=>{stop();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('blur',stop);};
+  },[id,sendTyping]);
+  function reportTyping(value) {
+    clearTimeout(typingTimer.current);
+    if(!value.trim()){typingClock.current=0;sendTyping(id,false);return;}
+    if(Date.now()-typingClock.current>2000){sendTyping(id,true);typingClock.current=Date.now();}
+    typingTimer.current=setTimeout(()=>{typingClock.current=0;sendTyping(id,false);},3000);
+  }
+  const [recording,setRecording]=useState(false);
   const [text, setText] = useState("");
   const endRef = useRef(null);
   const messagesRef = useRef(null);
   const followLatest = useRef(true);
   const restoredEntry = useRef(null);
+  useChatViewport(screenRef, messagesRef, followLatest);
   const jumpRef = useRef(null);
   const [reply,setReply]=useState(null);
+  const [selection,setSelection]=useState(null);
+  const [deleteTarget,setDeleteTarget]=useState(null);
   const [share,setShare]=useState(null);
+  const [viewer,setViewer]=useState(null);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
+  const draft=useAttachmentDraft(setError);
   const [menu,setMenu]=useState(null);
   const touch=useRef({timer:null});
   useEffect(()=>()=>clearTimeout(touch.current.timer),[]);
@@ -64,9 +95,27 @@ function Chat() {
   const isGroup = id === GROUP_CHAT_ID;
   const partner = isGroup ? null : members.find((m) => m.id === id);
   const list = messages[id] ?? [];
+  const gallery=list.flatMap(message=>message.deleted?[]:message.details?.mediaItems?.length?message.details.mediaItems:message.details?.media?[message.details.media]:[])
+    .filter(media=>media.kind!=='round'&&(media.mime.startsWith('image/')||media.mime.startsWith('video/')));
+  const viewedMedia=viewer?gallery.find(media=>media.id===viewer.id):null;
+  const selecting=selection?.chatKey===id;
+  const selectedMessages=selecting?list.filter(m=>selection.ids.includes(m.id)&&!m.deleted&&!m.pending):[];
+  const selectedIds=new Set(selectedMessages.map(m=>m.id));
+  const canDeleteSelected=selectedMessages.length>0&&selectedMessages.every(m=>m.from===currentUserId);
+  useEffect(()=>{
+    if(!selecting||!canDeleteSelected||menu||share||deleteTarget||recording)return;
+    const keydown=e=>{
+      if(e.defaultPrevented||e.key!=='Delete'||e.repeat||e.isComposing||e.ctrlKey||e.altKey||e.metaKey||e.shiftKey)return;
+      if(e.target instanceof Element&&e.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]'))return;
+      if(document.querySelector('dialog[open]'))return;
+      e.preventDefault();setDeleteTarget({batch:true});
+    };
+    document.addEventListener('keydown',keydown);
+    return()=>document.removeEventListener('keydown',keydown);
+  },[selecting,canDeleteSelected,menu,share,deleteTarget,recording]);
   const activeReply = reply?.chatKey === id ? reply : null;
   const visibleCandidates=list.filter(m=>m.from!==currentUserId&&!m.deleted&&!m.pending).map(m=>m.id).join(',');
-  useMessageViews({containerRef:messagesRef,chatKey:id,userId:currentUserId,messageIds:visibleCandidates,markMessagesSeen,blocked:!!menu||!!share});
+  useMessageViews({containerRef:messagesRef,chatKey:id,userId:currentUserId,messageIds:visibleCandidates,markMessagesSeen,blocked:!!menu||!!share||!!viewedMedia});
 
   // Пока экран открыт, новые сообщения сразу отмечаются прочитанными.
   useEffect(() => {
@@ -90,7 +139,7 @@ function Chat() {
       if(node){revealMessage(node);jumpRef.current=null;}
       return;
     }
-    if(followLatest.current)endRef.current?.scrollIntoView({ block: "end" });
+    if(followLatest.current && messagesRef.current)messagesRef.current.scrollTop=messagesRef.current.scrollHeight;
   }, [list.length,id,currentUserId,location.key]);
 
   if (!isGroup && (!partner || partner.id === currentUserId)) {
@@ -98,6 +147,7 @@ function Chat() {
   }
 
   function handleBack(e) {
+    if(selecting){e.preventDefault();setSelection(null);return;}
     if (location.key !== "default") {
       e.preventDefault();
       navigate(-1);
@@ -110,10 +160,17 @@ function Chat() {
   }
 
   async function handleSend(e) {
-    e.preventDefault(); const value=text.trim(); if(!value||busy)return;
+    e.preventDefault(); const value=text.trim(); if((!value&&!draft.items.length)||busy||draft.preparing||submitBusy.current)return;
+    submitBusy.current=true;
+    reportTyping('');
+    followLatest.current=true;
     setBusy(true);setError('');
-    try { if(activeReply) await sendRichMessage(id,{text:value,replyId:activeReply.id}); else await sendMessage(id,value); setText('');setReply(null); }
-    catch(err){setError(errorText(err));}finally{setBusy(false);}
+    try {
+      if(draft.items.length) await sendRichMessage(id,{text:value,replyId:activeReply?.id},draft.items.map(item=>item.file));
+      else if(activeReply) await sendRichMessage(id,{text:value,replyId:activeReply.id});
+      else await sendMessage(id,value);
+      draft.clear();setText('');setReply(null);
+    } catch(err){setError(errorText(err));}finally{submitBusy.current=false;setBusy(false);}
   }
   async function jumpToMessage(messageId) {
     followLatest.current=false;
@@ -128,13 +185,43 @@ function Chat() {
     }
   }
   async function upload(event) {
-    const files=Array.from(event.target.files??[]);event.target.value='';if(!files.length)return;
-    if(files.some(file=>file.size>25*1024*1024)){setError(t('chatRich.tooLarge'));return;}
-    setBusy(true);setError('');try{for(const file of files){const prepared=await prepareMedia(file);if(!prepared)throw new Error(t('chatRich.chooseMedia'));await sendRichMessage(id,{},prepared.file);}}catch(err){setError(errorText(err));}finally{setBusy(false);}
+    const files=Array.from(event.target.files??[]);event.target.value='';
+    return uploadFiles(files);
+  }
+  async function uploadFiles(files) {
+    if(busy||recording)return;
+    return draft.add(files);
+  }
+  async function sendRecording(file,kind,duration) {
+    setBusy(true);followLatest.current=true;
+    try {await sendRichMessage(id,{kind,duration},file);} finally {setBusy(false);}
+  }
+  async function removeMessage(message, scope) {
+    if(message.from!==currentUserId)return;
+    closeMenu();setError('');
+    await deleteChatMessage(id,message.id,scope);
+    setDeleteTarget(null);
+    if(reply?.id===message.id)setReply(null);
+  }
+  function toggleSelection(message) {
+    if(message.deleted||message.pending||String(message.id).startsWith('tmp-'))return;
+    setSelection(current=>{
+      const ids=current?.chatKey===id?current.ids:[];
+      return {chatKey:id,ids:ids.includes(message.id)?ids.filter(value=>value!==message.id):[...ids,message.id]};
+    });
+  }
+  async function removeSelected(scope) {
+    if(!canDeleteSelected)return;
+    for(const message of selectedMessages){
+      await deleteChatMessage(id,message.id,scope);
+      setSelection(current=>current?{...current,ids:current.ids.filter(value=>value!==message.id)}:current);
+      if(reply?.id===message.id)setReply(null);
+    }
+    setDeleteTarget(null);setSelection(null);
   }
   function openMenu(e,m) {
     if(m.deleted||m.pending||String(m.id).startsWith('tmp-'))return;
-    e.preventDefault();const rect=e.currentTarget.getBoundingClientRect();
+    e.preventDefault();if(selecting)return;const rect=e.currentTarget.getBoundingClientRect();
     setMenu({message:m,x:e.clientX||rect.left+20,y:e.clientY||rect.top+20});
   }
   function closeMenu() {
@@ -144,16 +231,21 @@ function Chat() {
   }
   function messageEvents(m) {return {
     id:`chat-message-${m.id}`,
-    tabIndex:0,role:'group','aria-label':t('chatRich.messageActions'),
+    tabIndex:0,role:selecting?'checkbox':'group','aria-checked':selecting?selectedIds.has(m.id):undefined,'aria-label':t('chatRich.messageActions'),
     onContextMenu:e=>openMenu(e,m),
-    onKeyDown:e=>{if(e.key==='ContextMenu'||(e.shiftKey&&e.key==='F10'))openMenu(e,m);},
-    onPointerDown:e=>{if(e.pointerType!=='touch')return;clearTimeout(touch.current.timer);const x=e.clientX,y=e.clientY;touch.current={x,y,timer:setTimeout(()=>{touch.current.suppress=true;if(!m.deleted&&!m.pending)setMenu({message:m,x,y});},500)};},
+    onKeyDown:e=>{if(selecting&&(e.key===' '||e.key==='Enter')){e.preventDefault();toggleSelection(m);return;}if(e.key==='ContextMenu'||(e.shiftKey&&e.key==='F10'))openMenu(e,m);},
+    onPointerDown:e=>{if(selecting||e.pointerType!=='touch')return;clearTimeout(touch.current.timer);const x=e.clientX,y=e.clientY;touch.current={x,y,timer:setTimeout(()=>{touch.current.suppress=true;if(!m.deleted&&!m.pending)setMenu({message:m,x,y});},500)};},
     onPointerMove:e=>{if(Math.abs(e.clientX-(touch.current.x??e.clientX))>10||Math.abs(e.clientY-(touch.current.y??e.clientY))>10)clearTimeout(touch.current.timer);},
     onPointerUp:()=>clearTimeout(touch.current.timer),onPointerCancel:()=>clearTimeout(touch.current.timer),
-    onClickCapture:e=>{if(touch.current.suppress){e.preventDefault();e.stopPropagation();touch.current.suppress=false;}}
+    onClickCapture:e=>{if(selecting){e.preventDefault();e.stopPropagation();toggleSelection(m);return;}if(touch.current.suppress){e.preventDefault();e.stopPropagation();touch.current.suppress=false;}}
   };}
 
 
+  const typingNames = (typingByChat[id]?.userIds??[]).filter(userId=>userId!==currentUserId).map(userId=>members.find(member=>member.id===userId)?.name).filter(Boolean);
+  const namesFormatter = new Intl.ListFormat(document.documentElement.lang || 'ru', {style:'long',type:'conjunction'});
+  const typingLabel = typingNames.length>3
+    ? t('chatRich.typingMore',{names:namesFormatter.format(typingNames.slice(0,2)),count:typingNames.length-2})
+    : t(typingNames.length===1?'chatRich.typingOne':'chatRich.typingMany',{names:namesFormatter.format(typingNames)});
   const title = isGroup ? t("chats.family") : partner.name;
   const subtitle = isGroup
     ? t("plural.members", { count: members.length })
@@ -161,7 +253,13 @@ function Chat() {
   const headerTo = isGroup ? `/chats/${id}/info` : `/more/family/${partner.id}`;
 
   return (
-    <div className={styles.screen}>
+    <div id="chat-recording-stage" ref={screenRef} className={styles.screen}
+      onDragEnter={e=>{if(!Array.from(e.dataTransfer.types).includes('Files'))return;e.preventDefault();dragDepth.current++;if(!busy&&!recording&&!draft.preparing)setDragging(true);}}
+      onDragOver={e=>{if(Array.from(e.dataTransfer.types).includes('Files')){e.preventDefault();e.dataTransfer.dropEffect=busy||recording||draft.preparing?'none':'copy';}}}
+      onDragLeave={e=>{e.preventDefault();dragDepth.current=Math.max(0,dragDepth.current-1);if(!dragDepth.current)setDragging(false);}}
+      onDrop={e=>{if(!Array.from(e.dataTransfer.types).includes('Files'))return;e.preventDefault();dragDepth.current=0;setDragging(false);void uploadFiles(Array.from(e.dataTransfer.files));}}
+      onKeyDown={e=>{if(e.key==='Escape'&&selecting&&!share&&!deleteTarget){e.preventDefault();setSelection(null);}}}>
+      {dragging&&<div className={styles.dropOverlay} role="status"><Icon name="paperclip" size={32}/><strong>{t('chatRich.dropMedia')}</strong><span>{t('chatRich.limit')}</span></div>}
       <header className={styles.header}>
         <Link to="/chats" onClick={handleBack} className={styles.back} aria-label={t("common.back")}>
           <Icon name="back" />
@@ -179,19 +277,25 @@ function Chat() {
         </Link>
       </header>
 
+      {selecting&&<div className={styles.selectionBar} role="toolbar" aria-label={t('chatRich.select')}>
+        <button type="button" onClick={()=>setSelection(null)} aria-label={t('common.cancel')}><Icon name="close" size={20}/></button>
+        <strong>{t('chatRich.selectedCount',{count:selectedMessages.length})}</strong>
+        <button type="button" aria-label={t('chatRich.forward')} disabled={!selectedMessages.length} onClick={()=>setShare(selectedMessages.map(m=>({sourceChatId:chatServerId(id),forwardId:m.id})))}><Icon name="forward" size={20}/><span>{t('chatRich.forward')}</span></button>
+        {canDeleteSelected&&<button type="button" aria-label={t('common.delete')} onClick={()=>setDeleteTarget({batch:true})}><Icon name="trash" size={20}/><span>{t('common.delete')}</span></button>}
+      </div>}
       <div ref={messagesRef} className={styles.messages} onScroll={e=>{const node=e.currentTarget;followLatest.current=node.scrollHeight-node.scrollTop-node.clientHeight<60;}}>
-        {list.length === 0 && <p className={styles.empty}>{t("chats.empty")}</p>}
+        {list.every(m=>m.deleted) && <p className={styles.empty}>{t("chats.empty")}</p>}
 
         {list.map((m, i) => {
           const dayLabel =
-            i === 0 || list[i - 1].day !== m.day ? <div className={styles.day}>{dayName(m.day)}</div> : null;
-          const text = <MessageContent message={m} chatId={chatServerId(id)} onJumpToMessage={jumpToMessage} />;
+            !m.deleted && (i === 0 || list.slice(0,i).filter(item=>!item.deleted).at(-1)?.day !== m.day) ? <div className={styles.day}>{dayName(m.day)}</div> : null;
+          const text = <MessageContent message={m} chatId={chatServerId(id)} onJumpToMessage={jumpToMessage} onOpenMedia={(media,url)=>setViewer({id:media.id,initial:{id:media.id,url}})} />;
           if (m.from === currentUserId) {
             return (
-              <Fragment key={m.id}>
+              <MessagePresence key={m.id} deleted={m.deleted}>
                 {dayLabel}
-                <div className={styles.mine} {...messageEvents(m)}>
-                  <div className={styles.bubbleMine}>{text}</div>
+                <div className={`${styles.mine} ${selecting?styles.selectable:''} ${selectedIds.has(m.id)?styles.selected:''}`} {...messageEvents(m)}>
+                  <div className={`${styles.bubbleMine} ${m.details?.media?.kind==='round'?styles.roundBubble:(m.details?.media||m.details?.mediaItems?.length)?styles.mediaBubble:''}`}>{text}</div>
                   <span className={styles.meta}>
                     {m.time}
                     {m.statusKey&&<span className={styles.delivery}>
@@ -200,58 +304,67 @@ function Chat() {
                     </span>}
                   </span>
                 </div>
-              </Fragment>
+              </MessagePresence>
             );
           }
           const author = members.find((member) => member.id === m.from);
           return (
-            <Fragment key={m.id}>
+            <MessagePresence key={m.id} deleted={m.deleted}>
               {dayLabel}
               <div className={styles.other}>
                 {author?<Link to={`/more/family/${author.id}`} onClick={rememberChatPosition} className={styles.senderAvatar} aria-label={author.name}>
                   <Avatar letter={author?.letter ?? "?"} tone={author?.tone ?? "cream"} photo={author?.photo} size={32} />
                 </Link>:<span className={styles.senderAvatar} role="img" aria-label={t("common.formerMember")}><Avatar letter="?" tone="cream" size={32}/></span>}
-                <div className={styles.otherBody} {...messageEvents(m)} data-view-message={m.deleted?undefined:m.id}>
-                  <div className={styles.bubbleOther}>
+                <div className={`${styles.otherBody} ${selecting?styles.selectable:''} ${selectedIds.has(m.id)?styles.selected:''}`} {...messageEvents(m)} data-view-message={m.deleted?undefined:m.id}>
+                  <div className={`${styles.bubbleOther} ${m.details?.media?.kind==='round'?styles.roundBubble:(m.details?.media||m.details?.mediaItems?.length)?styles.mediaBubble:''}`}>
                     {isGroup && <b className={styles.author}>{author?.name ?? t("common.formerMember")}</b>}
                     {text}
                   </div>
                   <span className={styles.meta}>{m.time}</span>
                 </div>
               </div>
-            </Fragment>
+            </MessagePresence>
           );
         })}
 
         <div ref={endRef} />
       </div>
 
-      {menu&&<MessageMenu x={menu.x} y={menu.y} onClose={closeMenu} onReply={()=>{setReply({...menu.message,chatKey:id});closeMenu();document.getElementById('message')?.focus();}} onForward={()=>{setShare({sourceChatId:chatServerId(id),forwardId:menu.message.id});closeMenu();}}/>}
-      {share&&<ChatShare payload={share} onClose={()=>setShare(null)}/>}
+      {menu&&<MessageMenu onSelect={()=>{setReply(null);setSelection({chatKey:id,ids:[menu.message.id]});closeMenu();}} onDelete={menu.message.from===currentUserId?()=>{setDeleteTarget(menu.message);closeMenu();}:undefined} x={menu.x} y={menu.y} onClose={closeMenu} onReply={()=>{setReply({...menu.message,chatKey:id});closeMenu();document.getElementById('message')?.focus();}} onForward={()=>{setShare({sourceChatId:chatServerId(id),forwardId:menu.message.id});closeMenu();}}/>}
+      {deleteTarget&&(deleteTarget.batch?canDeleteSelected:deleteTarget.from===currentUserId)&&<DeleteMessageDialog title={deleteTarget.batch?t('chatRich.deleteSelectedTitle',{count:selectedMessages.length}):undefined} canDeleteAll onClose={()=>setDeleteTarget(null)} onDelete={scope=>deleteTarget.batch?removeSelected(scope):removeMessage(deleteTarget,scope)}/>}
+      {viewedMedia&&<MediaViewer media={viewedMedia} items={gallery} chatId={chatServerId(id)} initialResource={viewer.initial} onChange={mediaId=>setViewer(current=>({...current,id:mediaId}))} onClose={()=>setViewer(null)}/>}
+      {share&&<ChatShare payload={share} onSent={()=>setSelection(null)} onClose={()=>setShare(null)}/>}
+      <div className={styles.typing} role="status" aria-live="polite" aria-atomic="true">{typingNames.length>0&&typingLabel}</div>
       {error&&<p className={styles.feedback} role="alert">{error}</p>}
       {busy&&<p className={styles.feedback} role="status">{t('chatRich.sending')}</p>}
       {activeReply&&<div className={styles.reply}><Icon name="reply" size={20}/><div><b>{t('chatRich.replying')}</b><span>{activeReply.text.slice(0,120)}</span></div><button type="button" onClick={()=>setReply(null)} aria-label={t('chatRich.cancelReply')}><Icon name="close" size={20}/></button></div>}
-      <form className={styles.form} onSubmit={handleSend}>
-        <Attachments disabled={busy} onUpload={upload}/>
+      <AttachmentDraft items={draft.items} disabled={busy||draft.preparing} onRemove={draft.remove} onClear={draft.clear}/>
+      {draft.preparing&&<p className={styles.feedback} role="status">{t('chatRich.preparingMedia')}</p>}
+      <form className={`${styles.form} ${recording?styles.recordingForm:''}`} onSubmit={handleSend}>
+        <Attachments disabled={busy||recording||draft.preparing} onUpload={upload}/>
         <label htmlFor="message" className={styles.srOnly}>
           {t("chats.message")}
         </label>
         <input
           id="message"
           type="text"
-          placeholder={t("chats.placeholder")}
+          placeholder={t(draft.items.length?"chatRich.caption":"chats.placeholder")}
           className={styles.input}
           maxLength={2000}
-          disabled={busy}
+          disabled={busy||recording}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onBlur={()=>reportTyping('')}
+          onChange={(e) => {setText(e.target.value);reportTyping(e.target.value);}}
         />
-        <button type="submit" disabled={busy||!text.trim()} className={styles.send} aria-label={t("chats.send")}>
+        {text.trim()||draft.items.length?<button type="submit" disabled={busy||draft.preparing} className={styles.send} aria-label={t("chats.send")}>
           <Icon name="send" size={20} />
-        </button>
+        </button>:<Recorder key={id} disabled={busy||draft.preparing} onSend={sendRecording} onRecordingChange={setRecording}/>}
       </form>
     </div>
   );
 }
 
-export default Chat;
+export default function ChatRoute() {
+  const {id}=useParams();
+  return <Chat key={id}/>;
+}
